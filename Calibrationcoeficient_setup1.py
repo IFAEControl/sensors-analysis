@@ -661,12 +661,3 @@ def PedestalTemperatureAnalysis(mean, std, temperature, name, outputpath, wavele
 #Tfull, Tpedestal = Sensor_setup1('./Useful_data/setup1/Temperatura_22_2024/data/1064nm','temperatura_22_26072024_PD','1064')
 #Tfull, Tpedestal = Sensor_setup1('./Useful_data/setup1/Temperatura_24_2024/data/532nm','temperatura_24_30072024_PD','532')
 Tfull, Tpedestal = Sensor_setup1('./Useful_data/setup1/Temperatura_24_2024/data/1064nm','temperatura_24_30072024_PD','1064')
-
-
-# %%
-
-
-# %%
-
-
-
