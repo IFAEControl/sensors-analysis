@@ -1,13 +1,3 @@
 # Photodiode calibration project
 
-Goal of the project is to calibrate the photodiodes. For that purpose, a absolutely calibrated PowerMeter is used to obtain the power W-V relationship thanks to the two beams after the beamsplitter. In this way, we know what power we expect to be reaching the PD, so that we can calibrated. The calibration of the PD is done thanks to the Rasberry. Note that in the data columns, we will either have PowerMeter+Keithley or Raspberry(PD)+Keithley.
-
-Each of the used filters will be connected to a W-V relationship, as the effect of the filters is not linear but a convolution, so a different laser power is trasmited  (may we do a FFT of the signal to asses this? ). 
-
-
-Calibration constant to be given as $\mu$ W/m +- E. The uncertainty budget, whose quadratic sum is E, include various sources of uncertainties, as geometrical aspects, power stability aspects, and dependency with the temperature. Then, we can look into the contributions from laser, dark-current, readout noise. 
-
-Possible incoming tests to reach a robust characterization: 
-- Dark Current (current in absence of light). Jorge suspects that it is higher that it should be as it is not well polarised (3.3 V for the p-n junction instead of 10-12V), so that some current is still flowing to the small energy gap of the semiconductor. 
-- Laser ON. 
-- Angle of incidence 
+Goal of the project is to calibrate the photodiodes. For that purpose, there are two set-ups. The first is used to obtain the power W-V relationship thanks to the two beams after the beamsplitter. In this way, we know what power we expect to be reaching the PD, so that we can calibrated. The calibration of the PD is done thanks to the Rasberry. Note that in the data columns, we will either have PowerMeter+Keithley or Raspberry(PD)+Keithley. The second setup, the laser goes through the BS, and reached the PD and the sensors in the baffle. In this way, we have a relative change of the PD (V) with the power in the sensors (seen as ADC counts). With these two relationships, we can obtained the final calibration factor, that is given in ADC counts/W per each sensor.
