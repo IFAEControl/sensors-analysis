@@ -6,7 +6,18 @@ import zipfile
 from calibration.helpers import get_logger
 logger = get_logger()
 
-def setup_paths(calib_files_path, output_path=None):
+
+singleton_output_path = None
+
+def get_base_output_path():
+    """Get the base output path for storing analysis results."""
+    global singleton_output_path
+    if singleton_output_path is None:
+        logger.error("Output path has not been set up yet. Call setup_paths first.")
+        sys.exit(1)
+    return singleton_output_path
+
+def setup_paths(calib_files_path, output_path=None, overwrite=False):
     """
     Setup file paths for calibration input data files and output directory.
 
@@ -46,6 +57,19 @@ def setup_paths(calib_files_path, output_path=None):
 
     if output_path is None:
         output_path = f'./output/{base_name}'
+    
+    if os.path.exists(output_path):
+        if not overwrite:
+            logger.error("Output path '%s' already exists. Use --overwrite / -w to overwrite.", output_path)
+            sys.exit(1)
+        if not os.path.isdir(output_path):
+            logger.error("Output path '%s' exists and is not a directory.", output_path)
+            sys.exit(1)
+        # Remove existing directory
+        import shutil
+        shutil.rmtree(output_path)
+    global singleton_output_path
+    singleton_output_path = output_path
     os.makedirs(output_path, exist_ok=True)
 
     logger.info("Calibration files path: %s", files_path)

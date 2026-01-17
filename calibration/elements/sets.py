@@ -79,8 +79,8 @@ class FileSetAnalysis(BaseAnal):
     """Class to analyze a set of calibration files."""
 
     def __init__(self, file_set: FileSet):
+        super().__init__()
         self.fs = file_set
-        self.plots = {}
         self.results = {}
 
         self.slopes = []
@@ -286,7 +286,7 @@ class FileSetAnalysis(BaseAnal):
         fig.suptitle(f'Conv Factor Slope Comparison for {self.anal_label}', y=1.02)
 
         plt.savefig(opath, dpi=150)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
 
     def _gen_plot_conv_factor_intercept_method_comparison(self):
@@ -352,11 +352,12 @@ class FileSetAnalysis(BaseAnal):
 
         plt.savefig(opath, dpi=150)
         plt.close(fig)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
 
     def _gen_plot_slopes_vs_temperature(self):
         # Plot dels slopes per la PM en funció de la temperatura mitja de cada fitxer, no cal fer regressió lineal perque
         # totes han de tenir el mateix valor.
+        fig_id = 'W/V_slopes_vs_Temp'
         opath = os.path.join(self.output_path,
                              'PMVsRefPD_fitSlope_vs_Temperature.png')
         fig = plt.figure(figsize=(10, 6))
@@ -371,7 +372,7 @@ class FileSetAnalysis(BaseAnal):
         plt.title(f'{self.anal_label} - W/V fit slopes')
         plt.tight_layout(rect=[0, 0, 1, 0.98])
         plt.savefig(opath)  # Display the current figure
-        self.plots['W/V_slopes_vs_Temp'] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
 
     def _gen_plot_slopes_intercepts_vs_index(self):
@@ -528,7 +529,7 @@ class FileSetAnalysis(BaseAnal):
         # )
 
         plt.savefig(opath, dpi=150)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
     
     def _gen_plots_vs_laser_setting(self):
@@ -546,7 +547,7 @@ class FileSetAnalysis(BaseAnal):
         plt.legend()
         plt.tight_layout(rect=[0, 0, 1, 0.98])
         plt.savefig(opath)  # Save the current figure
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
 
         fig_id = "RefPD_vs_LaserSetting"
@@ -562,7 +563,7 @@ class FileSetAnalysis(BaseAnal):
         plt.legend()
         plt.tight_layout(rect=[0, 0, 1, 0.98])
         plt.savefig(opath)  # Save the current figure
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
     
     def _gen_pedestals_hist_plot(self):
@@ -615,7 +616,7 @@ class FileSetAnalysis(BaseAnal):
         fig.suptitle(f'{self.anal_label} - Histogram of pedestal values', fontsize=14)
         plt.tight_layout(rect=[0, 0, 1, 0.98])
         plt.savefig(opath)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
     
     def _gen_mean_pedestals_plot(self):
@@ -671,7 +672,7 @@ class FileSetAnalysis(BaseAnal):
 
 
         plt.savefig(opath, dpi=150)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
 
     def _gen_pedestals_timeseries_plot(self):
@@ -715,7 +716,7 @@ class FileSetAnalysis(BaseAnal):
         ax2.legend()
 
         plt.savefig(opath, dpi=150)
-        self.plots[fig_id] = opath
+        self.add_plot_path(fig_id, opath)
         plt.close(fig)
     
 

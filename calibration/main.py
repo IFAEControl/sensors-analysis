@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("calib_files_path", help="Path to calibration files folder or zip file")
     parser.add_argument("--output-path", "-o", help="Output path (default: './output/<name_of_calib_files>')")
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
+    parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
     
     args = parser.parse_args()
     

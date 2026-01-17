@@ -96,7 +96,7 @@ class CalibFileAnalysis(BaseAnal):
         plt.tight_layout()
         plt.savefig(fig_path)  # Save the current plot
         plt.close(fig)
-        self.plots[fig_id] = fig_path
+        self.add_plot_path(fig_id, fig_path)
         # logger.debug("Plot saved to %s", fig_path)
 
 
@@ -111,7 +111,7 @@ class CalibFileAnalysis(BaseAnal):
         plt.tight_layout()
         plt.savefig(fig_path)  # Save the current plot
         plt.close(fig)
-        self.plots[fig_id] = fig_path
+        self.add_plot_path(fig_id, fig_path)
         logger.debug("Plot saved to %s", fig_path)
 
         intercept = self.linreg_refPD_vs_meanPM.intercept
@@ -130,7 +130,7 @@ class CalibFileAnalysis(BaseAnal):
         plt.tight_layout()
         plt.savefig(fig_path)  # Save the current plot
         plt.close(fig)
-        self.plots[fig_id] = fig_path
+        self.add_plot_path(fig_id, fig_path)
         logger.debug("Plot saved to %s", fig_path)
 
 

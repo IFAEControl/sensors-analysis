@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from calibration.helpers import get_logger, filepaths
+from calibration.helpers import get_logger, filepaths, system_info
 from .calib_file import CalibFile
 from .calibration_analysis import CalibrationAnalysis
 from .sets import FileSet
@@ -21,7 +21,8 @@ class Calibration:
     Docstring for Calibration
     """
     def __init__(self, call_args):
-        cfpath, opath =  filepaths.setup_paths(call_args.calib_files_path, call_args.output_path)
+        cfpath, opath =  filepaths.setup_paths(call_args.calib_files_path, call_args.output_path,
+                                               overwrite=call_args.overwrite)
         self.calib_files_path = cfpath
         self.output_path = opath
         self.file_sets = {}
@@ -30,6 +31,7 @@ class Calibration:
             'calib_files_path': cfpath,
             'output_path': opath,
             'execution_date': datetime.now(timezone.utc).isoformat(),
+            'system': system_info.get_system_info()
         }
         self.anal = CalibrationAnalysis(self)
 

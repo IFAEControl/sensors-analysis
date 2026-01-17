@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 import os
+from venv import logger
 
 from matplotlib import pyplot as plt
 
+from calibration.helpers.filepaths import get_base_output_path
 
 class BaseAnal(ABC):
     """Abstract base class for analysis components."""
@@ -47,6 +49,17 @@ class BaseAnal(ABC):
         """Convert analysis results to a dictionary."""
         pass
 
+    def add_plot_path(self, fig_id: str, fig_path: str):
+        """Add a plot to the summary dictionary.
+
+        Args:
+            fig_id (str): Identifier for the figure.
+            fig_path (str): Path to the saved figure.
+        """
+        # user provides a path, where we create a folder to sustain everything
+        base_output_path = get_base_output_path()
+        fig_path = os.path.relpath(fig_path, start=base_output_path)
+        self.plots[fig_id] = fig_path
 
     def _gen_temp_humidity_hists_plot(self):
         """Generate temperature and humidity plot for the calibration file data."""
@@ -61,7 +74,7 @@ class BaseAnal(ABC):
         plt.tight_layout()
         plt.savefig(fig_path)  # Save the current plot
         plt.close(fig)
-        self.plots[fig_id] = fig_path
+        self.add_plot_path(fig_id, fig_path)
 
         fig_id = "humidity_hist"
         fig_path = os.path.join(self.output_path, fig_id + '.png')
@@ -74,7 +87,7 @@ class BaseAnal(ABC):
         plt.tight_layout()
         plt.savefig(fig_path)  # Save the current plot
         plt.close(fig)
-        self.plots[fig_id] = fig_path        
+        self.add_plot_path(fig_id, fig_path)
 
     def _gen_timeseries_plot(self):
         """Generate timeseries plot with dual axes for calibration file data."""
@@ -131,4 +144,4 @@ class BaseAnal(ABC):
         plt.tight_layout()
         plt.savefig(fig_path)
         plt.close(fig)
-        self.plots[fig_id] = fig_path    
+        self.add_plot_path(fig_id, fig_path)    
