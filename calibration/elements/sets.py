@@ -40,7 +40,7 @@ class FileSet:
         """Concatenated DataFrame of all calibration files in the set."""
         if self._concat_df is None:
             self._concat_df = pd.concat(
-                [calfile.df for calfile in self.files if calfile.df is not None], ignore_index=True)
+                [calfile._df for calfile in self.files if calfile._df is not None], ignore_index=True)
         return self._concat_df
 
     @property
@@ -48,7 +48,7 @@ class FileSet:
         """Concatenated DataFrame of all calibration files in the set."""
         if self._concat_ped_df is None:
             self._concat_ped_df = pd.concat(
-                [calfile.df_pedestal for calfile in self.files if calfile.df_pedestal is not None], ignore_index=True)
+                [calfile._df_pedestal for calfile in self.files if calfile._df_pedestal is not None], ignore_index=True)
         return self._concat_ped_df
 
     def add_calib_file(self, calib_file: 'CalibFile'):
@@ -136,10 +136,10 @@ class FileSetAnalysis(BaseAnal):
     
     def analyze_pedestals(self):
         for calfile in self.fs.files:
-            self.mean_pedestal_pd.append(calfile.df_pedestal['meanRefPD'].mean())
-            self.mean_pedestal_pd_std.append(calfile.df_pedestal['meanRefPD'].std())
-            self.mean_pedestal_pm.append(calfile.df_pedestal['meanPM'].mean())
-            self.mean_pedestal_pm_std.append(calfile.df_pedestal['meanPM'].std())
+            self.mean_pedestal_pd.append(calfile._df_pedestal['meanRefPD'].mean())
+            self.mean_pedestal_pd_std.append(calfile._df_pedestal['meanRefPD'].std())
+            self.mean_pedestal_pm.append(calfile._df_pedestal['meanPM'].mean())
+            self.mean_pedestal_pm_std.append(calfile._df_pedestal['meanPM'].std())
         self.mean_pedestal_pd = np.array(self.mean_pedestal_pd)
         self.mean_pedestal_pm = np.array(self.mean_pedestal_pm)
 
@@ -196,8 +196,8 @@ class FileSetAnalysis(BaseAnal):
                 calfile.anal.linreg_refPD_vs_meanPM.intercept)
             self.intercepts_std.append(
                 calfile.anal.linreg_refPD_vs_meanPM.intercept_stderr)
-            self.mean_temp.append(calfile.df['Temp'].mean())
-            self.mean_rh.append(calfile.df['RH'].mean())
+            self.mean_temp.append(calfile._df['Temp'].mean())
+            self.mean_rh.append(calfile._df['RH'].mean())
         self.slopes = np.array(self.slopes)
         self.slopes_std = np.array(self.slopes_std)
         self.intercepts = np.array(self.intercepts)
@@ -218,7 +218,6 @@ class FileSetAnalysis(BaseAnal):
         weighted = self.results['weighted_linreg_means']
 
         fig_id = "ConvFactorSlopes_Comparison"
-        opath = os.path.join(self.output_path, fig_id + '.png')
 
         fig, (ax1, ax2, ax3) = plt.subplots(
             nrows=3, ncols=1, figsize=(10, 9), sharex=True, constrained_layout=True
@@ -285,8 +284,7 @@ class FileSetAnalysis(BaseAnal):
         # Title on the figure
         fig.suptitle(f'Conv Factor Slope Comparison for {self.anal_label}', y=1.02)
 
-        plt.savefig(opath, dpi=150)
-        self.add_plot_path(fig_id, opath)
+        self.savefig(fig_id)
         plt.close(fig)
 
     def _gen_plot_conv_factor_intercept_method_comparison(self):
@@ -296,7 +294,6 @@ class FileSetAnalysis(BaseAnal):
         weighted = self.results['weighted_linreg_means']
 
         fig_id = "ConvFactorIntercepts_Comparison"
-        opath = os.path.join(self.output_path, fig_id + '.png')
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=2, ncols=1, figsize=(10, 9), sharex=True, constrained_layout=True
@@ -350,16 +347,13 @@ class FileSetAnalysis(BaseAnal):
         # Title on the figure
         fig.suptitle(f'Conv Factor Intercept Comparison for {self.anal_label}', y=1.02)
 
-        plt.savefig(opath, dpi=150)
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, opath)
 
     def _gen_plot_slopes_vs_temperature(self):
         # Plot dels slopes per la PM en funció de la temperatura mitja de cada fitxer, no cal fer regressió lineal perque
         # totes han de tenir el mateix valor.
-        fig_id = 'W/V_slopes_vs_Temp'
-        opath = os.path.join(self.output_path,
-                             'PMVsRefPD_fitSlope_vs_Temperature.png')
+        fig_id = 'PMVsRefPD_fitSlope_vs_Temperature'
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         plt.errorbar(self.mean_temp, self.slopes,
@@ -370,16 +364,15 @@ class FileSetAnalysis(BaseAnal):
         plt.ylabel('ref PD vs PM slopes')
         plt.xlabel('Mean temperature (Cº)')
         plt.title(f'{self.anal_label} - W/V fit slopes')
-        plt.tight_layout(rect=[0, 0, 1, 0.98])
-        plt.savefig(opath)  # Display the current figure
-        self.add_plot_path(fig_id, opath)
+        plt.tight_layout(rect=(0, 0, 1, 0.98))
+        self.savefig(fig_id)
         plt.close(fig)
 
     def _gen_plot_slopes_intercepts_vs_index(self):
         # Plot dels slopes i intercepts per la PM en funció de l'índex del fitxer, no cal fer regressió lineal perque
         # totes han de tenir el mateix valor.
-        opath = os.path.join(self.output_path, 'PMVsRefPD_fitSlopes_and_Intercepts_vs_Run.png')
 
+        fig_id = 'PMVsRefPD_fitSlopes_and_Intercepts_vs_Run'
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6), sharex=True)
 
         # Slopes
@@ -427,14 +420,13 @@ class FileSetAnalysis(BaseAnal):
         ax2.set_xticks(range(len(self.intercepts)))
 
         fig.suptitle(f'{self.anal_label} - W/V fit slopes and intercepts')
-        plt.tight_layout(rect=[0, 0, 1, 0.98])
-        plt.savefig(opath)
+        plt.tight_layout(rect=(0, 0, 1, 0.98))
+        self.savefig(fig_id)
         plt.close(fig)
 
     def _gen_plot_PMvsRefPD_all_calfiles(self):
 
         fig_id = "PM_vs_RefPD"
-        opath = os.path.join(self.output_path, fig_id + ".png")
 
         n_files = len(self.fs.files)
 
@@ -464,9 +456,9 @@ class FileSetAnalysis(BaseAnal):
 
             # Errorbar → grab color
             eb = ax_top.errorbar(
-                calfile.df['meanRefPD'],
-                calfile.df['meanPM'],
-                yerr=calfile.df['stdPM'],
+                calfile._df['meanRefPD'],
+                calfile._df['meanPM'],
+                yerr=calfile._df['stdPM'],
                 fmt='.', markersize=8, linewidth=1,
                 label=calfile.file_label
             )
@@ -475,8 +467,8 @@ class FileSetAnalysis(BaseAnal):
             colors[calfile.file_label] = color
 
             ax_top.plot(
-                calfile.df['meanRefPD'],
-                intercept + slope * calfile.df['meanRefPD'],
+                calfile._df['meanRefPD'],
+                intercept + slope * calfile._df['meanRefPD'],
                 linewidth=1,
                 color=color,
                 label=f'{calfile.meta["run"]}: '
@@ -503,9 +495,9 @@ class FileSetAnalysis(BaseAnal):
             color = colors[calfile.file_label]
 
             ax.errorbar(
-                calfile.df['meanRefPD'],
-                calfile.df['meanPM'],
-                yerr=calfile.df['stdPM'],
+                calfile._df['meanRefPD'],
+                calfile._df['meanPM'],
+                yerr=calfile._df['stdPM'],
                 fmt='.', markersize=4, linewidth=0.8,
                 color=color
             )
@@ -528,48 +520,42 @@ class FileSetAnalysis(BaseAnal):
         #     bottom=0.08
         # )
 
-        plt.savefig(opath, dpi=150)
-        self.add_plot_path(fig_id, opath)
+        self.savefig(fig_id)
         plt.close(fig)
     
     def _gen_plots_vs_laser_setting(self):
         """Generate plots vs laser setting for the set of calibration files"""
         fig_id = "PM_vs_LaserSetting"
-        opath = os.path.join(self.output_path, fig_id + ".png")
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         for calfile in self.fs.files:
-            plt.errorbar(calfile.df['L'], calfile.df['meanPM'], yerr=calfile.df['stdPM'],
+            plt.errorbar(calfile._df['L'], calfile._df['meanPM'], yerr=calfile._df['stdPM'],
                          fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
         plt.ylabel('Power meter (W)')
         plt.xlabel(self.laser_label)
         plt.title(f'{self.anal_label} - PM vs Laser setting')
         plt.legend()
         plt.tight_layout(rect=[0, 0, 1, 0.98])
-        plt.savefig(opath)  # Save the current figure
-        self.add_plot_path(fig_id, opath)
+        self.savefig(fig_id)
         plt.close(fig)
 
         fig_id = "RefPD_vs_LaserSetting"
-        opath = os.path.join(self.output_path, fig_id + ".png")
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         for calfile in self.fs.files:
-            plt.errorbar(calfile.df['L'], calfile.df['meanRefPD'], yerr=calfile.df['stdRefPD'],
+            plt.errorbar(calfile._df['L'], calfile._df['meanRefPD'], yerr=calfile._df['stdRefPD'],
                          fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
         plt.ylabel('ref PD (V)')
         plt.xlabel(self.laser_label)
         plt.title(f'{self.anal_label} - RefPD vs Laser setting')
         plt.legend()
-        plt.tight_layout(rect=[0, 0, 1, 0.98])
-        plt.savefig(opath)  # Save the current figure
-        self.add_plot_path(fig_id, opath)
+        plt.tight_layout(rect=(0, 0, 1, 0.98))
+        self.savefig(fig_id)
         plt.close(fig)
     
     def _gen_pedestals_hist_plot(self):
         """Generate histogram plot of pedestal values for the set of calibration files"""
         fig_id = "Pedestals_Histogram"
-        opath = os.path.join(self.output_path, fig_id + ".png")
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=1, ncols=2, figsize=(12, 6), sharey=True
@@ -577,10 +563,10 @@ class FileSetAnalysis(BaseAnal):
 
         # Concatenate pedestal data
         df_pm_ped = pd.concat(
-            [calfile.df_pedestal['meanPM'] for calfile in self.fs.files]
+            [calfile._df_pedestal['meanPM'] for calfile in self.fs.files]
         )
         df_refpd_ped = pd.concat(
-            [calfile.df_pedestal['meanRefPD'] for calfile in self.fs.files]
+            [calfile._df_pedestal['meanRefPD'] for calfile in self.fs.files]
         )
 
         # ─────────────────────────────
@@ -614,15 +600,13 @@ class FileSetAnalysis(BaseAnal):
 
         # ─────────────────────────────
         fig.suptitle(f'{self.anal_label} - Histogram of pedestal values', fontsize=14)
-        plt.tight_layout(rect=[0, 0, 1, 0.98])
-        plt.savefig(opath)
-        self.add_plot_path(fig_id, opath)
+        plt.tight_layout(rect=(0, 0, 1, 0.98))
+        self.savefig(fig_id)
         plt.close(fig)
     
     def _gen_mean_pedestals_plot(self):
         """Generate pedestal plot for the set of calibration files"""
         fig_id = "Pedestals_mean_vs_runindex"
-        opath = os.path.join(self.output_path, fig_id + ".png")
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=2, ncols=1,
@@ -670,15 +654,12 @@ class FileSetAnalysis(BaseAnal):
         ax2.set_xlim([-1, len(self.fs.files)])
         ax2.legend()
 
-
-        plt.savefig(opath, dpi=150)
-        self.add_plot_path(fig_id, opath)
+        self.savefig(fig_id)
         plt.close(fig)
 
     def _gen_pedestals_timeseries_plot(self):
         """Generate pedestal plot for the set of calibration files"""
         fig_id = "Pedestals_timeseries"
-        opath = os.path.join(self.output_path, fig_id + ".png")
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=2, ncols=1,
@@ -715,8 +696,7 @@ class FileSetAnalysis(BaseAnal):
         ax2.grid(True, alpha=0.3)
         ax2.legend()
 
-        plt.savefig(opath, dpi=150)
-        self.add_plot_path(fig_id, opath)
+        self.savefig(fig_id)
         plt.close(fig)
     
 

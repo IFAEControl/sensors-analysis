@@ -1,11 +1,23 @@
 
 # Virgo Instrumented baffles optical setup sensors calibration and characterization analysis
 
+## Installation
+
+To install the package, use:
+```bash
+pip install -e .
+```
+
 ## Calibration Module
 
 To execute it without installing the package, use:
 ```bash
 python -m calibration.main <path_to_calibration_zip_file> [--output_path <output_path>]
+```
+
+To execute with the package installed, use:
+```bash
+calibration-files-analysis <path_to_calibration_zip_file> [--output_path <output_path>]
 ```
 
 ### Structure

@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 import os
 from venv import logger
 
+import pandas as pd
 from matplotlib import pyplot as plt
 
-from calibration.helpers.filepaths import get_base_output_path
+from calibration.helpers.file_manage import get_base_output_path, get_plot_output_format
 
 class BaseAnal(ABC):
     """Abstract base class for analysis components."""
@@ -32,7 +33,7 @@ class BaseAnal(ABC):
     
     @property
     @abstractmethod
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """DataFrame containing the data to be analyzed."""
         pass
 
@@ -60,11 +61,23 @@ class BaseAnal(ABC):
         base_output_path = get_base_output_path()
         fig_path = os.path.relpath(fig_path, start=base_output_path)
         self.plots[fig_id] = fig_path
+    
+    def savefig(self, fig_id: str, fig_filename: str|None = None):
+        """Save current plt matplotlib figure to the output path and register it.
+        Save format is set globally in file_manage module.
+        Args:
+            fig_id (str): Identifier for the figure.
+            fig_filename (str, optional): Filename for the figure. If None, uses fig_id. Defaults to None.
+        """
+        plot_format = get_plot_output_format()  # Get the plot format from the file_manage module
+
+        fig_path = os.path.join(self.output_path, f"{fig_filename or fig_id}.{plot_format}")
+        plt.savefig(fig_path)
+        self.add_plot_path(fig_id, fig_path)
 
     def _gen_temp_humidity_hists_plot(self):
         """Generate temperature and humidity plot for the calibration file data."""
         fig_id = "temperature_hist"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(10, 6))
         plt.hist(self.df['Temp'], color='blue', alpha=0.7)
         plt.xlabel('Temperature (°C)')
@@ -72,12 +85,10 @@ class BaseAnal(ABC):
         plt.grid()
         plt.title(f'{self.anal_label} - Temperatures histogram')
         plt.tight_layout()
-        plt.savefig(fig_path)  # Save the current plot
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)
 
         fig_id = "humidity_hist"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(10, 6))
         plt.hist(self.df['RH'], color='blue', alpha=0.7)
         plt.xlabel('Humidity (%)')
@@ -85,14 +96,12 @@ class BaseAnal(ABC):
         plt.grid()
         plt.title(f'{self.anal_label} - Humidity histogram')
         plt.tight_layout()
-        plt.savefig(fig_path)  # Save the current plot
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)
 
     def _gen_timeseries_plot(self):
         """Generate timeseries plot with dual axes for calibration file data."""
         fig_id = "timeseries"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(12, 10))
 
         # Top plot: meanRefPD and meanPM vs time (2/3 height)
@@ -142,6 +151,5 @@ class BaseAnal(ABC):
 
         ax3.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(fig_path)
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)    

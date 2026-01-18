@@ -2,9 +2,8 @@
 Docstring for calibration.elements.calib_file_analysis
 """
 
-import os
 from typing import TYPE_CHECKING
-
+import pandas as pd
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
 
@@ -34,22 +33,22 @@ class CalibFileAnalysis(BaseAnal):
         self.linreg_refPD_vs_L = CalibLinReg('L', 'meanRefPD', None)
 
     @property
-    def anal_label(self):
+    def anal_label(self) -> str:
         return self.cf.file_label
 
     @property
-    def laser_label(self):
+    def laser_label(self) -> str:
         return self.cf.laser_label
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """
         df: DataFrame with calibration data
         """
         return self.cf.df
 
     @property
-    def output_path(self):
+    def output_path(self) -> str:
         """
         output_path: where to store plots and results for this set of files
         Filename should contain the run number
@@ -86,7 +85,6 @@ class CalibFileAnalysis(BaseAnal):
 
         # Plot Mean PM vs L
         fig_id = "meanPM_vs_L"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df['L'], self.df['meanPM'], yerr=self.df['stdPM'], fmt='.', markersize=10, linewidth=1)
         plt.ylabel('Mean Optical Power (W)')
@@ -94,14 +92,12 @@ class CalibFileAnalysis(BaseAnal):
         plt.grid()
         plt.title(f'{self.anal_label} - Mean PM vs {self.laser_label}')
         plt.tight_layout()
-        plt.savefig(fig_path)  # Save the current plot
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)
         # logger.debug("Plot saved to %s", fig_path)
 
 
         fig_id = "meanRefPD_vs_L"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df['L'], self.df['meanRefPD'], yerr=self.df['stdRefPD'], fmt='.', markersize=10, linewidth=1)
         plt.ylabel('Mean ref PD (V)')
@@ -109,16 +105,14 @@ class CalibFileAnalysis(BaseAnal):
         plt.grid()
         plt.title(f'{self.anal_label} - Mean Ref PD vs {self.laser_label}')
         plt.tight_layout()
-        plt.savefig(fig_path)  # Save the current plot
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)
-        logger.debug("Plot saved to %s", fig_path)
+        # logger.debug("Plot saved to %s", fig_path)
 
         intercept = self.linreg_refPD_vs_meanPM.intercept
         slope = self.linreg_refPD_vs_meanPM.slope
 
         fig_id = "meanPM_vs_meanRefPD"
-        fig_path = os.path.join(self.output_path, fig_id + '.png')
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df['meanRefPD'], self.df['meanPM'], yerr=self.df['stdPM'], fmt='.', markersize=10, linewidth=1)
         plt.plot(self.df['meanRefPD'], intercept + slope*self.df['meanRefPD'], 'r', label='fitted line')
@@ -128,11 +122,8 @@ class CalibFileAnalysis(BaseAnal):
         plt.grid()
         plt.title(f'{self.anal_label} - Mean PM vs Mean Ref PD')
         plt.tight_layout()
-        plt.savefig(fig_path)  # Save the current plot
+        self.savefig(fig_id)
         plt.close(fig)
-        self.add_plot_path(fig_id, fig_path)
-        logger.debug("Plot saved to %s", fig_path)
-
 
     def to_dict(self):
         """Return analysis results as a dictionary."""

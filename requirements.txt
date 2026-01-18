@@ -1,6 +1,11 @@
+# If editing dependencies, make sure to update pyproject.toml as well
 colorlog
 pandas
 scipy
 numpy
 matplotlib
+
+#development tools, do not add to pyproject.toml
+flake8
+black
 jupyterlab

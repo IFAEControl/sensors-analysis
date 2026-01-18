@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sensors-analysis"
+version = "0.1.1"
+description = "Virgo Instrumented Baffles sensors calibration analysis"
+readme = "readme.md"
+requires-python = ">=3.9"
+authors = [{ name = "IFAE Virgo Instrumented Baffles" }]
+license = { file = "LICENSE" }
+
+# If you want to manage dependencies here, mirror requirements.txt entries.
+dependencies = ["colorlog", "pandas", "scipy", "numpy", "matplotlib"]
+
+[project.urls]
+Homepage = "https://github.com/IFAEControl/sensors-analysis.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["calibration*"]
+
+[project.scripts]
+calibration-files-analysis = "calibration.main:main"

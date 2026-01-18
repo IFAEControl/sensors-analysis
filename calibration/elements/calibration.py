@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from calibration.helpers import get_logger, filepaths, system_info
+from calibration.helpers import file_manage, get_logger, system_info
 from .calib_file import CalibFile
 from .calibration_analysis import CalibrationAnalysis
 from .sets import FileSet
@@ -21,7 +21,7 @@ class Calibration:
     Docstring for Calibration
     """
     def __init__(self, call_args):
-        cfpath, opath =  filepaths.setup_paths(call_args.calib_files_path, call_args.output_path,
+        cfpath, opath =  file_manage.setup_paths(call_args.calib_files_path, call_args.output_path,
                                                overwrite=call_args.overwrite)
         self.calib_files_path = cfpath
         self.output_path = opath
@@ -74,31 +74,19 @@ class Calibration:
             json.dump(self.to_dict(), f, indent=2)
         logger.info("Calibration results saved to %s", results_path)
     
+    
 #-------------------------------------
 
-    def close_figs(self):
-        for gl, values in self._figs.items():
-            for fig_id, fig_ix in values.items():
-                plt.figure(fig_ix)
-                plt.legend()
-                set_output_path = os.path.join(self.output_path, "plots", gl)
-                os.makedirs(set_output_path, exist_ok=True)
-                plot_path = os.path.join(set_output_path, f"{fig_id}.png")
-                plt.savefig(plot_path)
-                plt.close()
-                logger.info("Saved set plot to %s", plot_path)
-        self._figs = {}
-
  
-    def get_temperature_data(self):
-        temp_data = pd.DataFrame()
-        for calfile in self.calib_files:
-            temp_data = pd.concat([temp_data, calfile.df[['datetime', 'Temp']].copy()])
-        return temp_data
+    # def get_temperature_data(self):
+    #     temp_data = pd.DataFrame()
+    #     for calfile in self.calib_files:
+    #         temp_data = pd.concat([temp_data, calfile.df[['datetime', 'Temp']].copy()])
+    #     return temp_data
     
-    def get_humidity_data(self):
-        humidity_data = pd.DataFrame()
-        for calfile in self.calib_files:
-            humidity_data = pd.concat([humidity_data, calfile.df[['datetime', 'RH']].copy()])
-        return humidity_data
+    # def get_humidity_data(self):
+    #     humidity_data = pd.DataFrame()
+    #     for calfile in self.calib_files:
+    #         humidity_data = pd.concat([humidity_data, calfile.df[['datetime', 'RH']].copy()])
+    #     return humidity_data
 
