@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 
 class CalibLinReg:
     def __init__(self, x_var:str, y_var:str, linreg):
@@ -44,4 +46,25 @@ class CalibLinReg:
             }
         else:
             return {}
-    
+
+
+@dataclass
+class SanityCheckResult:
+    """Result of a sanity check operation."""
+    severity: str
+    check_name: str
+    check_args: dict
+    passed: bool
+    info: str = ""
+    error: bool = False
+
+    def to_dict(self) -> dict:
+        """Convert the sanity check result to a dictionary."""
+        return {
+            'check_name': self.check_name,
+            'check_args': str(self.check_args),
+            'passed': self.passed,
+            'info': self.info,
+            'severity': self.severity,
+            'error': self.error,
+        }

@@ -9,7 +9,7 @@ import pandas as pd
 
 from calibration.helpers import get_logger
 
-from .calib_file_analysis import CalibFileAnalysis
+from .analysis.calib_file_analysis import CalibFileAnalysis
 
 logger = get_logger()
 
@@ -40,7 +40,6 @@ class CalibFile:
         self.anal = CalibFileAnalysis(self)
         self.meta = {
             'filename': os.path.basename(file_path),
-            'size': os.path.getsize(file_path),
         }
         self.initialize()
     
@@ -104,12 +103,33 @@ class CalibFile:
         self._df = self._df.iloc[1:-1].reset_index(drop=True)
         logger.info("Loaded data for calibration file: %s", self.meta['filename'])
 
+
     def analyze(self):
         """Analyze the calibration file data"""
         if self.output_path:
             os.makedirs(self.output_path, exist_ok=True)
         self.anal.analyze()
-    
+        self.set_file_info()
+
+    def set_file_info(self):
+        """Set file info metadata"""
+        self.meta['num_points'] = len(self._df)
+        self.meta['file_size_bytes'] = os.path.getsize(self.file_path)
+        self.meta['time_info'] = {}
+        self._set_time_info()
+
+    def _set_time_info(self):
+        min_time = self.df['timestamp'].min()
+        max_time = self.df['timestamp'].max()
+        t_res = {
+            'min_ts': int(min_time),
+            'max_ts': int(max_time),
+            'elapsed_time_s': int(max_time - min_time),
+            'min_dt': pd.to_datetime(min_time, unit='s').strftime('%Y-%m-%d %H:%M:%S'),
+            'max_dt': pd.to_datetime(max_time, unit='s').strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.meta['time_info'] = t_res
+
     @property
     def power(self) -> str:
         """Return power parsing from file name"""

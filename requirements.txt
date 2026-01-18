@@ -4,6 +4,7 @@ pandas
 scipy
 numpy
 matplotlib
+pyyaml
 
 #development tools, do not add to pyproject.toml
 flake8

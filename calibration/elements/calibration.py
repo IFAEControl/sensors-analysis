@@ -5,13 +5,12 @@ import os
 import json
 from datetime import datetime, timezone
 
-import pandas as pd
-import matplotlib.pyplot as plt
-
 from calibration.helpers import file_manage, get_logger, system_info
 from .calib_file import CalibFile
-from .calibration_analysis import CalibrationAnalysis
-from .sets import FileSet
+from .analysis import CalibrationAnalysis
+from .calib_fileset import FileSet
+from .sanity_checks import SanityChecks
+
 logger = get_logger()
 
         
@@ -34,6 +33,11 @@ class Calibration:
             'system': system_info.get_system_info()
         }
         self.anal = CalibrationAnalysis(self)
+        self.sanity = SanityChecks(self)
+    
+    def sanity_checks(self):
+        """Perform sanity checks on the calibration data"""
+        self.sanity.run_checks()
 
     def load_calibration_files(self):
         """
@@ -65,7 +69,8 @@ class Calibration:
         """Convert calibration data to dictionary"""
         return {
             'meta': self.meta,
-            'file_sets': {f"{wl}_{fw}": fs.to_dict() for (wl, fw), fs in self.file_sets.items()}
+            'results': self.anal.to_dict(),
+            'sanity_checks': self.sanity.results
         }
 
     def export_calib_data_summary(self):
@@ -74,7 +79,7 @@ class Calibration:
             json.dump(self.to_dict(), f, indent=2)
         logger.info("Calibration results saved to %s", results_path)
     
-    
+
 #-------------------------------------
 
  

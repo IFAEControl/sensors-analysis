@@ -9,71 +9,16 @@ from matplotlib.gridspec import GridSpec
 from scipy.stats import linregress
 
 from calibration.helpers import get_logger
-from .base_anal import BaseAnal
-from .data_holders import CalibLinReg
+from calibration.helpers.file_manage import get_generate_plots
+from .analysis_base import BaseAnal
+from ..data_holders import CalibLinReg
 
 if TYPE_CHECKING:
-    from .calibration import Calibration
-    from .calib_file import CalibFile
+    from ..calibration import Calibration
+    from ..calib_file import CalibFile
+    from ..calib_fileset import FileSet
 
 logger = get_logger()
-
-
-class FileSet:
-    """Class to represent a set of calibration files with the same wavelength and filter wheel"""
-
-    def __init__(self, wave_length: str, filter_wheel: str, calibration: Calibration | None = None):
-        self.wl = wave_length
-        self.fw = filter_wheel
-        self.cal = calibration
-        self.files: list['CalibFile'] = []
-        self.anal = FileSetAnalysis(self)
-        self.output_path = os.path.join(
-            calibration.output_path,
-            f"{self.wl}_{self.fw}"
-        )
-        self._concat_df: pd.DataFrame | None = None
-        self._concat_ped_df: pd.DataFrame | None = None
-
-    @property
-    def concat_df(self):
-        """Concatenated DataFrame of all calibration files in the set."""
-        if self._concat_df is None:
-            self._concat_df = pd.concat(
-                [calfile._df for calfile in self.files if calfile._df is not None], ignore_index=True)
-        return self._concat_df
-
-    @property
-    def concat_pedestal_df(self):
-        """Concatenated DataFrame of all calibration files in the set."""
-        if self._concat_ped_df is None:
-            self._concat_ped_df = pd.concat(
-                [calfile._df_pedestal for calfile in self.files if calfile._df_pedestal is not None], ignore_index=True)
-        return self._concat_ped_df
-
-    def add_calib_file(self, calib_file: 'CalibFile'):
-        """Add a calibration file to the set."""
-        if calib_file.wavelength != self.wl or calib_file.filter_wheel != self.fw:
-            logger.error(
-                "Calibration file wavelength or filter wheel does not match the set.")
-            return
-        self.files.append(calib_file)
-        calib_file.set_file_set(self)
-
-    def analyze(self):
-        """Analyze the set of calibration files."""
-        os.makedirs(self.output_path, exist_ok=True)
-        self.anal.analyze()
-
-    def to_dict(self):
-        """Convert file set data to dictionary."""
-        return {
-            'wave_length': self.wl,
-            'filter_wheel': self.fw,
-            'analysis': self.anal.to_dict(),
-            'files': {cf.meta['filename']: cf.to_dict() for cf in self.files}
-        }
-
 
 class FileSetAnalysis(BaseAnal):
     """Class to analyze a set of calibration files."""
@@ -132,7 +77,8 @@ class FileSetAnalysis(BaseAnal):
         self.analyze_weighted_mean_of_lin_regs()
         self.analyze_full_data_set()
         self.analyze_pedestals()
-        self.generate_plots()
+        if get_generate_plots():
+            self.generate_plots()
     
     def analyze_pedestals(self):
         for calfile in self.fs.files:

@@ -9,6 +9,7 @@ logger = get_logger()
 
 singleton_output_path = None
 singleton_plot_output_format = 'png'
+singleton_gen_plots = True
 
 def get_base_output_path():
     """Get the base output path for storing analysis results."""
@@ -90,3 +91,12 @@ def get_plot_output_format() -> str:
     """Get the output format for plots."""
     global singleton_plot_output_format
     return singleton_plot_output_format
+
+def set_generate_plots(generate: bool):
+    """Set whether to generate plots."""
+    global singleton_gen_plots
+    singleton_gen_plots = generate
+def get_generate_plots() -> bool:
+    """Get whether to generate plots."""
+    global singleton_gen_plots
+    return singleton_gen_plots

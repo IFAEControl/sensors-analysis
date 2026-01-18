@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 
 
 from calibration.helpers import get_logger
+from calibration.helpers.file_manage import get_generate_plots
 
-from .data_holders import CalibLinReg
-from .base_anal import BaseAnal
+from ..data_holders import CalibLinReg
+from .analysis_base import BaseAnal
 
 if TYPE_CHECKING:
-    from .calib_file import CalibFile
+    from ..calib_file import CalibFile
 
 
 logger = get_logger()
@@ -27,7 +28,7 @@ class CalibFileAnalysis(BaseAnal):
     def __init__(self, calib_file:CalibFile):
         super().__init__()
         self.cf:CalibFile = calib_file
-       
+        self.file_info = {}
         self.linreg_refPD_vs_meanPM = CalibLinReg('meanRefPD', 'meanPM', None)
         self.linreg_meanPM_vs_L = CalibLinReg('L', 'meanPM', None)
         self.linreg_refPD_vs_L = CalibLinReg('L', 'meanRefPD', None)
@@ -59,8 +60,10 @@ class CalibFileAnalysis(BaseAnal):
         """
         Docstring for analyze
         """
+
         self.calc_lin_regs()
-        self.generate_plots()
+        if get_generate_plots():
+            self.generate_plots()
 
     def calc_lin_regs(self):
         """Calculate linear regressions for the calibration file data."""

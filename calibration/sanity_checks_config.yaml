@@ -1,0 +1,39 @@
+{
+    # structure of the check:
+    #   "check_name" : arguments to provide to the check function
+    # calibration, fileset or file have to implement methods called san_check_{check_name}
+    # with arguments: severity, argument
+    # if argument is a dictionary, then several arguments can be passed by keywords
+    # If a sanity check method is not found, a warning is issued
+    # ToDo: Add pedestals checks
+    # ToDo: Add linear_regression checks
+    "calibration":{
+        "errors":{
+            "max_temperature_swing": 4.0
+        },
+        "warnings":{
+            "max_temperature_swing": 3.0,
+            "avg_temperature_range": [19.0, 22.0],
+            "max_rh": 60
+        }
+    },
+    "fileset":{
+        "errors":{
+            "min_files": 2,
+            "max_temperature_swing":2.0
+        },
+        "warnings":{
+            "min_files": 3,
+            "max_temperature_swing":3.0,
+            "max_time_span_hours": 12
+        }
+    },
+    "file":{
+        "errors":{
+            "min_data_points": 15
+        },
+        "warnings":{
+            "min_data_points": 25
+        }
+    }
+}

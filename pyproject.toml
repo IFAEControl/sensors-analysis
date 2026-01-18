@@ -12,7 +12,7 @@ authors = [{ name = "IFAE Virgo Instrumented Baffles" }]
 license = { file = "LICENSE" }
 
 # If you want to manage dependencies here, mirror requirements.txt entries.
-dependencies = ["colorlog", "pandas", "scipy", "numpy", "matplotlib"]
+dependencies = ["colorlog", "pandas", "scipy", "numpy", "matplotlib", "pyyaml"]
 
 [project.urls]
 Homepage = "https://github.com/IFAEControl/sensors-analysis.git"
