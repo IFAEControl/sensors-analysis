@@ -21,13 +21,13 @@ def main():
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
     parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
-    parser.add_argument("--do_not_sub_pedestals", "-d", action="store_true", help="Do not subtract pedestals from data")
+    # parser.add_argument("--do_not_sub_pedestals", "-d", action="store_true", help="Do not subtract pedestals from data")
     args = parser.parse_args()
 
     if args.plot_format:
         config.plot_output_format = args.plot_format
-    if args.do_not_sub_pedestals:
-        config.subtract_pedestals = False
+    # if args.do_not_sub_pedestals:
+    #     config.substract_pedestals = False
     if args.no_plots:
         config.generate_plots = False
 
