@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from calibration.config import config
 from calibration.helpers import get_logger
-from calibration.helpers.file_manage import get_generate_plots
+
 
 if TYPE_CHECKING:
     from ..calibration import Calibration
@@ -31,7 +32,7 @@ class CalibrationAnalysis:
         """Analyze all file sets and generate interrelated plots"""
         for _, fileset in self.sets.items():
             fileset.analyze()
-        if get_generate_plots():
+        if config.generate_plots:
             self.gen_plots()
         self._find_elapsed_time_range()
         self._find_sets()

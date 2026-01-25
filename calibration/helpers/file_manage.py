@@ -8,8 +8,6 @@ logger = get_logger()
 
 
 singleton_output_path = None
-singleton_plot_output_format = 'png'
-singleton_gen_plots = True
 
 def get_base_output_path():
     """Get the base output path for storing analysis results."""
@@ -77,26 +75,5 @@ def setup_paths(calib_files_path, output_path=None, overwrite=False):
     logger.info("Calibration files path: %s", files_path)
     logger.info("Output path: %s", output_path)
 
-    return files_path, output_path
+    return files_path, output_path, base_name
 
-def set_plot_output_format(format_str):
-    """Set the output format for plots."""
-    if format_str not in ['png', 'pdf', 'svg']:
-        logger.error("Invalid plot format '%s'. Supported formats are: png, pdf, svg.", format_str)
-        sys.exit(1)
-    global singleton_plot_output_format
-    singleton_plot_output_format = format_str
-
-def get_plot_output_format() -> str:
-    """Get the output format for plots."""
-    global singleton_plot_output_format
-    return singleton_plot_output_format
-
-def set_generate_plots(generate: bool):
-    """Set whether to generate plots."""
-    global singleton_gen_plots
-    singleton_gen_plots = generate
-def get_generate_plots() -> bool:
-    """Get whether to generate plots."""
-    global singleton_gen_plots
-    return singleton_gen_plots

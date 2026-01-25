@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING
 import yaml
 
 from calibration.helpers import get_logger
-from .data_holders import SanityCheckResult
+from .helpers import SanityCheckResult
+
+from .sanity.calibration_sanity import CalibrationSanityChecker
+from .sanity.fileset_sanity import FileSetSanityChecker
+from .sanity.file_sanity import FileSanityChecker
 
 if TYPE_CHECKING:
     from .calibration import Calibration
@@ -16,6 +20,31 @@ logger = get_logger()
 file_path = os.path.dirname(os.path.abspath(__file__))
 config_file = os.path.abspath(os.path.join(file_path,'..','sanity_checks_config.yaml'))
 
+class Counter:
+    """Simple counter class to keep track of passed and failed checks"""
+    def __init__(self):
+        self._checks = {}
+    
+    def check(self, severity:str, passed:bool):
+        """Increment the counter based on severity and pass/fail status"""
+        key = f"{severity}_{'passed' if passed else 'failed'}"
+        self._checks.setdefault(key, 0)
+        self._checks[key] += 1
+    
+    def to_dict(self) -> dict:
+        """Return the counter values as a dictionary"""
+        passed = sum([v for k,v in self._checks.items() if 'passed' in k])
+        failed = sum([v for k,v in self._checks.items() if 'failed' in k])
+        total = passed + failed
+        tmp = self._checks.copy()
+        tmp = {
+            'total_passed': passed,
+            'total_failed': failed,
+            'total_checks': total,
+            'details': tmp
+        }
+        return tmp
+    
 
 class SanityChecks:
     """Class to perform sanity checks on calibration data"""
@@ -23,6 +52,7 @@ class SanityChecks:
         self.calibration = calibration
         self.config = {}
         self.results = {}
+        self._c = Counter()
         self.initialize()
     
     def initialize(self):
@@ -52,71 +82,73 @@ class SanityChecks:
     @property
     def fileset_checks_config(self) -> dict:
         """Return the file checks configuration"""
-        return self.config.get('file', {})
+        return self.config.get('fileset', {})
     
+    def _run_check_methods(self, severity, checks, checker) -> SanityCheckResult:
+        results = self.results.setdefault(checker.level_header, {})
+        for check_name, check_params in checks.items():
+            method_name = f"san_check_{check_name}"
+            check_method = getattr(checker, method_name, None)
+            if check_method is None:
+                logger.warning("Sanity check method %s not found in %s", method_name, checker.level_name)
+                result = SanityCheckResult(
+                        severity=severity,
+                        check_name=check_name,
+                        check_args=check_params,
+                        passed=False,
+                        info="Sanity check method not found",
+                        exec_error=True
+                    )
+                results[check_name] = result.to_dict()
+                self._c.check(severity, False)
+                continue
+            try:
+                if isinstance(check_params, dict):
+                    result:SanityCheckResult = check_method(**check_params, severity=severity)
+                elif isinstance(check_params, list):
+                    result:SanityCheckResult = check_method(*check_params, severity=severity)
+                else:
+                    result:SanityCheckResult = check_method(check_params, severity=severity)
+                results[check_name] = result.to_dict()
+                self._c.check(severity, result.passed)
+            except Exception as e:
+                result = SanityCheckResult(
+                        severity=severity,
+                        check_name=check_name,
+                        check_args=check_params,
+                        passed=False,
+                        info=str(e),
+                        exec_error=True
+                    )
+                self._c.check(severity, False)
+                results[check_name] = result.to_dict()
+                logger.warning("Failed to execute check: %s, %s", check_name, str(e))
+
 
     def run_checks(self):
         """Run all configured sanity checks"""
         logger.info("Running sanity checks...")
         self.results = {}
-        for severity, checks in self.calibration_checks_config.items():
-            for check_name, check_params in checks.items():
-                method_name = f"san_check_{check_name}"
-                check_method = getattr(self.calibration, method_name, None)
-                if callable(check_method):
-                    logger.info("Running check: %s", check_name)
-                    result:SanityCheckResult = check_method(severity=severity, **check_params)
-                    self.results[check_name] = result.to_dict()
-                else:
-                    result = SanityCheckResult(
-                            severity=severity,
-                            check_name=check_name,
-                            check_args=check_params,
-                            passed=False,
-                            info=f"No method found for calibration check: {check_name}",
-                            error=True
-                        )
-                    self.results[f"calibration_{check_name}"] = result.to_dict()
-                    logger.warning("No method found for check: %s", check_name)
+
+
         
-        for fs_key, fs in self.calibration.file_sets.items():
+        checker = CalibrationSanityChecker(self.calibration)
+        for severity, checks in self.calibration_checks_config.items():
+            self._run_check_methods(severity, checks, checker)
+        
+        for _, fs in self.calibration.file_sets.items():
+            checker = FileSetSanityChecker(fs)
             for severity, checks in self.fileset_checks_config.items():
-                for check_name, check_params in checks.items():
-                    method_name = f"san_check_{check_name}"
-                    check_method = getattr(fs, method_name, None)
-                    if callable(check_method):
-                        logger.info("Running fileset check: %s for fileset %s", check_name, fs_key)
-                        result:SanityCheckResult = check_method(severity=severity, **check_params)
-                        self.results[f"fileset_{fs_key}_{check_name}"] = result.to_dict()
-                    else:
-                        result = SanityCheckResult(
-                            severity=severity,
-                            check_name=check_name,
-                            check_args=check_params,
-                            passed=False,
-                            info=f"No method found for fileset check: {check_name}",
-                            error=True
-                        )
-                        self.results[f"fileset_{fs_key}_{check_name}"] = result.to_dict()
-                        logger.warning("No method found for fileset check: %s", check_name)
+                self._run_check_methods(severity, checks, checker)
 
             for calfile in fs.files:
+                checker = FileSanityChecker(calfile)
                 for severity, checks in self.file_checks_config.items():
-                    for check_name, check_params in checks.items():
-                        method_name = f"san_check_{check_name}"
-                        check_method = getattr(calfile.anal, method_name, None)
-                        if callable(check_method):
-                            logger.info("Running file check: %s for file %s", check_name, calfile.meta['filename'])
-                            result:SanityCheckResult = check_method(severity=severity, **check_params)
-                            self.results[f"file_{calfile.meta['filename']}_{check_name}"] = result.to_dict()
-                        else:
-                            result = SanityCheckResult(
-                                severity=severity,
-                                check_name=check_name,
-                                check_args=check_params,
-                                passed=False,
-                                info=f"No method found for file check: {check_name}",
-                                error=True
-                            )
-                            self.results[f"file_{calfile.meta['filename']}_{check_name}"] = result.to_dict()
-                            logger.warning("No method found for file check: %s", check_name)
+                    self._run_check_methods(severity, checks, checker)
+        
+        c_d = self._c.to_dict()
+        self.results['summary'] = c_d
+        if c_d['total_failed'] > 0:
+            logger.warning(f"Sanity checks completed. {c_d['total_passed']} passed, {c_d['total_failed']} failed out of {c_d['total_checks']} checks.")
+        else:
+            logger.info(f"Sanity checks completed. {c_d['total_passed']} passed, {c_d['total_failed']} failed out of {c_d['total_checks']} checks.")

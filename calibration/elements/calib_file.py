@@ -9,7 +9,9 @@ import pandas as pd
 
 from calibration.helpers import get_logger
 
-from .analysis.calib_file_analysis import CalibFileAnalysis
+from .analysis.file_analysis import CalibFileAnalysis
+from .plots import FilePlots
+from .base_element import BaseElement, DataHolderLevel
 
 logger = get_logger()
 
@@ -27,21 +29,27 @@ file_name_pattern = re.compile(
 
 
 
-class CalibFile:
+class CalibFile(BaseElement):
     """Calibration file representation and data handling"""
     def __init__(self, file_path:str, file_set:FileSet|None=None):
+        super().__init__(DataHolderLevel.FILE)
         self.file_path = file_path
         self.fs = file_set
         self.output_path = self._calc_output_path()
-        self._df: pd.DataFrame | None = None
-        self._df_pedestal: pd.DataFrame | None = None
-        self._df_full: pd.DataFrame | None = None
         self.valid = True
         self.anal = CalibFileAnalysis(self)
+        self.plotter = FilePlots(self)
+        
         self.meta = {
             'filename': os.path.basename(file_path),
         }
         self.initialize()
+        self.level_header = self.file_label
+
+    @property
+    def base_filename(self) -> str:
+        """Return the base filename without path"""
+        return '.'.join(os.path.basename(self.file_path).split('.')[:-1])
     
     @property
     def df(self)-> pd.DataFrame:
@@ -51,10 +59,10 @@ class CalibFile:
         raise ValueError("DataFrame not loaded yet.")
 
     @property
-    def df_pedestal(self) -> pd.DataFrame:
+    def df_pedestals(self) -> pd.DataFrame:
         """Return the pedestal DataFrame with calibration data"""
-        if self._df_pedestal is not None:
-            return self._df_pedestal
+        if self._df_pedestals is not None:
+            return self._df_pedestals
         raise ValueError("Pedestal DataFrame not loaded yet.")
 
     @property
@@ -91,14 +99,14 @@ class CalibFile:
     def load_data(self):
         """Load calibration file data into a DataFrame"""
         self._df = pd.read_csv(self.file_path, delimiter ='\t', header=None)
-        self._df.columns = ['datetime', 'L', 'meanPM', 'stdPM', 'meanRefPD', 'stdRefPD', 'Temp', 'RH', 'samples']
+        self._df.columns = ['datetime', 'laser_setpoint', 'pm_mean', 'pm_std', 'ref_pd_mean', 'ref_pd_std', 'temperature', 'RH', 'samples']
         self._df["datetime"] = pd.to_datetime(
             self._df["datetime"],
             format="%Y-%m-%d-%H:%M:%S",
             utc=True
         )
         self._df["timestamp"] = self._df["datetime"].astype("int64") // 1_000_000_000
-        self._df_pedestal = pd.concat([self._df.iloc[[0]], self._df.iloc[[-1]]], ignore_index=True)
+        self._df_pedestals = pd.concat([self._df.iloc[[0]], self._df.iloc[[-1]]], ignore_index=True)
         self._df_full = self._df.copy()
         self._df = self._df.iloc[1:-1].reset_index(drop=True)
         logger.info("Loaded data for calibration file: %s", self.meta['filename'])
@@ -175,3 +183,4 @@ class CalibFile:
     def generate_plots(self):
         """Generate plots for the calibration file data"""
         self.anal.generate_plots()
+    

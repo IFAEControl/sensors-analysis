@@ -9,31 +9,37 @@
     # ToDo: Add linear_regression checks
     "calibration":{
         "errors":{
-            "max_temperature_swing": 4.0
+            "max_temperature_swing": 3.0
         },
         "warnings":{
-            "max_temperature_swing": 3.0,
-            "avg_temperature_range": [19.0, 22.0],
+            "max_temperature_swing": 2.0,
+            "avg_temperature_range": [19.0, 21.0],
             "max_rh": 60
         }
     },
     "fileset":{
         "errors":{
             "min_files": 2,
-            "max_temperature_swing":2.0
+            "max_temperature_swing":2.0,
         },
         "warnings":{
             "min_files": 3,
             "max_temperature_swing":3.0,
-            "max_time_span_hours": 12
+            "max_acq_time_span_hours": 2,
+
         }
     },
     "file":{
         "errors":{
-            "min_data_points": 15
+            "min_data_points": 15,
         },
         "warnings":{
-            "min_data_points": 25
+            "min_data_points": 25,
+            "max_acq_time_span_hours": 0.5,
+            "no_std_points": null,
+            "no_std_pedestals": null,
+            "zero_pedestals": null
+
         }
     }
 }
