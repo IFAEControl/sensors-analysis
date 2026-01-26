@@ -37,6 +37,7 @@ class Calibration(BaseElement):
         self.anal = CalibrationAnalysis(self)
         self.plotter = CalibrationPlots(self)
         self.level_header = calib_name
+        self.long_label = calib_name
    
     @property
     def df(self):

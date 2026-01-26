@@ -34,7 +34,7 @@ class CalibFile(BaseElement):
     def __init__(self, file_path:str, file_set:FileSet|None=None):
         super().__init__(DataHolderLevel.FILE)
         self.file_path = file_path
-        self.fs = file_set
+        self.dh_parent = file_set
         self.output_path = self._calc_output_path()
         self.valid = True
         self.anal = CalibFileAnalysis(self)
@@ -45,6 +45,7 @@ class CalibFile(BaseElement):
         }
         self.initialize()
         self.level_header = self.file_label
+        self.long_label = f"{self.dh_parent.long_label} - run {self.meta['run']}" if self.dh_parent else self.file_label
 
     @property
     def base_filename(self) -> str:
@@ -73,17 +74,18 @@ class CalibFile(BaseElement):
         raise ValueError("Full DataFrame not loaded yet.")
 
     def _calc_output_path(self):
-        if self.fs:
+        if self.dh_parent:
             return os.path.join(
-                self.fs.output_path,
+                self.dh_parent.output_path,
                 f"{self.set_label}_run{self.meta['run']}"
             )
         return None
     
     def set_file_set(self, file_set:FileSet|None):
         """Set the file set for this calibration file and update the output path accordingly"""
-        self.fs = file_set
+        self.dh_parent = file_set
         self.output_path = self._calc_output_path()
+        self.long_label = f"{self.dh_parent.long_label} - run {self.meta['run']}" if self.dh_parent else self.file_label
     
     def initialize(self):
         """Parse filename and load data"""
@@ -167,9 +169,9 @@ class CalibFile(BaseElement):
     def laser_label(self) -> str:
         """Return laser label based on wavelength"""
         if self.meta['wavelength'] == '1064':
-            return 'Laser Power (mW)'
+            return 'Laser SetPoint (mW)'
         if self.meta['wavelength'] == '532':
-            return 'Laser Current (mA)'
+            return 'Laser SetPoint (mA)'
         return 'Laser Parameter'
 
     def to_dict(self):

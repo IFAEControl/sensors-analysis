@@ -149,7 +149,7 @@ class FileSetPlots(BasePlots):
         # Title on the figure
         fig.suptitle(f'Conv Factor Slope Comparison for {self.level_label}', y=1.02)
 
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_plot_conv_factor_intercept_method_comparison(self):
@@ -228,7 +228,7 @@ class FileSetPlots(BasePlots):
         # Title on the figure
         fig.suptitle(f'Conv Factor Intercept Comparison for {self.level_label}', y=1.02)
 
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_plot_slopes_vs_temperature(self):
@@ -246,7 +246,7 @@ class FileSetPlots(BasePlots):
         plt.xlabel('Mean temperature (Cº)')
         plt.title(f'{self.level_label} - W/V fit slopes')
         plt.tight_layout(rect=(0, 0, 1, 0.98))
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_plot_slopes_intercepts_vs_index(self):
@@ -318,7 +318,7 @@ class FileSetPlots(BasePlots):
 
         fig.suptitle(f'{self.level_label} - W/V fit slopes and intercepts')
         plt.tight_layout(rect=(0, 0, 1, 0.98))
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_plot_pmvsRefPD_all_calfiles(self):
@@ -417,7 +417,7 @@ class FileSetPlots(BasePlots):
         #     bottom=0.08
         # )
 
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
     
     def _gen_plots_vs_laser_setting(self):
@@ -433,7 +433,7 @@ class FileSetPlots(BasePlots):
         plt.title(f'{self.level_label} - pm vs Laser setting')
         plt.legend()
         plt.tight_layout(rect=[0, 0, 1, 0.98])
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
         fig_id = "RefPD_vs_LaserSetting"
@@ -447,7 +447,7 @@ class FileSetPlots(BasePlots):
         plt.title(f'{self.level_label} - RefPD vs Laser setting')
         plt.legend()
         plt.tight_layout(rect=(0, 0, 1, 0.98))
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
     
     def _gen_pedestals_hist_plot(self):
@@ -498,12 +498,12 @@ class FileSetPlots(BasePlots):
         # ─────────────────────────────
         fig.suptitle(f'{self.level_label} - Histogram of pedestal values', fontsize=14)
         plt.tight_layout(rect=(0, 0, 1, 0.98))
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
     
     def _gen_mean_pedestals_plot(self):
         """Generate pedestal plot for the set of calibration files"""
-        fig_id = "Pedestals_mean_vs_runindex"
+        fig_id = "Pedestals_vs_runindex"
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=2, ncols=1,
@@ -520,15 +520,15 @@ class FileSetPlots(BasePlots):
         ax1.errorbar(
             x, self.df_pedestals['pm_mean'], yerr=self.df_pedestals['pm_std'],
             fmt='.', markersize=10, linewidth=1,
-            label='pm Pedestals'
+            label='PM Pedestals'
         )
 
         mean = self._anal.pedestal_stats.pm.mean
         std = self._anal.pedestal_stats.pm.std
         samples = self._anal.pedestal_stats.pm.samples
-        ax1.axhline(y=mean, color='orange', linestyle='--', label='pm Mean of Runs Mean Pedestal')
+        ax1.axhline(y=mean, color='orange', linestyle='--', label='PM mean of Pedestal')
         ax1.fill_between(range(-1, samples+1), mean-std, mean+std, color='orange', alpha=0.3, label='pm mean +/- std')
-        ax1.set_ylabel('Pedestals pm (W)')
+        ax1.set_ylabel('Pedestals PM (W)')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
 
@@ -543,7 +543,7 @@ class FileSetPlots(BasePlots):
         mean = self._anal.pedestal_stats.refpd.mean
         std = self._anal.pedestal_stats.refpd.std
         samples = self._anal.pedestal_stats.refpd.samples
-        ax2.axhline(y=mean, color='purple', linestyle='--', label='RefPD Mean of Runs Mean Pedestal')
+        ax2.axhline(y=mean, color='purple', linestyle='--', label='RefPD Mean of Pedestals')
         ax2.fill_between(range(-1, samples+1), mean-std, mean+std, color='red', alpha=0.3, label='RefPD mean +/- std')
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.set_xlabel('Run index')
@@ -552,7 +552,7 @@ class FileSetPlots(BasePlots):
         ax2.set_xlim([-1, len(self._data_holder.files)])
         ax2.legend()
 
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_pedestals_timeseries_plot(self):
@@ -594,5 +594,5 @@ class FileSetPlots(BasePlots):
         ax2.grid(True, alpha=0.3)
         ax2.legend()
 
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)

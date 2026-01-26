@@ -18,6 +18,7 @@ class BaseElement(ABC):
         self._df_pedestals = None
         self._df_full = None
         self.level_header = ""
+        self.dh_parent = None
 
     @property
     def level_name(self) -> str:

@@ -20,6 +20,7 @@ class BasePlots(ABC):
     def level_label(self) -> str:
         """Label for the data holder level."""
         return self._data_holder.level_header
+    
 
     @property
     @abstractmethod
@@ -68,7 +69,7 @@ class BasePlots(ABC):
         fig_path = os.path.relpath(fig_path, start=base_output_path)
         self.plots[fig_id] = fig_path
     
-    def savefig(self, fig_id: str, fig_filename: str|None = None):
+    def savefig(self, fig, fig_id: str, fig_filename: str|None = None):
         """Save current plt matplotlib figure to the output path and register it.
         Save format is set globally in file_manage module.
         Args:
@@ -76,7 +77,8 @@ class BasePlots(ABC):
             fig_filename (str, optional): Filename for the figure. If None, uses fig_id. Defaults to None.
         """
         plot_format = config.plot_output_format  # Get the plot format from the config module
-
+        fig.text(0.99, 0.01, f'{self._data_holder.long_label}', 
+                 ha='right', va='bottom', fontsize=8, color='gray')
         fig_path = os.path.join(self.output_path, f"{fig_filename or fig_id}.{plot_format}")
         plt.savefig(fig_path)
         self.add_plot_path(fig_id, fig_path)
@@ -91,7 +93,7 @@ class BasePlots(ABC):
         plt.grid()
         plt.title(f'{self.level_label} - Temperatures histogram')
         plt.tight_layout()
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
         fig_id = "humidity_hist"
@@ -102,7 +104,7 @@ class BasePlots(ABC):
         plt.grid()
         plt.title(f'{self.level_label} - Humidity histogram')
         plt.tight_layout()
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)
 
     def _gen_timeseries_plot(self):
@@ -115,11 +117,11 @@ class BasePlots(ABC):
         ax1_twin = ax1.twinx()
         # ax1.plot(self.df['datetime'], self.df['ref_pd_mean'], 'b-', label='Mean Ref PD', linewidth=2)
         ax1.errorbar(self.df['datetime'], self.df['ref_pd_mean'], yerr=self.df['ref_pd_std'], c='b', fmt='.', markersize=5, linewidth=1, label='Mean Ref PD')
-        ax1.set_ylabel('Mean Ref PD (V)', color='b')
+        ax1.set_ylabel('Ref PD (V)', color='b')
         ax1.tick_params(axis='y', labelcolor='b')
 
         ax1_twin.errorbar(self.df['datetime'], self.df['pm_mean'], yerr=self.df['pm_std'], c='r', fmt='.', markersize=5, linewidth=1, label='Mean pm')
-        ax1_twin.set_ylabel('Mean Optical Power (W)', color='r')
+        ax1_twin.set_ylabel('Power Meter (W)', color='r')
         ax1_twin.ticklabel_format(style='sci', axis='y', scilimits=(-2,3))
         ax1_twin.tick_params(axis='y', labelcolor='r')
 
@@ -158,5 +160,5 @@ class BasePlots(ABC):
 
         ax3.grid(True, alpha=0.3)
         plt.tight_layout()
-        self.savefig(fig_id)
+        self.savefig(fig, fig_id)
         plt.close(fig)

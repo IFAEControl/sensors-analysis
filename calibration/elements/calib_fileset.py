@@ -24,7 +24,7 @@ class FileSet(BaseElement):
         self.wl = wave_length
         self.fw = filter_wheel
         self.label = f"{self.wl}_{self.fw}"
-        self.cal = calibration
+        self.dh_parent = calibration
         self.files: list['CalibFile'] = []
         self.anal = FileSetAnalysis(self)
         self.plotter = FileSetPlots(self)
@@ -35,6 +35,7 @@ class FileSet(BaseElement):
             f"{self.wl}_{self.fw}"
         )
         self.level_header = self.label
+        self.long_label = f"{self.dh_parent.level_header} - {self.label}"
 
     @property
     def df(self):
