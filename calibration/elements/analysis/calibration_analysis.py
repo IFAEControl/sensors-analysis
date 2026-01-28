@@ -24,35 +24,33 @@ class CalibrationAnalysis:
     def __init__(self, calibration:Calibration):
         self.cal = calibration
         self.outpath = calibration.output_path
-        self.sets = calibration.file_sets
+        self.filesets = calibration.filesets
         self.plots = {}
         self.results = {}
 
     def analyze(self):
         """Analyze all file sets and generate interrelated plots"""
-        for _, fileset in self.sets.items():
+        for _, fileset in self.filesets.items():
             fileset.analyze()
-        if config.generate_plots:
-            self.gen_plots()
         self._find_elapsed_time_range()
-        self._find_sets()
+    #     self._find_sets()
 
 
-    def _find_sets(self) -> dict:
-        """Find all unique (wavelength, filterwheel) combinations across calibration files."""
-        fset = {}
-        for (wl, fw), fs in self.sets.items():
-            tmp = []
-            for calib_file in fs.files:
-                tmp.append(calib_file.meta['filename'])
-            fset[f"{wl}_{fw}"] = tmp
-        self.results['file_sets'] = fset
+    # def _find_sets(self) -> dict:
+    #     """Find all unique (wavelength, filterwheel) combinations across calibration files."""
+    #     fset = {}
+    #     for (wl, fw), fs in self.sets.items():
+    #         tmp = []
+    #         for calib_file in fs.files:
+    #             tmp.append(calib_file.meta['filename'])
+    #         fset[f"{wl}_{fw}"] = tmp
+    #     self.results['file_sets'] = fset
     
     def _find_elapsed_time_range(self) -> tuple[float, float]:
         """Find the overall elapsed time range across all calibration files."""
         min_time = float('inf')
         max_time = float('-inf')
-        for fileset in self.sets.values():
+        for fileset in self.filesets.values():
             for calib_file in fileset.files:
                 df = calib_file.df
                 if not df.empty:
@@ -75,17 +73,10 @@ class CalibrationAnalysis:
     def to_dict(self) -> dict:
         """Convert analysis results to a dictionary."""
         tmp = {
-            'analysis': self.results,
-            'sets': {f"{wl}_{fw}": fs.to_dict() for (wl, fw), fs in self.sets.items()},
+            'time_info': self.results['time'],
+            'filesets': {f"{wl}_{fw}": fs.to_dict() for (wl, fw), fs in self.filesets.items()},
 
         }
-        if self.plots:
-            tmp['plots'] = self.plots
-        
         return tmp
 
-    def gen_plots(self):
-        """Generate plots interrelating data from all sets of calibration files."""
-        # plot of whole calibration data acquisition temperature and humidity
-        pass
 

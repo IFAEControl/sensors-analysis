@@ -13,7 +13,7 @@ from .plots.calibration_plots import CalibrationPlots
 from .calib_fileset import FileSet
 from .base_element import BaseElement, DataHolderLevel
 logger = get_logger()
-
+from calibration.config import config
         
 
 class Calibration(BaseElement):
@@ -25,26 +25,35 @@ class Calibration(BaseElement):
         cfpath, opath, calib_name =  file_manage.setup_paths(call_args.calib_files_path, call_args.output_path,
                                                overwrite=call_args.overwrite)
         self.calib_files_path = cfpath
-        self.output_path = opath
-        self.file_sets = {}
+        self.reports_path = os.path.join(opath)
+        self.output_path = os.path.join(opath, 'calibration_outputs')
+        self.filesets = {}
         self.meta = {
             'calling_arguments': vars(call_args),
+            'calib_id': calib_name,
             'calib_files_path': cfpath,
-            'output_path': opath,
+            'root_output_path': opath,
+            'calibration_outputs_path': self.output_path,
+            'reports_path': self.reports_path,
             'execution_date': datetime.now(timezone.utc).isoformat(),
-            'system': system_info.get_system_info()
+            'system': system_info.get_system_info(),
+            'config': config.to_dict()
         }
         self.anal = CalibrationAnalysis(self)
         self.plotter = CalibrationPlots(self)
         self.level_header = calib_name
         self.long_label = calib_name
+        self.initialize()
+    
+    def initialize(self):
+        os.makedirs(self.output_path, exist_ok=True)
    
     @property
     def df(self):
         """Concatenated DataFrame of all calibration files."""
         if self._df is None:
             self._df = pd.concat(
-                [calfile.df for fileset in self.file_sets.values() for calfile in fileset.files if calfile.df is not None], ignore_index=True)
+                [calfile.df for fileset in self.filesets.values() for calfile in fileset.files if calfile.df is not None], ignore_index=True)
             self._df = self._df.sort_values(by='timestamp').reset_index(drop=True)
         return self._df
     
@@ -53,7 +62,7 @@ class Calibration(BaseElement):
         """Concatenated DataFrame of all pedestal data."""
         if self._df_pedestals is None:
             self._df_pedestals = pd.concat(
-                [fileset.df_pedestals for fileset in self.file_sets.values() if fileset.df_pedestals is not None], ignore_index=True)
+                [fileset.df_pedestals for fileset in self.filesets.values() if fileset.df_pedestals is not None], ignore_index=True)
             self._df_pedestals = self._df_pedestals.sort_values(by='timestamp').reset_index(drop=True)
         return self._df_pedestals
     
@@ -62,7 +71,7 @@ class Calibration(BaseElement):
         """Concatenated DataFrame of all full data."""
         if self._df_full is None:
             self._df_full = pd.concat(
-                [fileset.df_full for fileset in self.file_sets.values() if fileset.df_full is not None], ignore_index=True)
+                [fileset.df_full for fileset in self.filesets.values() if fileset.df_full is not None], ignore_index=True)
             self._df_full = self._df_full.sort_values(by='timestamp').reset_index(drop=True)
         return self._df_full
 
@@ -82,7 +91,7 @@ class Calibration(BaseElement):
                 # On creation of the CalibFile object the file is loaded to a DataFrame (if valid)
                 calfile = CalibFile(file_path)
                 if calfile.valid:
-                    self.file_sets.setdefault((calfile.wavelength, calfile.filter_wheel), FileSet(calfile.wavelength, calfile.filter_wheel, calibration=self)).add_calib_file(calfile)
+                    self.filesets.setdefault((calfile.wavelength, calfile.filter_wheel), FileSet(calfile.wavelength, calfile.filter_wheel, calibration=self)).add_calib_file(calfile)
                 else:
                     logger.warning("Skipping invalid calibration file: %s", file_name)
                     continue
@@ -96,20 +105,23 @@ class Calibration(BaseElement):
     def generate_plots(self):
         """Generate calibration plots"""
         os.makedirs(self.output_path, exist_ok=True)
-        for fileset in self.file_sets.values():
+        fs_plots = self.plotter.plots.setdefault('filesets', {})
+        for fileset in self.filesets.values():
             fileset.generate_plots()
+            fs_plots[fileset.level_header] = fileset.plotter.plots
         self.plotter.generate_plots()
     
     def to_dict(self):
         """Convert calibration data to dictionary"""
+
         return {
             'meta': self.meta,
-            'results': self.anal.to_dict(),
+            'analysis': self.anal.to_dict(),
             'plots': self.plotter.plots
         }
 
     def export_calib_data_summary(self, meta={}):
-        results_path = os.path.join(self.output_path, "calibration_summary.json")
+        results_path = os.path.join(self.reports_path, "calibration_summary.json")
         outdata = self.to_dict()
         if meta:
             outdata.update(meta)

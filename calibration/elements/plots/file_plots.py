@@ -47,7 +47,7 @@ class FilePlots(BasePlots):
     def generate_plots(self):
         """Generate plots for the calibration file data."""
         if self.df is None:
-            logger.error("Dataframe is not loaded for file: %s", self.cf.meta['filename'])
+            logger.error("Dataframe is not loaded for file: %s", self.cf.file_info['filename'])
             return
         
         self._gen_temp_humidity_hists_plot()

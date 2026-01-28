@@ -40,12 +40,13 @@ class CalibFile(BaseElement):
         self.anal = CalibFileAnalysis(self)
         self.plotter = FilePlots(self)
         
-        self.meta = {
+        self.file_info = {
             'filename': os.path.basename(file_path),
         }
+        self.time_info = {}
         self.initialize()
         self.level_header = self.file_label
-        self.long_label = f"{self.dh_parent.long_label} - run {self.meta['run']}" if self.dh_parent else self.file_label
+        self.long_label = f"{self.dh_parent.long_label} - run {self.file_info['run']}" if self.dh_parent else self.file_label
 
     @property
     def base_filename(self) -> str:
@@ -77,7 +78,7 @@ class CalibFile(BaseElement):
         if self.dh_parent:
             return os.path.join(
                 self.dh_parent.output_path,
-                f"{self.set_label}_run{self.meta['run']}"
+                f"{self.set_label}_run{self.file_info['run']}"
             )
         return None
     
@@ -85,15 +86,15 @@ class CalibFile(BaseElement):
         """Set the file set for this calibration file and update the output path accordingly"""
         self.dh_parent = file_set
         self.output_path = self._calc_output_path()
-        self.long_label = f"{self.dh_parent.long_label} - run {self.meta['run']}" if self.dh_parent else self.file_label
+        self.long_label = f"{self.dh_parent.long_label} - run {self.file_info['run']}" if self.dh_parent else self.file_label
     
     def initialize(self):
         """Parse filename and load data"""
-        gd = file_name_pattern.match(self.meta['filename'])
+        gd = file_name_pattern.match(self.file_info['filename'])
         if gd:
-            self.meta.update(gd.groupdict())
+            self.file_info.update(gd.groupdict())
         else:
-            logger.error("Filename '%s' does not match expected pattern.", self.meta['filename'])
+            logger.error("Filename '%s' does not match expected pattern.", self.file_info['filename'])
             self.valid = False
             return
         self.load_data()
@@ -111,7 +112,7 @@ class CalibFile(BaseElement):
         self._df_pedestals = pd.concat([self._df.iloc[[0]], self._df.iloc[[-1]]], ignore_index=True)
         self._df_full = self._df.copy()
         self._df = self._df.iloc[1:-1].reset_index(drop=True)
-        logger.info("Loaded data for calibration file: %s", self.meta['filename'])
+        logger.info("Loaded data for calibration file: %s", self.file_info['filename'])
 
 
     def analyze(self):
@@ -123,9 +124,8 @@ class CalibFile(BaseElement):
 
     def set_file_info(self):
         """Set file info metadata"""
-        self.meta['num_points'] = len(self._df)
-        self.meta['file_size_bytes'] = os.path.getsize(self.file_path)
-        self.meta['time_info'] = {}
+        self.file_info['num_points'] = len(self._df)
+        self.file_info['file_size_bytes'] = os.path.getsize(self.file_path)
         self._set_time_info()
 
     def _set_time_info(self):
@@ -138,51 +138,52 @@ class CalibFile(BaseElement):
             'min_dt': pd.to_datetime(min_time, unit='s').strftime('%Y-%m-%d %H:%M:%S'),
             'max_dt': pd.to_datetime(max_time, unit='s').strftime('%Y-%m-%d %H:%M:%S')
         }
-        self.meta['time_info'] = t_res
+        self.time_info = t_res
 
     @property
     def power(self) -> str:
         """Return power parsing from file name"""
-        return self.meta['power']
+        return self.file_info['power']
     
     @property
     def filter_wheel(self) -> str:
         """Return filter wheel"""
-        return self.meta['filterwheel']
+        return self.file_info['filterwheel']
     
     @property
     def wavelength(self) -> str:
         """Return wavelength"""
-        return self.meta['wavelength']
+        return self.file_info['wavelength']
 
     @property
     def set_label(self) -> str:
         """Return set label based on wavelength and filter wheel"""
-        return f"{self.meta['wavelength']}nm_{self.meta['filterwheel']}"
+        return f"{self.file_info['wavelength']}nm_{self.file_info['filterwheel']}"
 
     @property
     def file_label(self) -> str:
         """Return file label based on set label and run number"""
-        return f"{self.set_label}_run{self.meta['run']}"
+        return f"{self.set_label}_run{self.file_info['run']}"
     
     @property
     def laser_label(self) -> str:
         """Return laser label based on wavelength"""
-        if self.meta['wavelength'] == '1064':
+        if self.file_info['wavelength'] == '1064':
             return 'Laser SetPoint (mW)'
-        if self.meta['wavelength'] == '532':
+        if self.file_info['wavelength'] == '532':
             return 'Laser SetPoint (mA)'
         return 'Laser Parameter'
 
     def to_dict(self):
         """Convert calibration file data and analysis results to dictionary"""
-        if self._df is not None:
-            self.meta['num_points'] = len(self._df)
-        tmp = self.meta.copy()
-        tmp['analysis'] = self.anal.to_dict()
+        tmp = {
+            'file_info': self.file_info,
+            'time_info': self.time_info,
+            'analysis': self.anal.to_dict()
+        }
         return tmp
 
     def generate_plots(self):
         """Generate plots for the calibration file data"""
-        self.anal.generate_plots()
+        self.plotter.generate_plots()
     

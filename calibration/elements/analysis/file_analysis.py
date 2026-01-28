@@ -43,7 +43,7 @@ class CalibFileAnalysis(BaseAnal):
     def calc_lin_regs(self):
         """Calculate linear regressions for the calibration file data."""
         if self.df is None:
-            logger.error("Dataframe is not loaded for file: %s", self._data_holder.meta['filename'])
+            logger.error("Dataframe is not loaded for file: %s", self._data_holder.file_info['filename'])
             return
         
         # Perform linear regressions
@@ -55,13 +55,13 @@ class CalibFileAnalysis(BaseAnal):
     def to_dict(self):
         """Return analysis results as a dictionary."""
         if self._analyzed is False:
-            logger.warning("Analysis has not been performed yet for file: %s", self._data_holder.meta['filename'])        
+            logger.warning("Analysis has not been performed yet for file: %s", self._data_holder.file_info['filename'])        
         return {
             'linregs': {
-                'ref_pd_mean vs pm_mean': self.lr_refpd_vs_pm.to_dict(),
-                'pm_mean vs laser_setpoint': self.lr_pm_mean_vs_laser.to_dict(),
-                'ref_pd_mean vs laser_setpoint': self.lr_refpd_vs_laser.to_dict(),
+                'ref_pd_vs_pm': self.lr_refpd_vs_pm.to_dict(),
+                'pm_vs_laser_setpoint': self.lr_pm_mean_vs_laser.to_dict(),
+                'ref_pd_vs_laser_setpoint': self.lr_refpd_vs_laser.to_dict(),
             },
-            'pedestal_stats': self.pedstats.to_dict(),
+            'pedestal_stats': self.pedestal_stats.to_dict(),
         }
     

@@ -49,7 +49,7 @@ def main():
     san.run_checks()
     calibration.export_calib_data_summary({'sanity_checks': san.results})
     try:
-        with open(os.path.join(calibration.output_path, 'sanity_checks_results.json'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(calibration.reports_path, 'sanity_checks_results.json'), 'w', encoding='utf-8') as f:
             import json
             json.dump(san.results, f, indent=2)
     except Exception as e:

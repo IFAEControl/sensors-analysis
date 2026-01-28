@@ -6,6 +6,9 @@ numpy
 matplotlib
 pyyaml
 
+reportlab>=3.6.12
+pdfrw
+
 #development tools, do not add to pyproject.toml
 flake8
 black

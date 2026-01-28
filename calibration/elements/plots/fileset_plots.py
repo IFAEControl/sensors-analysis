@@ -46,9 +46,11 @@ class FileSetPlots(BasePlots):
         if not self._anal.analyzed:
             logger.warning("FileSetPlot: FileSet %s not analyzed yet. Can't generate plots.", self.level_label)
             return
-            
+        fileplots = self.plots.setdefault('files', {})
         for calfile in self._data_holder.files:
             calfile.plotter.generate_plots()
+            fileplots[calfile.level_header] = calfile.plotter.plots
+
         
         self._gen_temp_humidity_hists_plot()
         self._gen_timeseries_plot()
@@ -368,7 +370,7 @@ class FileSetPlots(BasePlots):
                 intercept + slope * calfile._df['ref_pd_mean'],
                 linewidth=1,
                 color=color,
-                label=f'{calfile.meta["run"]}: '
+                label=f'{calfile.file_info["run"]}: '
                     f'int={intercept:.2e}, slope={slope:.2e}'
             )
 

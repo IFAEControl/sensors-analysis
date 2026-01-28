@@ -72,7 +72,7 @@ class FileSetAnalysis(BaseAnal):
         for calfile in self.fs.files:
             calfile.analyze()
             logger.info("Analyzed calibration file: %s",
-                        calfile.meta['filename'])
+                        calfile.file_info['filename'])
         
         self.build_arrays()
         self.calc_means_of_lin_regs()

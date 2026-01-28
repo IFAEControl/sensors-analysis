@@ -78,10 +78,8 @@ class FileSet(BaseElement):
     def to_dict(self):
         """Convert file set data to dictionary."""
         return {
-            'wave_length': self.wl,
-            'filter_wheel': self.fw,
+            'meta': {'wave_length': self.wl,
+                     'filter_wheel': self.fw},
             'analysis': self.anal.to_dict(),
-            # 'files': {cf.meta['filename']: cf.to_dict() for cf in self.files}
+            'files': {cf.file_label: cf.to_dict() for cf in self.files}
         }
-
-

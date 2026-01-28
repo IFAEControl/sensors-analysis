@@ -85,7 +85,7 @@ class SanityChecks:
         return self.config.get('fileset', {})
     
     def _run_check_methods(self, severity, checks, checker) -> SanityCheckResult:
-        results = self.results.setdefault(checker.level_header, {})
+        results = {}
         for check_name, check_params in checks.items():
             method_name = f"san_check_{check_name}"
             check_method = getattr(checker, method_name, None)
@@ -123,28 +123,33 @@ class SanityChecks:
                 self._c.check(severity, False)
                 results[check_name] = result.to_dict()
                 logger.warning("Failed to execute check: %s, %s", check_name, str(e))
-
+        return results
 
     def run_checks(self):
         """Run all configured sanity checks"""
         logger.info("Running sanity checks...")
         self.results = {}
-
-
         
         checker = CalibrationSanityChecker(self.calibration)
+        self.results[checker.level_header] = {}
         for severity, checks in self.calibration_checks_config.items():
-            self._run_check_methods(severity, checks, checker)
+            results = self._run_check_methods(severity, checks, checker)
+            self.results[checker.level_header]['checks'] = results
         
-        for _, fs in self.calibration.file_sets.items():
+        filesets_results = self.results[checker.level_header].setdefault('filesets', {})
+        
+        for _, fs in self.calibration.filesets.items():
             checker = FileSetSanityChecker(fs)
+            fs_res = filesets_results.setdefault(fs.level_header, {})
             for severity, checks in self.fileset_checks_config.items():
-                self._run_check_methods(severity, checks, checker)
-
+                results = self._run_check_methods(severity, checks, checker)
+                fs_res['checks'] = results
+            file_results = fs_res.setdefault('files', {})
             for calfile in fs.files:
                 checker = FileSanityChecker(calfile)
                 for severity, checks in self.file_checks_config.items():
-                    self._run_check_methods(severity, checks, checker)
+                    results = self._run_check_methods(severity, checks, checker)
+                    file_results[calfile.level_header] = results
         
         c_d = self._c.to_dict()
         self.results['summary'] = c_d
