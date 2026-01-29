@@ -56,9 +56,9 @@ class FilePlots(BasePlots):
         # Plot Mean pm vs laser_setpoint
         fig_id = "pm_vs_L"
         fig = plt.figure(figsize=(10, 6))
-        plt.errorbar(self.df['laser_setpoint'], self.df['pm_mean'], yerr=self.df['pm_std'], 
+        plt.errorbar(self.df['laser_setpoint'], self.df[self.pm_col], yerr=self.df[self.pm_std_col], 
                      fmt='.', markersize=10, linewidth=1, label='Power Meter')
-        plt.ylabel('Power Meter (W)')
+        plt.ylabel(f'Power Meter ({self.power_units})')
         plt.xlabel(self.laser_label)
         plt.legend()
         plt.grid()
@@ -71,7 +71,7 @@ class FilePlots(BasePlots):
 
         fig_id = "refPD_vs_L"
         fig = plt.figure(figsize=(10, 6))
-        plt.errorbar(self.df['laser_setpoint'], self.df['ref_pd_mean'], yerr=self.df['ref_pd_std'], 
+        plt.errorbar(self.df['laser_setpoint'], self.df[self.refpd_col], yerr=self.df[self.refpd_std_col], 
                      fmt='.', markersize=10, linewidth=1, label='Ref PD')
         plt.ylabel('Ref PD (V)')
         plt.xlabel(self.laser_label)
@@ -89,13 +89,13 @@ class FilePlots(BasePlots):
 
         fig_id = "pm_vs_refPD"
         fig = plt.figure(figsize=(10, 6))
-        plt.errorbar(self.df['ref_pd_mean'], self.df['pm_mean'], yerr=self.df['pm_std'], 
+        plt.errorbar(self.df[self.refpd_col], self.df[self.pm_col], yerr=self.df[self.pm_std_col], 
                      fmt='.', markersize=10, linewidth=1, label='Power Meter')
-        plt.plot(self.df['ref_pd_mean'], intercept + slope*self.df['ref_pd_mean'], 'r', label='fitted line')
-        plt.ylabel('Power Meter (W)')
+        plt.plot(self.df[self.refpd_col], intercept + slope*self.df[self.refpd_col], 'r', label='fitted line')
+        plt.ylabel(f'Power Meter ({self.power_units})')
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         plt.xlabel('Ref PD (V)')
-        plt.legend([f'intercept={intercept:.2} (W), slope={slope:.2}+/-{slope_err:.2} (W/V)', 'Power Meter'])
+        plt.legend([f'intercept={intercept:.2} ({self.power_units}), slope={slope:.2}+/-{slope_err:.2} ({self.power_units}/V)', 'Power Meter'])
         plt.grid()
         plt.title(f'{self.level_label} - Power Meter vs Ref PD')
         plt.tight_layout()

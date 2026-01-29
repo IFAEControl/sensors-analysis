@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import pandas as pd
 
+from calibration.config import config
+
 class DataHolderLevel(Enum):
     """Enum for sanity check levels."""
     CALIBRATION = 'calibration'
@@ -19,6 +21,32 @@ class BaseElement(ABC):
         self._df_full = None
         self.level_header = ""
         self.dh_parent = None
+        self.data_prep_info = {}
+    
+    @property
+    def refpd_col(self) -> str:
+        """Column name for reference photodiode data."""
+        return 'ref_pd_zeroed' if config.subtract_pedestals else 'ref_pd_mean'
+    
+    @property
+    def pm_col(self) -> str:
+        """Column name for power meter data."""
+        return 'pm_zeroed' if config.subtract_pedestals else 'pm_mean'
+    
+    @property
+    def refpd_std_col(self) -> str:
+        """Column name for reference photodiode standard deviation data."""
+        return 'ref_pd_std'
+    
+    @property
+    def pm_std_col(self) -> str:
+        """Column name for power meter standard deviation data."""
+        return 'pm_std'
+    
+    @property
+    def power_units(self) -> str:
+        """Return the units used for power measurements."""
+        return 'uW' if config.use_uW_as_power_units else 'W'
 
     @property
     def level_name(self) -> str:

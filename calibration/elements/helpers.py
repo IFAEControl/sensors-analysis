@@ -51,12 +51,12 @@ class CalibLinReg:
             return {
                 'x_var': self.x_var,
                 'y_var': self.y_var,
-                'slope': self.slope,
-                'intercept': self.intercept,
-                'r_value': self.r_value,
-                'p_value': self.p_value,
-                'stderr': self.stderr,
-                'intercept_stderr': self.intercept_stderr,
+                'slope': float(self.slope),
+                'intercept': float(self.intercept),
+                'r_value': float(self.r_value),
+                'p_value': float(self.p_value),
+                'stderr': float(self.stderr),
+                'intercept_stderr': float(self.intercept_stderr),
             }
         raise AttributeError("No linear regression result available")
 
@@ -121,7 +121,10 @@ class MeanStats:
             return {
                 'mean': self.mean,
                 'std': self.std,
+                'samples': self.samples,
                 'weighted': self.weighted,
+                'w_mean': self.w_mean,
+                'w_stderr': self.w_stderr,
                 'ndof': self.ndof,
                 'chi2': self.chi2,
                 'chi2_reduced': self.chi2_reduced,

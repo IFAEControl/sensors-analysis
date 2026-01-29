@@ -95,7 +95,7 @@ class Calibration(BaseElement):
                 else:
                     logger.warning("Skipping invalid calibration file: %s", file_name)
                     continue
-                logger.info("Loaded calibration file: %s", file_name)
+                # logger.info("Loaded calibration file: %s", file_name)
     
     def analyze(self):
         """Analyze the calibration data"""

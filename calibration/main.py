@@ -21,18 +21,26 @@ def main():
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
     parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
-    # parser.add_argument("--do_not_sub_pedestals", "-d", action="store_true", help="Do not subtract pedestals from data")
+    parser.add_argument("--do-not-sub-pedestals", "-d", action="store_true", help="Do not subtract pedestals from data")
+    parser.add_argument("--do-not-replace-zero-pm-stds", "-z", action="store_true", help="Do not replace zero PM stds from data")
+    parser.add_argument("--use-first-ped-in-linreag", "-p", action="store_true", help="Use first pedestal measurement in linear regression")
+    parser.add_argument("--use-W-as-power-units", "-u", action="store_true", help="Use W as power units instead of uW")
     args = parser.parse_args()
 
     if args.plot_format:
         config.plot_output_format = args.plot_format
-    # if args.do_not_sub_pedestals:
-    #     config.substract_pedestals = False
+    if args.do_not_sub_pedestals:
+        config.subtract_pedestals = False
     if args.no_plots:
         config.generate_plots = False
-
+    if args.do_not_replace_zero_pm_stds:
+        config.replace_zero_pm_stds = False
+    if args.use_first_ped_in_linreag:
+        config.use_first_pedestal_in_linreg = True
+    if args.use_W_as_power_units:
+        config.use_uW_as_power_units = False
+    
     calibration = Calibration(args)
-
     if args.log_file:
         log_file_path = os.path.join(calibration.output_path, f"{now.strftime('%Y%m%d_%H%M%S')}_calibration.log")
         logger.info("Logging to file: %s", log_file_path)
@@ -44,7 +52,8 @@ def main():
 
     calibration.load_calibration_files()
     calibration.analyze()
-    calibration.generate_plots()
+    if config.generate_plots:
+        calibration.generate_plots()
     san = SanityChecks(calibration)
     san.run_checks()
     calibration.export_calib_data_summary({'sanity_checks': san.results})

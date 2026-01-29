@@ -15,6 +15,29 @@ class BasePlots(ABC):
     def __init__(self, *args, **kwargs) -> None:
         self.plots = {}
         self._data_holder = None
+    
+    @property
+    def dh(self):
+        """Shortcut to data holder."""
+        return self._data_holder
+
+    @property
+    def refpd_col(self) -> str:
+        """Column name for reference photodiode data."""
+        return self._data_holder.refpd_col
+    @property
+    def pm_col(self) -> str:
+        """Column name for power meter data."""
+        return self._data_holder.pm_col
+    
+    @property
+    def refpd_std_col(self) -> str:
+        """Column name for reference photodiode standard deviation data."""
+        return self._data_holder.refpd_std_col
+    @property
+    def pm_std_col(self) -> str:
+        """Column name for power meter standard deviation data."""
+        return self._data_holder.pm_std_col
 
     @property
     def level_label(self) -> str:
@@ -57,6 +80,11 @@ class BasePlots(ABC):
         pass
 
 
+    @property
+    def power_units(self) -> str:
+        """Return the units used for power measurements."""
+        return 'uW' if config.use_uW_as_power_units else 'W'
+    
     def add_plot_path(self, fig_id: str, fig_path: str):
         """Add a plot to the summary dictionary.
 
@@ -116,12 +144,12 @@ class BasePlots(ABC):
         ax1 = plt.subplot2grid((5, 1), (0, 0), rowspan=2)
         ax1_twin = ax1.twinx()
         # ax1.plot(self.df['datetime'], self.df['ref_pd_mean'], 'b-', label='Mean Ref PD', linewidth=2)
-        ax1.errorbar(self.df['datetime'], self.df['ref_pd_mean'], yerr=self.df['ref_pd_std'], c='b', fmt='.', markersize=5, linewidth=1, label='Mean Ref PD')
+        ax1.errorbar(self.df['datetime'], self.df[self.refpd_col], yerr=self.df[self.refpd_std_col], c='b', fmt='.', markersize=5, linewidth=1, label='Mean Ref PD')
         ax1.set_ylabel('Ref PD (V)', color='b')
         ax1.tick_params(axis='y', labelcolor='b')
 
-        ax1_twin.errorbar(self.df['datetime'], self.df['pm_mean'], yerr=self.df['pm_std'], c='r', fmt='.', markersize=5, linewidth=1, label='Mean pm')
-        ax1_twin.set_ylabel('Power Meter (W)', color='r')
+        ax1_twin.errorbar(self.df['datetime'], self.df[self.pm_col], yerr=self.df[self.pm_std_col], c='r', fmt='.', markersize=5, linewidth=1, label='Mean pm')
+        ax1_twin.set_ylabel(f'Power Meter ({self.power_units})', color='r')
         ax1_twin.ticklabel_format(style='sci', axis='y', scilimits=(-2,3))
         ax1_twin.tick_params(axis='y', labelcolor='r')
 

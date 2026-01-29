@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from calibration.helpers import get_logger
+from calibration.config import config
 
 from .analysis.file_analysis import CalibFileAnalysis
 from .plots import FilePlots
@@ -99,19 +100,57 @@ class CalibFile(BaseElement):
             return
         self.load_data()
 
+    def _subs_pm_zero_stds(self):
+        zero_std_count = (self._df['pm_std'] == 0).sum()
+        self.data_prep_info['original_pm_std_zero_count'] = int(zero_std_count)
+        self.data_prep_info['replace_zero_pm_std'] = config.replace_zero_pm_stds
+        if config.replace_zero_pm_stds:
+            resolution = config.power_meter_resolutions.get(f"{self.wavelength}-{self.filter_wheel}")
+            self.data_prep_info['num_pm_std_replaced'] = int(zero_std_count)
+            self.data_prep_info['pm_std_replacement_value'] = resolution
+            if zero_std_count > 0:
+                logger.info("Replacing %d zero PM std values with resolution %g for file %s", zero_std_count, resolution, self.file_info['filename'])
+                self._df.loc[self._df['pm_std'] == 0, 'pm_std'] = resolution
+        else:
+            self.data_prep_info['num_pm_std_replaced'] = 0
+            self.data_prep_info['pm_std_replacement_value'] = None
+
+    def _subtract_pedestals(self):
+        self.anal.analyze_pedestals()
+        pm_ped = self.anal.pedestal_stats.pm.w_mean if self.anal.pedestal_stats.pm.weighted else self.anal.pedestal_stats.pm.mean
+        ref_pd_ped = self.anal.pedestal_stats.refpd.w_mean if self.anal.pedestal_stats.refpd.weighted else self.anal.pedestal_stats.refpd.mean
+        self._df['pm_zeroed'] = self._df['pm_mean'] - pm_ped
+        self._df['ref_pd_zeroed'] = self._df['ref_pd_mean'] - ref_pd_ped
+        self.data_prep_info['pedestal_subtraction'] = {
+            'pm_pedestal': pm_ped,
+            'refpd_pedestal': ref_pd_ped
+        }
+
     def load_data(self):
         """Load calibration file data into a DataFrame"""
         self._df = pd.read_csv(self.file_path, delimiter ='\t', header=None)
         self._df.columns = ['datetime', 'laser_setpoint', 'pm_mean', 'pm_std', 'ref_pd_mean', 'ref_pd_std', 'temperature', 'RH', 'samples']
+        self.data_prep_info['original_num_rows'] = len(self._df)
+        self.data_prep_info['use_uW_as_power_units'] = config.use_uW_as_power_units
+        if config.use_uW_as_power_units:
+            self._df['pm_mean'] = self._df['pm_mean'] * 1e6
         self._df["datetime"] = pd.to_datetime(
             self._df["datetime"],
             format="%Y-%m-%d-%H:%M:%S",
             utc=True
         )
         self._df["timestamp"] = self._df["datetime"].astype("int64") // 1_000_000_000
+        self._subs_pm_zero_stds()
+
         self._df_pedestals = pd.concat([self._df.iloc[[0]], self._df.iloc[[-1]]], ignore_index=True)
+        self.data_prep_info['original_num_pedestals'] = len(self._df_pedestals)
+        self._subtract_pedestals()
+
         self._df_full = self._df.copy()
-        self._df = self._df.iloc[1:-1].reset_index(drop=True)
+        if config.use_first_pedestal_in_linreg:
+            self._df = self._df.iloc[0:-1].reset_index(drop=True)
+        else:
+            self._df = self._df.iloc[1:-1].reset_index(drop=True)
         logger.info("Loaded data for calibration file: %s", self.file_info['filename'])
 
 
@@ -179,7 +218,8 @@ class CalibFile(BaseElement):
         tmp = {
             'file_info': self.file_info,
             'time_info': self.time_info,
-            'analysis': self.anal.to_dict()
+            'analysis': self.anal.to_dict(),
+            'data_preparation': self.data_prep_info
         }
         return tmp
 
