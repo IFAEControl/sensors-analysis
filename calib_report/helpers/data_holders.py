@@ -12,6 +12,10 @@ class CallingArguments:
     log_file: bool
     overwrite: bool
     no_plots: bool
+    do_not_sub_pedestals: bool
+    do_not_replace_zero_pm_stds: bool
+    use_first_ped_in_linreag: bool
+    use_W_as_power_units: bool
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "CallingArguments":
@@ -22,6 +26,14 @@ class CallingArguments:
             log_file=bool(data.get("log_file", False)),
             overwrite=bool(data.get("overwrite", False)),
             no_plots=bool(data.get("no_plots", False)),
+            do_not_sub_pedestals=bool(data.get("do_not_sub_pedestals", False)),
+            do_not_replace_zero_pm_stds=bool(
+                data.get("do_not_replace_zero_pm_stds", False)
+            ),
+            use_first_ped_in_linreag=bool(
+                data.get("use_first_ped_in_linreag", False)
+            ),
+            use_W_as_power_units=bool(data.get("use_W_as_power_units", False)),
         )
 
 
@@ -56,12 +68,24 @@ class SystemInfo:
 class MetaConfig:
     plot_output_format: Optional[str]
     generate_plots: bool
+    subtract_pedestals: bool
+    replace_zero_pm_stds: bool
+    power_meter_resolutions: Dict[str, float] = field(default_factory=dict)
+    use_first_pedestal_in_linreg: bool = False
+    use_uW_as_power_units: bool = False
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "MetaConfig":
         return cls(
             plot_output_format=data.get("plot_output_format"),
             generate_plots=bool(data.get("generate_plots", False)),
+            subtract_pedestals=bool(data.get("subtract_pedestals", False)),
+            replace_zero_pm_stds=bool(data.get("replace_zero_pm_stds", False)),
+            power_meter_resolutions=data.get("power_meter_resolutions", {}) or {},
+            use_first_pedestal_in_linreg=bool(
+                data.get("use_first_pedestal_in_linreg", False)
+            ),
+            use_uW_as_power_units=bool(data.get("use_uW_as_power_units", False)),
         )
 
 
@@ -144,7 +168,10 @@ class PedestalStats:
     """Statistics for pedestal measurements."""
     mean: Optional[float]
     std: Optional[float]
+    samples: Optional[int]
     weighted: bool
+    w_mean: Optional[float]
+    w_stderr: Optional[float]
     ndof: Optional[int]
     chi2: Optional[float]
     chi2_reduced: Optional[float]
@@ -155,7 +182,10 @@ class PedestalStats:
         return cls(
             mean=data.get("mean"),
             std=data.get("std"),
+            samples=data.get("samples"),
             weighted=bool(data.get("weighted", False)),
+            w_mean=data.get("w_mean"),
+            w_stderr=data.get("w_stderr"),
             ndof=data.get("ndof"),
             chi2=data.get("chi2"),
             chi2_reduced=data.get("chi2_reduced"),
@@ -339,6 +369,7 @@ class FileSetPlots:
     pmVsRefPD_fitSlope_vs_Temperature: Optional[str] = None
     pmVsRefPD_fitSlopes_and_Intercepts_vs_Run: Optional[str] = None
     pm_vs_RefPD: Optional[str] = None
+    pm_vs_RefPD_runs: Optional[str] = None
     pm_vs_LaserSetting: Optional[str] = None
     RefPD_vs_LaserSetting: Optional[str] = None
     Pedestals_Histogram: Optional[str] = None
@@ -364,6 +395,7 @@ class FileSetPlots:
                 "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run"
             ),
             pm_vs_RefPD=data.get("pm_vs_RefPD"),
+            pm_vs_RefPD_runs=data.get("pm_vs_RefPD_runs"),
             pm_vs_LaserSetting=data.get("pm_vs_LaserSetting"),
             RefPD_vs_LaserSetting=data.get("RefPD_vs_LaserSetting"),
             Pedestals_Histogram=data.get("Pedestals_Histogram"),
@@ -458,35 +490,65 @@ class SanityChecksSummary:
 
 @dataclass
 class SanityChecks:
-    """All sanity check results organized by group."""
-    groups: Dict[str, Dict[str, SanityCheckEntry]] = field(default_factory=dict)
+    """All sanity check results organized by calibration, fileset, and file."""
+    calibration_checks: Dict[str, SanityCheckEntry] = field(default_factory=dict)
+    fileset_checks: Dict[str, Dict[str, SanityCheckEntry]] = field(default_factory=dict)
+    file_checks: Dict[str, Dict[str, Dict[str, SanityCheckEntry]]] = field(
+        default_factory=dict
+    )
     summary: Optional[SanityChecksSummary] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecks":
-        """Parse sanity checks from dict, organizing by group name.
-        
-        The structure supports arbitrary group names (calibration_10122025, 1064_FW5, etc.)
-        Each group contains multiple check entries, with 'summary' being special.
-        """
+        """Parse sanity checks from dict, supporting nested calibration/fileset/file."""
         summary_data = data.get("summary")
-        summary = SanityChecksSummary.from_dict(
-            summary_data) if summary_data else None
+        summary = SanityChecksSummary.from_dict(summary_data) if summary_data else None
 
-        groups: Dict[str, Dict[str, SanityCheckEntry]] = {}
-        for group_name, group_checks in (data or {}).items():
-            if group_name == "summary":
-                continue
-            if not isinstance(group_checks, dict):
-                continue
-            checks_dict = {
-                check_name: SanityCheckEntry.from_dict(check_data)
-                for check_name, check_data in group_checks.items()
-                if isinstance(check_data, dict)
-            }
-            groups[group_name] = checks_dict
+        calibration_checks: Dict[str, SanityCheckEntry] = {}
+        fileset_checks: Dict[str, Dict[str, SanityCheckEntry]] = {}
+        file_checks: Dict[str, Dict[str, SanityCheckEntry]] = {}
 
-        return cls(groups=groups, summary=summary)
+        for group_name, group_data in (data or {}).items():
+            if group_name == "summary" or not isinstance(group_data, dict):
+                continue
+
+            checks_block = group_data.get("checks")
+            if isinstance(checks_block, dict):
+                calibration_checks = {
+                    check_name: SanityCheckEntry.from_dict(check_data)
+                    for check_name, check_data in checks_block.items()
+                    if isinstance(check_data, dict)
+                }
+
+            filesets_block = group_data.get("filesets")
+            if isinstance(filesets_block, dict):
+                for fs_name, fs_data in filesets_block.items():
+                    if not isinstance(fs_data, dict):
+                        continue
+                    fs_checks = fs_data.get("checks")
+                    if isinstance(fs_checks, dict):
+                        fileset_checks[fs_name] = {
+                            check_name: SanityCheckEntry.from_dict(check_data)
+                            for check_name, check_data in fs_checks.items()
+                            if isinstance(check_data, dict)
+                        }
+                    fs_files = fs_data.get("files")
+                    if isinstance(fs_files, dict):
+                        for file_name, file_checks_block in fs_files.items():
+                            if not isinstance(file_checks_block, dict):
+                                continue
+                            file_checks[file_name] = {
+                                check_name: SanityCheckEntry.from_dict(check_data)
+                                for check_name, check_data in file_checks_block.items()
+                                if isinstance(check_data, dict)
+                            }
+
+        return cls(
+            calibration_checks=calibration_checks,
+            fileset_checks=fileset_checks,
+            file_checks=file_checks,
+            summary=summary,
+        )
 
 
 @dataclass
@@ -517,7 +579,7 @@ if __name__ == "__main__":
         "..", "..",
         "output",
         "calibration_10122025",
-        "calibration_summary.json"
+        "calibration_10122025-summary.json"
     )
     
     if os.path.exists(json_path):

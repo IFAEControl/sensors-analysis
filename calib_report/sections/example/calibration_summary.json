@@ -1,0 +1,1843 @@
+{
+  "meta": {
+    "calling_arguments": {
+      "calib_files_path": "data/calib/calibration_10122025.zip",
+      "plot_format": "pdf",
+      "output_path": null,
+      "log_file": false,
+      "overwrite": true,
+      "no_plots": false,
+      "do_not_sub_pedestals": false,
+      "do_not_replace_zero_pm_stds": false,
+      "use_first_ped_in_linreag": false,
+      "use_W_as_power_units": false
+    },
+    "calib_id": "calibration_10122025",
+    "calib_files_path": "/var/folders/_3/x3fk473x2ps_1jnq48p4l66w0000gn/T/tmps432atkv",
+    "root_output_path": "./output/calibration_10122025",
+    "calibration_outputs_path": "./output/calibration_10122025/calibration_outputs",
+    "reports_path": "./output/calibration_10122025",
+    "execution_date": "2026-01-29T10:18:43.155475+00:00",
+    "system": {
+      "username": "otger",
+      "cwd": "/Users/otger/development/virgo/em/sensors-analysis",
+      "os": "Darwin",
+      "os_release": "25.2.0",
+      "os_version": "Darwin Kernel Version 25.2.0: Tue Nov 18 21:09:45 PST 2025; root:xnu-12377.61.12~1/RELEASE_ARM64_T6030",
+      "machine": "arm64",
+      "architecture": "64bit",
+      "python_version": "3.14.2",
+      "hostname": "Otgers-MBP.local"
+    },
+    "config": {
+      "plot_output_format": "pdf",
+      "generate_plots": true,
+      "subtract_pedestals": true,
+      "replace_zero_pm_stds": true,
+      "power_meter_resolutions": {
+        "532-FW4": 4.51e-08,
+        "532-FW5": 4.56e-09,
+        "1064-FW5": 4.57e-09
+      },
+      "use_first_pedestal_in_linreg": false,
+      "use_uW_as_power_units": true
+    }
+  },
+  "analysis": {
+    "time_info": {
+      "min_ts": 1765360066,
+      "max_ts": 1765373179,
+      "elapsed_time_s": 13113,
+      "min_dt": "2025-12-10 09:47:46",
+      "max_dt": "2025-12-10 13:26:19"
+    },
+    "filesets": {
+      "1064_FW5": {
+        "meta": {
+          "wave_length": "1064",
+          "filter_wheel": "FW5"
+        },
+        "analysis": {
+          "lr_refpd_vs_pm": {
+            "x_var": "ref_pd_mean",
+            "y_var": "pm_mean",
+            "slope": 175.05422076010103,
+            "intercept": -0.297737538118902,
+            "r_value": 0.999926454301069,
+            "p_value": 5.44878253396974e-251,
+            "stderr": 0.18621664782237968,
+            "intercept_stderr": 0.06711493337579023
+          },
+          "pedestals": {
+            "pm": {
+              "mean": -0.056999999999999995,
+              "std": 0.04776609676329017,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": -0.09294009352897036,
+              "w_stderr": 2.5405550879008853e-09,
+              "ndof": 5,
+              "chi2": 98691164883230.89,
+              "chi2_reduced": 19738232976646.18,
+              "exec_error": false
+            },
+            "refpd": {
+              "mean": 2.143e-06,
+              "std": 3.6631025101681224e-07,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": 2.1244491076462225e-06,
+              "w_stderr": 8.712523445015392e-08,
+              "ndof": 5,
+              "chi2": 14.214320779147814,
+              "chi2_reduced": 2.8428641558295626,
+              "exec_error": false
+            }
+          }
+        },
+        "files": {
+          "1064nm_FW5_run1": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_1064_300uW_FW5_1.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "1064",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "1",
+              "num_points": 44,
+              "file_size_bytes": 4112
+            },
+            "time_info": {
+              "min_ts": 1765369953,
+              "max_ts": 1765370980,
+              "elapsed_time_s": 1027,
+              "min_dt": "2025-12-10 12:32:33",
+              "max_dt": "2025-12-10 12:49:40"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 175.99763817883695,
+                  "intercept": -0.2168597054288739,
+                  "r_value": 0.9999880414067327,
+                  "p_value": 1.0979761425685679e-98,
+                  "stderr": 0.13281316770909082,
+                  "intercept_stderr": 0.04732260871049841
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 2.438012883252687,
+                  "intercept": -3.428867307120832,
+                  "r_value": 0.9999810335292943,
+                  "p_value": 1.7660332367107342e-94,
+                  "stderr": 0.0023169986940694775,
+                  "intercept_stderr": 0.06226620144194691
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.013852242383171778,
+                  "intercept": -0.018243441519446568,
+                  "r_value": 0.9999720979831783,
+                  "p_value": 5.855882229860774e-91,
+                  "stderr": 1.5967514575985827e-05,
+                  "intercept_stderr": 0.0004291053256354334
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": -0.013500000000000002,
+                  "std": 0.01767766952966369,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": -0.002227897838899804,
+                  "w_stderr": 9.751328557914599e-09,
+                  "ndof": 1,
+                  "chi2": 306974459724.951,
+                  "chi2_reduced": 306974459724.951,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.3755000000000004e-06,
+                  "std": 8.697413408594529e-08,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.3743869689835194e-06,
+                  "w_stderr": 1.5625140209013674e-07,
+                  "ndof": 1,
+                  "chi2": 0.15486743781349147,
+                  "chi2_reduced": 0.15486743781349147,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 46,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 2,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 2,
+              "pm_std_replacement_value": 4.57e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": -0.002227897838899804,
+                "refpd_pedestal": 2.3743869689835194e-06
+              }
+            }
+          },
+          "1064nm_FW5_run2": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_1064_300uW_FW5_2.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "1064",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "2",
+              "num_points": 44,
+              "file_size_bytes": 4108
+            },
+            "time_info": {
+              "min_ts": 1765371053,
+              "max_ts": 1765372079,
+              "elapsed_time_s": 1026,
+              "min_dt": "2025-12-10 12:50:53",
+              "max_dt": "2025-12-10 13:07:59"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 173.95704594174302,
+                  "intercept": -0.12182684794483123,
+                  "r_value": 0.9999827954813804,
+                  "p_value": 2.2791987541978088e-95,
+                  "stderr": 0.15745601050485342,
+                  "intercept_stderr": 0.05728693343239497
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 2.442988516718588,
+                  "intercept": -3.2776009156760537,
+                  "r_value": 0.9999831397873342,
+                  "p_value": 1.4907835851303134e-95,
+                  "stderr": 0.0021890152852375297,
+                  "intercept_stderr": 0.05918373708356583
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.014043046955361944,
+                  "intercept": -0.018127218998842343,
+                  "r_value": 0.9999587753986768,
+                  "p_value": 2.125569621282133e-87,
+                  "stderr": 1.9676296615711e-05,
+                  "intercept_stderr": 0.000531982016542262
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": -0.057499999999999996,
+                  "std": 0.060104076400856535,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": -0.09865195773753649,
+                  "w_stderr": 4.533616621681241e-09,
+                  "ndof": 1,
+                  "chi2": 5486432413341.514,
+                  "chi2_reduced": 5486432413341.514,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.2584999999999996e-06,
+                  "std": 4.942676400493967e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.2505758485599415e-06,
+                  "w_stderr": 1.5588698344196106e-07,
+                  "ndof": 1,
+                  "chi2": 5.024019824581247,
+                  "chi2_reduced": 5.024019824581247,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 46,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 3,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 3,
+              "pm_std_replacement_value": 4.57e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": -0.09865195773753649,
+                "refpd_pedestal": 2.2505758485599415e-06
+              }
+            }
+          },
+          "1064nm_FW5_run3": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_1064_300uW_FW5_3.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "1064",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "3",
+              "num_points": 44,
+              "file_size_bytes": 4110
+            },
+            "time_info": {
+              "min_ts": 1765372152,
+              "max_ts": 1765373179,
+              "elapsed_time_s": 1027,
+              "min_dt": "2025-12-10 13:09:12",
+              "max_dt": "2025-12-10 13:26:19"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 175.32335508695397,
+                  "intercept": -0.38229398014191673,
+                  "r_value": 0.9999570172556941,
+                  "p_value": 5.109274559014822e-87,
+                  "stderr": 0.2508367680980143,
+                  "intercept_stderr": 0.0905661265692754
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 2.4182748395694125,
+                  "intercept": -3.048797274210436,
+                  "r_value": 0.9999576668688961,
+                  "p_value": 3.7108483869040553e-87,
+                  "stderr": 0.0034336023293886605,
+                  "intercept_stderr": 0.0931945395575854
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.013791327111191678,
+                  "intercept": -0.015163657769624583,
+                  "r_value": 0.9998629070055227,
+                  "p_value": 1.9324695407458952e-76,
+                  "stderr": 3.524103875335582e-05,
+                  "intercept_stderr": 0.000956509247456962
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": -0.09999999999999999,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": -0.09999999999999998,
+                  "w_stderr": 3.231477990022522e-09,
+                  "ndof": 1,
+                  "chi2": 1.844327666770955e-17,
+                  "chi2_reduced": 1.844327666770955e-17,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 1.7950000000000002e-06,
+                  "std": 2.0506096654409878e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 1.8135863861567374e-06,
+                  "w_stderr": 1.4195032278090392e-07,
+                  "ndof": 1,
+                  "chi2": 1.0262856027139822,
+                  "chi2_reduced": 1.0262856027139822,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 46,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 2,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 2,
+              "pm_std_replacement_value": 4.57e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": -0.09999999999999998,
+                "refpd_pedestal": 1.8135863861567374e-06
+              }
+            }
+          }
+        }
+      },
+      "532_FW5": {
+        "meta": {
+          "wave_length": "532",
+          "filter_wheel": "FW5"
+        },
+        "analysis": {
+          "lr_refpd_vs_pm": {
+            "x_var": "ref_pd_mean",
+            "y_var": "pm_mean",
+            "slope": 212.2763460103727,
+            "intercept": -0.5225555846730288,
+            "r_value": 0.999943499725708,
+            "p_value": 4.2276761633167997e-122,
+            "stderr": 0.2889318149871212,
+            "intercept_stderr": 0.14067540243296742
+          },
+          "pedestals": {
+            "pm": {
+              "mean": 0.0,
+              "std": 0.0,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": 0.0,
+              "w_stderr": 1.8616122045152154e-09,
+              "ndof": 5,
+              "chi2": 0.0,
+              "chi2_reduced": 0.0,
+              "exec_error": false
+            },
+            "refpd": {
+              "mean": 2.0919999999999996e-06,
+              "std": 3.097657179224325e-07,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": 2.078836248739438e-06,
+              "w_stderr": 9.187350458913943e-08,
+              "ndof": 5,
+              "chi2": 9.464918994971505,
+              "chi2_reduced": 1.892983798994301,
+              "exec_error": false
+            }
+          }
+        },
+        "files": {
+          "532nm_FW5_run1": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_300uW_FW5_1.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "1",
+              "num_points": 21,
+              "file_size_bytes": 2080
+            },
+            "time_info": {
+              "min_ts": 1765365028,
+              "max_ts": 1765366465,
+              "elapsed_time_s": 1437,
+              "min_dt": "2025-12-10 11:10:28",
+              "max_dt": "2025-12-10 11:34:25"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 212.37794700955988,
+                  "intercept": -0.5271769444172207,
+                  "r_value": 0.9999516316718052,
+                  "p_value": 1.3179104523409098e-39,
+                  "stderr": 0.4792299026276703,
+                  "intercept_stderr": 0.21856236596939918
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 1.8342852133403074,
+                  "intercept": -386.2051665522816,
+                  "r_value": 0.9909775939573496,
+                  "p_value": 4.754481207144943e-18,
+                  "stderr": 0.056914195299005474,
+                  "intercept_stderr": 14.838130868890767
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.008632876009204302,
+                  "intercept": -1.8149537728489786,
+                  "r_value": 0.9905648163637689,
+                  "p_value": 7.260675340179065e-18,
+                  "stderr": 0.00027400541458499184,
+                  "intercept_stderr": 0.07143610094172455
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.2244069222106567e-09,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 1.807e-06,
+                  "std": 3.9597979746446645e-08,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 1.79701185815695e-06,
+                  "w_stderr": 1.6390156045662974e-07,
+                  "ndof": 1,
+                  "chi2": 0.025470671366611956,
+                  "chi2_reduced": 0.025470671366611956,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 2,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 2,
+              "pm_std_replacement_value": 4.56e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 1.79701185815695e-06
+              }
+            }
+          },
+          "532nm_FW5_run2": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_300uW_FW5_2.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "2",
+              "num_points": 21,
+              "file_size_bytes": 2078
+            },
+            "time_info": {
+              "min_ts": 1765366681,
+              "max_ts": 1765368118,
+              "elapsed_time_s": 1437,
+              "min_dt": "2025-12-10 11:38:01",
+              "max_dt": "2025-12-10 12:01:58"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 212.34417083853927,
+                  "intercept": -0.33218448089135677,
+                  "r_value": 0.9999642789300097,
+                  "p_value": 7.402171756895907e-41,
+                  "stderr": 0.411767822533353,
+                  "intercept_stderr": 0.2226640191182952
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 2.5411477120916643,
+                  "intercept": -555.4757068548344,
+                  "r_value": 0.9837775270970298,
+                  "p_value": 1.2177680239550997e-15,
+                  "stderr": 0.10630684377656863,
+                  "intercept_stderr": 27.715315167480107
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.011972978841276976,
+                  "intercept": -2.6158819633744765,
+                  "r_value": 0.9842945020017639,
+                  "p_value": 8.97042365563006e-16,
+                  "stderr": 0.0004926395509622054,
+                  "intercept_stderr": 0.12843632577014613
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.2244069222106567e-09,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.106e-06,
+                  "std": 3.676955262170046e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.066235294117647e-06,
+                  "w_stderr": 1.5488834688252052e-07,
+                  "ndof": 1,
+                  "chi2": 2.751882760024424,
+                  "chi2_reduced": 2.751882760024424,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 4,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 4,
+              "pm_std_replacement_value": 4.56e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 2.066235294117647e-06
+              }
+            }
+          },
+          "532nm_FW5_run3": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_300uW_FW5_3.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "300uW",
+              "filterwheel": "FW5",
+              "run": "3",
+              "num_points": 21,
+              "file_size_bytes": 2079
+            },
+            "time_info": {
+              "min_ts": 1765368334,
+              "max_ts": 1765369772,
+              "elapsed_time_s": 1438,
+              "min_dt": "2025-12-10 12:05:34",
+              "max_dt": "2025-12-10 12:29:32"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 211.40208092442273,
+                  "intercept": -0.40523519051082246,
+                  "r_value": 0.9999556047115343,
+                  "p_value": 5.837981174235856e-40,
+                  "stderr": 0.4570148975946162,
+                  "intercept_stderr": 0.2098000595283299
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 1.8293209331286369,
+                  "intercept": -384.563400306889,
+                  "r_value": 0.9909201926903884,
+                  "p_value": 5.048616914122495e-18,
+                  "stderr": 0.05694291123777762,
+                  "intercept_stderr": 14.84561741693534
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.00865112968083974,
+                  "intercept": -1.8166331539548688,
+                  "r_value": 0.9907181868351931,
+                  "p_value": 6.217525451609814e-18,
+                  "stderr": 0.0002723122567413105,
+                  "intercept_stderr": 0.0709946768376984
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.2244069222106567e-09,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.363e-06,
+                  "std": 1.824335495461292e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.357269496544916e-06,
+                  "w_stderr": 1.5898120857249382e-07,
+                  "ndof": 1,
+                  "chi2": 0.6570977295162876,
+                  "chi2_reduced": 0.6570977295162876,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 3,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 3,
+              "pm_std_replacement_value": 4.56e-09,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 2.357269496544916e-06
+              }
+            }
+          }
+        }
+      },
+      "532_FW4": {
+        "meta": {
+          "wave_length": "532",
+          "filter_wheel": "FW4"
+        },
+        "analysis": {
+          "lr_refpd_vs_pm": {
+            "x_var": "ref_pd_mean",
+            "y_var": "pm_mean",
+            "slope": 437.2656512710897,
+            "intercept": -0.6642197825659935,
+            "r_value": 0.9998884732452261,
+            "p_value": 4.298133729270808e-113,
+            "stderr": 0.83622145336066,
+            "intercept_stderr": 0.4440396964418983
+          },
+          "pedestals": {
+            "pm": {
+              "mean": 0.0,
+              "std": 0.0,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": 0.0,
+              "w_stderr": 1.8411997899920224e-08,
+              "ndof": 5,
+              "chi2": 0.0,
+              "chi2_reduced": 0.0,
+              "exec_error": false
+            },
+            "refpd": {
+              "mean": 1.9851666666666662e-06,
+              "std": 3.5255377840361703e-07,
+              "samples": 6,
+              "weighted": true,
+              "w_mean": 1.980433397588578e-06,
+              "w_stderr": 8.703773635213561e-08,
+              "ndof": 5,
+              "chi2": 14.201554384011889,
+              "chi2_reduced": 2.840310876802378,
+              "exec_error": false
+            }
+          }
+        },
+        "files": {
+          "532nm_FW4_run1": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_3mW_FW4_1.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "3mW",
+              "filterwheel": "FW4",
+              "run": "1",
+              "num_points": 21,
+              "file_size_bytes": 2080
+            },
+            "time_info": {
+              "min_ts": 1765360066,
+              "max_ts": 1765361503,
+              "elapsed_time_s": 1437,
+              "min_dt": "2025-12-10 09:47:46",
+              "max_dt": "2025-12-10 10:11:43"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 436.55154116680916,
+                  "intercept": -0.41835095480897166,
+                  "r_value": 0.9999329055638203,
+                  "p_value": 2.951523357375795e-38,
+                  "stderr": 1.1602159507098586,
+                  "intercept_stderr": 0.5904689014361096
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 4.941402825605438,
+                  "intercept": -1080.788663848214,
+                  "r_value": 0.9931324579227058,
+                  "p_value": 3.5872685842048295e-19,
+                  "stderr": 0.13354727420485174,
+                  "intercept_stderr": 34.81718262772059
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.011323350274680639,
+                  "intercept": -2.475869408977219,
+                  "r_value": 0.9935655484007995,
+                  "p_value": 1.9352459236166459e-19,
+                  "stderr": 0.00029612334499030653,
+                  "intercept_stderr": 0.0772024786297319
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.18905158315133e-08,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 1.7445e-06,
+                  "std": 4.263853890554881e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 1.7127061247720736e-06,
+                  "w_stderr": 1.531518441886848e-07,
+                  "ndof": 1,
+                  "chi2": 3.8324251399179987,
+                  "chi2_reduced": 3.8324251399179987,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 15,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 15,
+              "pm_std_replacement_value": 4.51e-08,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 1.7127061247720736e-06
+              }
+            }
+          },
+          "532nm_FW4_run2": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_3mW_FW4_2.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "3mW",
+              "filterwheel": "FW4",
+              "run": "2",
+              "num_points": 21,
+              "file_size_bytes": 2079
+            },
+            "time_info": {
+              "min_ts": 1765361719,
+              "max_ts": 1765363156,
+              "elapsed_time_s": 1437,
+              "min_dt": "2025-12-10 10:15:19",
+              "max_dt": "2025-12-10 10:39:16"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 440.79784652721406,
+                  "intercept": -1.7620984406578373,
+                  "r_value": 0.9998753859243033,
+                  "p_value": 1.0575862519383495e-35,
+                  "stderr": 1.5966208785712064,
+                  "intercept_stderr": 0.858917210912614
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 5.32953328838966,
+                  "intercept": -1169.9129291906659,
+                  "r_value": 0.9875665253955499,
+                  "p_value": 9.872957795367194e-17,
+                  "stderr": 0.19462700999515273,
+                  "intercept_stderr": 50.74131382789578
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.01208603563420652,
+                  "intercept": -2.6488820097060786,
+                  "r_value": 0.9873125070194667,
+                  "p_value": 1.1952595019668628e-16,
+                  "stderr": 0.0004459369115307642,
+                  "intercept_stderr": 0.11626045519575443
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.18905158315133e-08,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.1630000000000003e-06,
+                  "std": 5.006316010800758e-07,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.1761675353041675e-06,
+                  "w_stderr": 1.5194904103818787e-07,
+                  "ndof": 1,
+                  "chi2": 5.420124997296776,
+                  "chi2_reduced": 5.420124997296776,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 13,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 13,
+              "pm_std_replacement_value": 4.51e-08,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 2.1761675353041675e-06
+              }
+            }
+          },
+          "532nm_FW4_run3": {
+            "file_info": {
+              "filename": "calibration_10122025_PD_532_3mW_FW4_3.txt",
+              "day": "10",
+              "month": "12",
+              "year": "2025",
+              "wavelength": "532",
+              "power": "3mW",
+              "filterwheel": "FW4",
+              "run": "3",
+              "num_points": 21,
+              "file_size_bytes": 2074
+            },
+            "time_info": {
+              "min_ts": 1765363372,
+              "max_ts": 1765364809,
+              "elapsed_time_s": 1437,
+              "min_dt": "2025-12-10 10:42:52",
+              "max_dt": "2025-12-10 11:06:49"
+            },
+            "analysis": {
+              "linregs": {
+                "used_columns": {
+                  "pm": "pm_zeroed",
+                  "refpd": "ref_pd_zeroed",
+                  "info": "zeroed columns used if pedestals subtracted"
+                },
+                "ref_pd_vs_pm": {
+                  "x_var": "ref_pd_mean",
+                  "y_var": "pm_mean",
+                  "slope": 434.3452618242722,
+                  "intercept": 0.2497067963648476,
+                  "r_value": 0.9999643056100371,
+                  "p_value": 7.349816521395191e-41,
+                  "stderr": 0.8419472722954741,
+                  "intercept_stderr": 0.45922045425115465
+                },
+                "pm_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "pm_mean",
+                  "slope": 5.200440602229078,
+                  "intercept": -1133.529010964055,
+                  "r_value": 0.990254396451455,
+                  "p_value": 9.863048398693121e-18,
+                  "stderr": 0.16779353620333692,
+                  "intercept_stderr": 43.745544254098945
+                },
+                "ref_pd_vs_laser_setpoint": {
+                  "x_var": "laser_setpoint",
+                  "y_var": "ref_pd_mean",
+                  "slope": 0.01196882755092672,
+                  "intercept": -2.609216477708265,
+                  "r_value": 0.9899399224358543,
+                  "p_value": 1.3320281369920355e-17,
+                  "stderr": 0.0003924520638692051,
+                  "intercept_stderr": 0.10231639141807035
+                }
+              },
+              "pedestal_stats": {
+                "pm": {
+                  "mean": 0.0,
+                  "std": 0.0,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 0.0,
+                  "w_stderr": 3.18905158315133e-08,
+                  "ndof": 1,
+                  "chi2": 0.0,
+                  "chi2_reduced": 0.0,
+                  "exec_error": false
+                },
+                "refpd": {
+                  "mean": 2.0479999999999997e-06,
+                  "std": 4.525483399593915e-08,
+                  "samples": 2,
+                  "weighted": true,
+                  "w_mean": 2.04419493035769e-06,
+                  "w_stderr": 1.4734944369955657e-07,
+                  "ndof": 1,
+                  "chi2": 0.046496316392903164,
+                  "chi2_reduced": 0.046496316392903164,
+                  "exec_error": false
+                }
+              }
+            },
+            "data_preparation": {
+              "original_num_rows": 23,
+              "use_uW_as_power_units": true,
+              "original_pm_std_zero_count": 10,
+              "replace_zero_pm_std": true,
+              "num_pm_std_replaced": 10,
+              "pm_std_replacement_value": 4.51e-08,
+              "original_num_pedestals": 2,
+              "pedestal_subtraction": {
+                "pm_pedestal": 0.0,
+                "refpd_pedestal": 2.04419493035769e-06
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "plots": {
+    "filesets": {
+      "1064_FW5": {
+        "files": {
+          "1064nm_FW5_run1": {
+            "temperature_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run1/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run1/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/1064_FW5/1064nm_FW5_run1/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run1/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run1/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/1064_FW5/1064nm_FW5_run1/pm_vs_refPD.pdf"
+          },
+          "1064nm_FW5_run2": {
+            "temperature_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run2/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run2/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/1064_FW5/1064nm_FW5_run2/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run2/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run2/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/1064_FW5/1064nm_FW5_run2/pm_vs_refPD.pdf"
+          },
+          "1064nm_FW5_run3": {
+            "temperature_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run3/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/1064_FW5/1064nm_FW5_run3/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/1064_FW5/1064nm_FW5_run3/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run3/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/1064_FW5/1064nm_FW5_run3/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/1064_FW5/1064nm_FW5_run3/pm_vs_refPD.pdf"
+          }
+        },
+        "temperature_hist": "calibration_outputs/1064_FW5/temperature_hist.pdf",
+        "humidity_hist": "calibration_outputs/1064_FW5/humidity_hist.pdf",
+        "timeseries": "calibration_outputs/1064_FW5/timeseries.pdf",
+        "ConvFactorSlopes_Comparison": "calibration_outputs/1064_FW5/ConvFactorSlopes_Comparison.pdf",
+        "ConvFactorIntercepts_Comparison": "calibration_outputs/1064_FW5/ConvFactorIntercepts_Comparison.pdf",
+        "pmVsRefPD_fitSlope_vs_Temperature": "calibration_outputs/1064_FW5/pmVsRefPD_fitSlope_vs_Temperature.pdf",
+        "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run": "calibration_outputs/1064_FW5/pmVsRefPD_fitSlopes_and_Intercepts_vs_Run.pdf",
+        "pm_vs_RefPD": "calibration_outputs/1064_FW5/pm_vs_RefPD.pdf",
+        "pm_vs_RefPD_runs": "calibration_outputs/1064_FW5/pm_vs_RefPD_runs.pdf",
+        "pm_vs_LaserSetting": "calibration_outputs/1064_FW5/pm_vs_LaserSetting.pdf",
+        "RefPD_vs_LaserSetting": "calibration_outputs/1064_FW5/RefPD_vs_LaserSetting.pdf",
+        "Pedestals_Histogram": "calibration_outputs/1064_FW5/Pedestals_Histogram.pdf",
+        "Pedestals_vs_runindex": "calibration_outputs/1064_FW5/Pedestals_vs_runindex.pdf",
+        "Pedestals_timeseries": "calibration_outputs/1064_FW5/Pedestals_timeseries.pdf"
+      },
+      "532_FW5": {
+        "files": {
+          "532nm_FW5_run1": {
+            "temperature_hist": "calibration_outputs/532_FW5/532nm_FW5_run1/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW5/532nm_FW5_run1/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW5/532nm_FW5_run1/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run1/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run1/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW5/532nm_FW5_run1/pm_vs_refPD.pdf"
+          },
+          "532nm_FW5_run2": {
+            "temperature_hist": "calibration_outputs/532_FW5/532nm_FW5_run2/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW5/532nm_FW5_run2/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW5/532nm_FW5_run2/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run2/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run2/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW5/532nm_FW5_run2/pm_vs_refPD.pdf"
+          },
+          "532nm_FW5_run3": {
+            "temperature_hist": "calibration_outputs/532_FW5/532nm_FW5_run3/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW5/532nm_FW5_run3/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW5/532nm_FW5_run3/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run3/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW5/532nm_FW5_run3/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW5/532nm_FW5_run3/pm_vs_refPD.pdf"
+          }
+        },
+        "temperature_hist": "calibration_outputs/532_FW5/temperature_hist.pdf",
+        "humidity_hist": "calibration_outputs/532_FW5/humidity_hist.pdf",
+        "timeseries": "calibration_outputs/532_FW5/timeseries.pdf",
+        "ConvFactorSlopes_Comparison": "calibration_outputs/532_FW5/ConvFactorSlopes_Comparison.pdf",
+        "ConvFactorIntercepts_Comparison": "calibration_outputs/532_FW5/ConvFactorIntercepts_Comparison.pdf",
+        "pmVsRefPD_fitSlope_vs_Temperature": "calibration_outputs/532_FW5/pmVsRefPD_fitSlope_vs_Temperature.pdf",
+        "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run": "calibration_outputs/532_FW5/pmVsRefPD_fitSlopes_and_Intercepts_vs_Run.pdf",
+        "pm_vs_RefPD": "calibration_outputs/532_FW5/pm_vs_RefPD.pdf",
+        "pm_vs_RefPD_runs": "calibration_outputs/532_FW5/pm_vs_RefPD_runs.pdf",
+        "pm_vs_LaserSetting": "calibration_outputs/532_FW5/pm_vs_LaserSetting.pdf",
+        "RefPD_vs_LaserSetting": "calibration_outputs/532_FW5/RefPD_vs_LaserSetting.pdf",
+        "Pedestals_Histogram": "calibration_outputs/532_FW5/Pedestals_Histogram.pdf",
+        "Pedestals_vs_runindex": "calibration_outputs/532_FW5/Pedestals_vs_runindex.pdf",
+        "Pedestals_timeseries": "calibration_outputs/532_FW5/Pedestals_timeseries.pdf"
+      },
+      "532_FW4": {
+        "files": {
+          "532nm_FW4_run1": {
+            "temperature_hist": "calibration_outputs/532_FW4/532nm_FW4_run1/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW4/532nm_FW4_run1/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW4/532nm_FW4_run1/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run1/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run1/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW4/532nm_FW4_run1/pm_vs_refPD.pdf"
+          },
+          "532nm_FW4_run2": {
+            "temperature_hist": "calibration_outputs/532_FW4/532nm_FW4_run2/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW4/532nm_FW4_run2/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW4/532nm_FW4_run2/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run2/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run2/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW4/532nm_FW4_run2/pm_vs_refPD.pdf"
+          },
+          "532nm_FW4_run3": {
+            "temperature_hist": "calibration_outputs/532_FW4/532nm_FW4_run3/temperature_hist.pdf",
+            "humidity_hist": "calibration_outputs/532_FW4/532nm_FW4_run3/humidity_hist.pdf",
+            "timeseries": "calibration_outputs/532_FW4/532nm_FW4_run3/timeseries.pdf",
+            "pm_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run3/pm_vs_L.pdf",
+            "refPD_vs_L": "calibration_outputs/532_FW4/532nm_FW4_run3/refPD_vs_L.pdf",
+            "pm_vs_refPD": "calibration_outputs/532_FW4/532nm_FW4_run3/pm_vs_refPD.pdf"
+          }
+        },
+        "temperature_hist": "calibration_outputs/532_FW4/temperature_hist.pdf",
+        "humidity_hist": "calibration_outputs/532_FW4/humidity_hist.pdf",
+        "timeseries": "calibration_outputs/532_FW4/timeseries.pdf",
+        "ConvFactorSlopes_Comparison": "calibration_outputs/532_FW4/ConvFactorSlopes_Comparison.pdf",
+        "ConvFactorIntercepts_Comparison": "calibration_outputs/532_FW4/ConvFactorIntercepts_Comparison.pdf",
+        "pmVsRefPD_fitSlope_vs_Temperature": "calibration_outputs/532_FW4/pmVsRefPD_fitSlope_vs_Temperature.pdf",
+        "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run": "calibration_outputs/532_FW4/pmVsRefPD_fitSlopes_and_Intercepts_vs_Run.pdf",
+        "pm_vs_RefPD": "calibration_outputs/532_FW4/pm_vs_RefPD.pdf",
+        "pm_vs_RefPD_runs": "calibration_outputs/532_FW4/pm_vs_RefPD_runs.pdf",
+        "pm_vs_LaserSetting": "calibration_outputs/532_FW4/pm_vs_LaserSetting.pdf",
+        "RefPD_vs_LaserSetting": "calibration_outputs/532_FW4/RefPD_vs_LaserSetting.pdf",
+        "Pedestals_Histogram": "calibration_outputs/532_FW4/Pedestals_Histogram.pdf",
+        "Pedestals_vs_runindex": "calibration_outputs/532_FW4/Pedestals_vs_runindex.pdf",
+        "Pedestals_timeseries": "calibration_outputs/532_FW4/Pedestals_timeseries.pdf"
+      }
+    },
+    "timeseries": "calibration_outputs/timeseries.pdf",
+    "temperature_hist": "calibration_outputs/temperature_hist.pdf",
+    "humidity_hist": "calibration_outputs/humidity_hist.pdf"
+  },
+  "sanity_checks": {
+    "calibration_10122025": {
+      "checks": {
+        "max_temperature_swing": {
+          "check_name": "max_temperature_swing",
+          "check_args": "{'max_swing': 2.0}",
+          "passed": true,
+          "info": "Temperature swing: 0.70 \u00b0C, Allowed range: 2.0 \u00b0C",
+          "severity": "warnings",
+          "exec_error": false,
+          "internal": false,
+          "check_explanation": "Checks if the maximum temperature swing during the calibration is within the limit: 2.0 \u00b0C"
+        },
+        "avg_temperature_range": {
+          "check_name": "avg_temperature_range",
+          "check_args": "{'min_avg': 19.0, 'max_avg': 21.0}",
+          "passed": true,
+          "info": "Average temperature: 20.65 \u00b0C, Allowed range: [19.0, 21.0] \u00b0C",
+          "severity": "warnings",
+          "exec_error": false,
+          "internal": false,
+          "check_explanation": "Checks if the average temperature during the calibration is within limits:[19.0, 21.0] \u00b0C"
+        },
+        "max_rh": {
+          "check_name": "max_relative_humidity",
+          "check_args": "{'max_rh': 60}",
+          "passed": true,
+          "info": "Maximum relative humidity: 37.00 %, Allowed maximum: 60 %",
+          "severity": "warnings",
+          "exec_error": false,
+          "internal": false,
+          "check_explanation": "Checks if the maximum relative humidity during the calibration is within the limit: 60 %"
+        }
+      },
+      "filesets": {
+        "1064_FW5": {
+          "checks": {
+            "min_files": {
+              "check_name": "min_files",
+              "check_args": "{'min_files': 3}",
+              "passed": true,
+              "info": "Number of files: 3, Minimum required: 3",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if there are at least 3 files in the fileset."
+            },
+            "max_temperature_swing": {
+              "check_name": "max_temperature_swing",
+              "check_args": "{'max_swing': 3.0}",
+              "passed": true,
+              "info": "Temperature swing: 0.10 \u00b0C, Allowed range: 3.0 \u00b0C",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the maximum temperature swing during the calibration is within the limit: 3.0 \u00b0C"
+            },
+            "max_acq_time_span_hours": {
+              "check_name": "max_acquisition_time_span_hours",
+              "check_args": "{'max_hours': 2}",
+              "passed": true,
+              "info": "Acquisition time span: 0.90 hours, Allowed maximum: 2 hours",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 2 hours"
+            }
+          },
+          "files": {
+            "1064nm_FW5_run1": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": true,
+                "info": "Number of data points: 44, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.29 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "1064nm_FW5_run2": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": true,
+                "info": "Number of data points: 44, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.28 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "1064nm_FW5_run3": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": true,
+                "info": "Number of data points: 44, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.29 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            }
+          }
+        },
+        "532_FW5": {
+          "checks": {
+            "min_files": {
+              "check_name": "min_files",
+              "check_args": "{'min_files': 3}",
+              "passed": true,
+              "info": "Number of files: 3, Minimum required: 3",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if there are at least 3 files in the fileset."
+            },
+            "max_temperature_swing": {
+              "check_name": "max_temperature_swing",
+              "check_args": "{'max_swing': 3.0}",
+              "passed": true,
+              "info": "Temperature swing: 0.10 \u00b0C, Allowed range: 3.0 \u00b0C",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the maximum temperature swing during the calibration is within the limit: 3.0 \u00b0C"
+            },
+            "max_acq_time_span_hours": {
+              "check_name": "max_acquisition_time_span_hours",
+              "check_args": "{'max_hours': 2}",
+              "passed": true,
+              "info": "Acquisition time span: 1.32 hours, Allowed maximum: 2 hours",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 2 hours"
+            }
+          },
+          "files": {
+            "532nm_FW5_run1": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "532nm_FW5_run2": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "532nm_FW5_run3": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            }
+          }
+        },
+        "532_FW4": {
+          "checks": {
+            "min_files": {
+              "check_name": "min_files",
+              "check_args": "{'min_files': 3}",
+              "passed": true,
+              "info": "Number of files: 3, Minimum required: 3",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if there are at least 3 files in the fileset."
+            },
+            "max_temperature_swing": {
+              "check_name": "max_temperature_swing",
+              "check_args": "{'max_swing': 3.0}",
+              "passed": true,
+              "info": "Temperature swing: 0.70 \u00b0C, Allowed range: 3.0 \u00b0C",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the maximum temperature swing during the calibration is within the limit: 3.0 \u00b0C"
+            },
+            "max_acq_time_span_hours": {
+              "check_name": "max_acquisition_time_span_hours",
+              "check_args": "{'max_hours': 2}",
+              "passed": true,
+              "info": "Acquisition time span: 1.32 hours, Allowed maximum: 2 hours",
+              "severity": "warnings",
+              "exec_error": false,
+              "internal": false,
+              "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 2 hours"
+            }
+          },
+          "files": {
+            "532nm_FW4_run1": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "532nm_FW4_run2": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            },
+            "532nm_FW4_run3": {
+              "min_data_points": {
+                "check_name": "min_data_points",
+                "check_args": "{'min_points': 25}",
+                "passed": false,
+                "info": "Number of data points: 21, Required minimum: 25",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the number of data points in the calibration is above the minimum required: 25"
+              },
+              "max_acq_time_span_hours": {
+                "check_name": "max_acquisition_time_span_hours",
+                "check_args": "{'max_hours': 0.5}",
+                "passed": true,
+                "info": "Acquisition time span: 0.40 hours, Allowed maximum: 0.5 hours",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks if the total acquisition time span during the calibration is within the limit: 0.5 hours"
+              },
+              "no_std_points": {
+                "check_name": "no_std_points",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no points with standard deviation equal to zero in the calibration data"
+              },
+              "no_std_pedestals": {
+                "check_name": "no_std_pedestals",
+                "check_args": "{}",
+                "passed": true,
+                "info": "There are 0 points with std = 0",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with standard deviation equal to zero in the calibration data"
+              },
+              "zero_pedestals": {
+                "check_name": "zero_pedestals",
+                "check_args": "{}",
+                "passed": false,
+                "info": "There are 2 pedestal points with zero value",
+                "severity": "warnings",
+                "exec_error": false,
+                "internal": false,
+                "check_explanation": "Checks that there are no pedestal points with zero value in the calibration data"
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "total_passed": 61,
+      "total_failed": 12,
+      "total_checks": 73,
+      "details": {
+        "errors_passed": 16,
+        "warnings_passed": 45,
+        "warnings_failed": 12
+      }
+    }
+  }
+}

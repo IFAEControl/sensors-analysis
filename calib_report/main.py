@@ -1,10 +1,12 @@
 import os
 import argparse
 
-from .helpers import calc_paths, ReportPaths
-from .elements.full_report import FullReport
+from .helpers.paths import calc_paths, ReportPaths
+from .sections.full_report import FullReport
+from .helpers.logger import get_logger, add_file_handler
+from .config import config
 
-    
+logger = get_logger()
     
 def gen_report() -> None:
     parser = argparse.ArgumentParser(description="Generate a calibration PDF report")
@@ -20,9 +22,11 @@ def gen_report() -> None:
         default=None,
     )
 
+    add_file_handler("calibration_report.log")
     args = parser.parse_args()
 
     report_paths:ReportPaths = calc_paths(args.input_path, args.output_path)
+    config.paths = report_paths
     report = FullReport(
         report_paths=report_paths,
     )

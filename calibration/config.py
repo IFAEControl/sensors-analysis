@@ -17,6 +17,7 @@ class Configuration:
     power_meter_resolutions = PowerMeterResolutions
     use_first_pedestal_in_linreg = False  # whether to use the first pedestal measurement in linear regression calculations
     use_uW_as_power_units = True  # whether to convert power meter values to uW
+    summary_file_name = "calibration_summary.json"
 
     def to_dict(self):
         """Convert configuration to dictionary."""

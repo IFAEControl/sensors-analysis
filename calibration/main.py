@@ -51,6 +51,7 @@ def main():
     logger.info("Starting calibration analysis at %s", now.isoformat())
 
     calibration.load_calibration_files()
+    config.summary_file_name = f"{calibration.meta['calib_id']}-summary.json"
     calibration.analyze()
     if config.generate_plots:
         calibration.generate_plots()

@@ -99,7 +99,7 @@ class SanityChecks:
                         info="Sanity check method not found",
                         exec_error=True
                     )
-                results[check_name] = result.to_dict()
+                results[f"{severity}.{check_name}"] = result.to_dict()
                 self._c.check(severity, False)
                 continue
             try:
@@ -109,7 +109,7 @@ class SanityChecks:
                     result:SanityCheckResult = check_method(*check_params, severity=severity)
                 else:
                     result:SanityCheckResult = check_method(check_params, severity=severity)
-                results[check_name] = result.to_dict()
+                results[f"{severity}.{check_name}"] = result.to_dict()
                 self._c.check(severity, result.passed)
             except Exception as e:
                 result = SanityCheckResult(
@@ -121,7 +121,7 @@ class SanityChecks:
                         exec_error=True
                     )
                 self._c.check(severity, False)
-                results[check_name] = result.to_dict()
+                results[f"{severity}.{check_name}"] = result.to_dict()
                 logger.warning("Failed to execute check: %s, %s", check_name, str(e))
         return results
 
@@ -131,25 +131,26 @@ class SanityChecks:
         self.results = {}
         
         checker = CalibrationSanityChecker(self.calibration)
-        self.results[checker.level_header] = {}
+        self.results[checker.level_header] = {'checks': {}}
         for severity, checks in self.calibration_checks_config.items():
             results = self._run_check_methods(severity, checks, checker)
-            self.results[checker.level_header]['checks'] = results
+            self.results[checker.level_header]['checks'].update(results)
         
         filesets_results = self.results[checker.level_header].setdefault('filesets', {})
         
         for _, fs in self.calibration.filesets.items():
             checker = FileSetSanityChecker(fs)
-            fs_res = filesets_results.setdefault(fs.level_header, {})
+            fs_res = filesets_results.setdefault(fs.level_header, {'checks': {}})
             for severity, checks in self.fileset_checks_config.items():
                 results = self._run_check_methods(severity, checks, checker)
-                fs_res['checks'] = results
+                fs_res['checks'].update(results)
             file_results = fs_res.setdefault('files', {})
             for calfile in fs.files:
                 checker = FileSanityChecker(calfile)
+                file_results.setdefault(calfile.level_header, {})
                 for severity, checks in self.file_checks_config.items():
                     results = self._run_check_methods(severity, checks, checker)
-                    file_results[calfile.level_header] = results
+                    file_results[calfile.level_header].update(results)
         
         c_d = self._c.to_dict()
         self.results['summary'] = c_d

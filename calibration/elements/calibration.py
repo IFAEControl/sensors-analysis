@@ -12,8 +12,9 @@ from .analysis import CalibrationAnalysis
 from .plots.calibration_plots import CalibrationPlots
 from .calib_fileset import FileSet
 from .base_element import BaseElement, DataHolderLevel
-logger = get_logger()
 from calibration.config import config
+
+logger = get_logger()
         
 
 class Calibration(BaseElement):
@@ -121,7 +122,7 @@ class Calibration(BaseElement):
         }
 
     def export_calib_data_summary(self, meta={}):
-        results_path = os.path.join(self.reports_path, "calibration_summary.json")
+        results_path = os.path.join(self.reports_path, config.summary_file_name)
         outdata = self.to_dict()
         if meta:
             outdata.update(meta)

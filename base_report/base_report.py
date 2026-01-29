@@ -273,62 +273,6 @@ class BaseReport:
             border_color=colors.HexColor("#B02A37"),
         )
     
-    def add_sanity_check(self, severity:str, title:str, description: str, passed: bool) -> None:
-        background_color = colors.HexColor("#D4EDDA") if passed else colors.HexColor("#F8D7DA")
-        border_color = colors.HexColor("#28A745") if passed else colors.HexColor("#B02A37")
-
-        severity_color_map = {
-            "Error": colors.HexColor("#8B0000"),
-            "Warning": colors.HexColor("#CC7000"),
-            "Info": colors.HexColor("#003366"),
-        }
-        severity_color = severity_color_map.get(severity, colors.black)
-
-        title_para = Paragraph(f"<b>{title}</b>", self.styles["BodyText"])
-        desc_para = Paragraph(description, ParagraphStyle(
-            name="SanityCheckDesc",
-            parent=self.styles["BodyText"],
-            textColor=colors.HexColor("#555555"),
-            fontSize=9,
-        ))
-        severity_para = Paragraph(f"<b>{severity}</b>", ParagraphStyle(
-            name="SeverityText",
-            parent=self.styles["BodyText"],
-            textColor=severity_color,
-            alignment=TA_RIGHT,
-        ))
-
-        left_cell = Table([[title_para], [desc_para]], colWidths=[self.doc.width * 0.85])
-        left_cell.setStyle(TableStyle([
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-        right_cell = Table([[severity_para]], colWidths=[self.doc.width * 0.15])
-        right_cell.setStyle(TableStyle([
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-
-        check_table = Table([[left_cell, right_cell]], colWidths=[self.doc.width * 0.85, self.doc.width * 0.15], hAlign="LEFT")
-        check_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), background_color),
-            ("BOX", (0, 0), (-1, -1), 1, border_color),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("ROUNDEDCORNERS", [5, 5, 5, 5]),
-            ("GRID", (0, 0), (0, -1), 0, colors.transparent),
-        ]))
-
-        self.story.append(check_table)
-        self.story.append(Spacer(1, 8))
-
 
     def add_table(
         self,
@@ -337,21 +281,40 @@ class BaseReport:
         description: str | None = None,
         center: bool = False,
         zebra: bool = False,
+        headers: str = "row",
     ) -> None:
+        if headers not in ("row", "col", "both", "none"):
+            raise ValueError("headers must be 'row', 'col', 'both', or 'none'")
 
         table = Table(data, hAlign="CENTER" if center else "LEFT")
         style_commands = [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8EDF2")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#1A1A1A")),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#B5BCC3")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-            ("TOPPADDING", (0, 0), (-1, 0), 6),
         ]
+        
+        # Apply header styling based on headers parameter
+        if headers in ("row", "both"):
+            style_commands.extend([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8EDF2")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#1A1A1A")),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+                ("TOPPADDING", (0, 0), (-1, 0), 6),
+            ])
+        
+        if headers in ("col", "both"):
+            style_commands.extend([
+                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8EDF2")),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#1A1A1A")),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("LEFTPADDING", (0, 0), (0, -1), 6),
+                ("RIGHTPADDING", (0, 0), (0, -1), 6),
+            ])
+        
         if zebra:
             style_commands.append(
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#EDF2F6")])
             )
+        
         table.setStyle(TableStyle(style_commands))
         self._append_table_with_caption(
             table,

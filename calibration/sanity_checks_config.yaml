@@ -8,21 +8,21 @@
     # ToDo: Add pedestals checks
     # ToDo: Add linear_regression checks
     "calibration":{
-        "errors":{
-            "max_temperature_swing": 3.0
+        "error":{
+            "max_temperature_swing": .001
         },
-        "warnings":{
+        "warning":{
             "max_temperature_swing": 2.0,
             "avg_temperature_range": [19.0, 21.0],
             "max_rh": 60
         }
     },
     "fileset":{
-        "errors":{
+        "error":{
             "min_files": 2,
-            "max_temperature_swing":2.0,
+            "max_temperature_swing": 2.0,
         },
-        "warnings":{
+        "warning":{
             "min_files": 3,
             "max_temperature_swing":3.0,
             "max_acq_time_span_hours": 2,
@@ -30,10 +30,10 @@
         }
     },
     "file":{
-        "errors":{
+        "error":{
             "min_data_points": 15,
         },
-        "warnings":{
+        "warning":{
             "min_data_points": 25,
             "max_acq_time_span_hours": 0.5,
             "no_std_points": null,
