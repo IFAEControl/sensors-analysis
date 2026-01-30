@@ -25,7 +25,7 @@ class FileSetSection(BaseSection):
         
     
     def add_fileset_summary(self, fs_name: str, fs_data: Fileset, fs_plots: FileSetPlots):
-        self.report.add_subsection(f'FileSet: {fs_name}')
+        self.report.add_subsection(f'FileSet: {fs_name}', f'fileset_{fs_name}')
         # Add plots and summary information for the fileset
         # "temperature_hist": "calibration_outputs/1064_FW5/temperature_hist.pdf",
         # "humidity_hist": "calibration_outputs/1064_FW5/humidity_hist.pdf",

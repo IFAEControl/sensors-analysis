@@ -76,9 +76,9 @@ def build_example_report() -> None:
     report.add_page()
     report.add_table_of_contents(page_break=False)
     report.add_page()
-    report.add_section("Results")
+    report.add_section("Results (no anchor on ToC)")
 
-    report.add_subsection("Sample Table")
+    report.add_subsection("Sample Table", "sample_table")
     report.add_table(        data = [
             ["Parameter", "Value", "Unit"],
             ["Laser Power", "1.2", "W"],
@@ -87,7 +87,7 @@ def build_example_report() -> None:
         ])
     report.add_subsubsection("Sample Subsubsection")
     report.add_paragraph(lorem)
-    report.add_subsection("Condensed Table")
+    report.add_subsection("Condensed Table", "condensed_table")
 
     table1_data = [
             ["", "1064 FW1", "1064 FW4", "532 FW1", "532 FW4", "532 FW7"],
@@ -119,7 +119,7 @@ def build_example_report() -> None:
     report.add_figure(mex_image_path, description=desc, center=True)
 
     report.add_page()
-    report.add_section("Additional Notes")
+    report.add_section("Additional Notes", anchor="additional_notes")
     report.add_paragraph("Add new content using sections, tables, and images.")
     report.add_paragraph("This is an example report generated using the BaseReport class."
                          " Modify and extend it to suit your calibration reporting needs."

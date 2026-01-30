@@ -411,6 +411,7 @@ class Plots:
     timeseries: Optional[str] = None
     temperature_hist: Optional[str] = None
     humidity_hist: Optional[str] = None
+    pedestals_timeseries: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Plots":
@@ -424,6 +425,7 @@ class Plots:
             timeseries=data.get("timeseries"),
             temperature_hist=data.get("temperature_hist"),
             humidity_hist=data.get("humidity_hist"),
+            pedestals_timeseries=data.get("pedestals_timeseries"),
         )
 
 

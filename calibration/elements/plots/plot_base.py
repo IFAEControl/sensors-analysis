@@ -15,6 +15,11 @@ class BasePlots(ABC):
     def __init__(self, *args, **kwargs) -> None:
         self.plots = {}
         self._data_holder = None
+
+    @property
+    def _anal(self):
+        """Shortcut to analysis component."""
+        return self._data_holder.anal
     
     @property
     def dh(self):
@@ -188,5 +193,47 @@ class BasePlots(ABC):
 
         ax3.grid(True, alpha=0.3)
         plt.tight_layout()
+        self.savefig(fig, fig_id)
+        plt.close(fig)
+
+    def _gen_pedestals_timeseries_plot(self):
+        """Generate pedestal plot for the set of calibration files"""
+        fig_id = "pedestals_timeseries"
+
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=2, ncols=1,
+            figsize=(10, 6),
+            sharex=True,
+            constrained_layout=True
+        )
+
+        x = range(len(self._data_holder.df_pedestals))
+
+        # ─────────────────────────────
+        # Top plot: pm pedestals
+        # ─────────────────────────────
+        ax1.errorbar(
+            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals['pm_mean'],
+            yerr=self._data_holder.df_pedestals['pm_std'],
+            fmt='.', markersize=10, linewidth=1,
+            label='pm Pedestals'
+        )
+        ax1.set_ylabel(f'Pedestals pm ({self.power_units})')
+        ax1.grid(True, alpha=0.3)
+        ax1.legend()
+
+        # ─────────────────────────────
+        # Bottom plot: RefPD pedestals
+        # ─────────────────────────────
+        ax2.errorbar(
+            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals["ref_pd_mean"],
+            yerr=self._data_holder.df_pedestals["ref_pd_std"],
+            fmt='.', markersize=10, linewidth=1,
+            label='RefPD Pedestals'
+        )
+        ax2.set_ylabel('Pedestals RefPD (V)')
+        ax2.grid(True, alpha=0.3)
+        ax2.legend()
+
         self.savefig(fig, fig_id)
         plt.close(fig)

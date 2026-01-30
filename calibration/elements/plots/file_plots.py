@@ -29,7 +29,6 @@ class FilePlots(BasePlots):
         super().__init__()
         self._data_holder:CalibFile = calib_file
         self.cf:CalibFile = calib_file
-        self._anal = calib_file.anal
         self.file_info = {}
 
     @property

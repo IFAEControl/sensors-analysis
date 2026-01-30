@@ -19,20 +19,20 @@ class SanityChecksSection(BaseSection):
         
     def add_sanity_checks(self, depth: int):
         """Add a subsection for sanity checks"""
-        self.report.add_subsection("Calibration Level Sanity Checks")
+        self.report.add_subsection("Calibration Level Sanity Checks", 'calib_level_sanity_checks')
         for name, check in self.report_data.sanity_checks.calibration_checks.items():
             add_sanity_check_box(self.report, check)
         if depth == 0 or depth >=2:
-            self.report.add_subsection(f"FileSet Level Sanity Checks")
+            self.report.add_subsection(f"FileSet Level Sanity Checks", 'fileset_level_sanity_checks')
             for fs_name, fs_checks in self.report_data.sanity_checks.fileset_checks.items():
-                self.report.add_subsubsection(f"FileSet {fs_name}")
+                self.report.add_subsubsection(f"FileSet {fs_name}", include_in_toc=False)
                 for name, check in fs_checks.items():
                     add_sanity_check_box(self.report, check)
         
         if depth == 0 or depth >=3:
-            self.report.add_subsection(f"File Level Sanity Checks")
+            self.report.add_subsection(f"File Level Sanity Checks", 'file_level_sanity_checks')
             for file_name, file_checks in self.report_data.sanity_checks.file_checks.items():
-                self.report.add_subsubsection(f"File {file_name}")
+                self.report.add_subsubsection(f"File {file_name}", include_in_toc=False)
                 for name, check in file_checks.items():
                     add_sanity_check_box(self.report, check)
 

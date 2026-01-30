@@ -27,7 +27,6 @@ class FileSetPlots(BasePlots):
         super().__init__()
         self._data_holder: FileSet = file_set
         # analysis results holder
-        self._anal = file_set.anal
 
     @property
     def level_label(self):
@@ -660,48 +659,6 @@ class FileSetPlots(BasePlots):
         ax2.set_xticks(range(len(self._data_holder.files)))
         ax2.grid(True, alpha=0.3)
         ax2.set_xlim([-1, len(self._data_holder.files)])
-        ax2.legend()
-
-        self.savefig(fig, fig_id)
-        plt.close(fig)
-
-    def _gen_pedestals_timeseries_plot(self):
-        """Generate pedestal plot for the set of calibration files"""
-        fig_id = "Pedestals_timeseries"
-
-        fig, (ax1, ax2) = plt.subplots(
-            nrows=2, ncols=1,
-            figsize=(10, 6),
-            sharex=True,
-            constrained_layout=True
-        )
-
-        x = range(len(self._data_holder.df_pedestals))
-
-        # ─────────────────────────────
-        # Top plot: pm pedestals
-        # ─────────────────────────────
-        ax1.errorbar(
-            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals['pm_mean'],
-            yerr=self._data_holder.df_pedestals['pm_std'],
-            fmt='.', markersize=10, linewidth=1,
-            label='pm Pedestals'
-        )
-        ax1.set_ylabel(f'Pedestals pm ({self.power_units})')
-        ax1.grid(True, alpha=0.3)
-        ax1.legend()
-
-        # ─────────────────────────────
-        # Bottom plot: RefPD pedestals
-        # ─────────────────────────────
-        ax2.errorbar(
-            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals["ref_pd_mean"],
-            yerr=self._data_holder.df_pedestals["ref_pd_std"],
-            fmt='.', markersize=10, linewidth=1,
-            label='RefPD Pedestals'
-        )
-        ax2.set_ylabel('Pedestals RefPD (V)')
-        ax2.grid(True, alpha=0.3)
         ax2.legend()
 
         self.savefig(fig, fig_id)

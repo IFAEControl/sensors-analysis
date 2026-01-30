@@ -42,4 +42,5 @@ class CalibrationPlots(BasePlots):
         if config.generate_plots:
             self._gen_timeseries_plot()
             self._gen_temp_humidity_hists_plot()
+            self._gen_pedestals_timeseries_plot()
 

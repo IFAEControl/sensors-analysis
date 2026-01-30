@@ -5,12 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python Debugger: calibration module with args",
             "type": "debugpy",
             "request": "launch",
             "module": "calibration.main",
             "console": "integratedTerminal",
-            "args": "${workspaceFolder}/data/calib/calibration_30102025.zip",
+            "args": "${workspaceFolder}/data/calib/calibration_10122025.zip",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

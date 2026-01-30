@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import os
+from pydoc import text
 from typing import Iterable, Sequence
 
 from reportlab.lib import colors
@@ -11,6 +12,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
+    CondPageBreak,
     Image,
     KeepTogether,
     PageBreak,
@@ -72,16 +74,22 @@ class ReportDocTemplate(SimpleDocTemplate):
         if isinstance(flowable, Paragraph):
             style_name = flowable.style.name
             page_number = self.canv.getPageNumber()
+            text = flowable.getPlainText()
+            bn = getattr(flowable,'_bookmarkName',None)
+            E = [0, text, self.page]
+            if bn is not None: 
+                E.append(bn)
             if style_name == "SectionHeading":
                 self._toc_entry_count += 1
-                self.notify("TOCEntry", (0, flowable.getPlainText(), page_number))
+                self.notify('TOCEntry', tuple(E))
             elif style_name == "SubsectionHeading":
                 self._toc_entry_count += 1
-                self.notify("TOCEntry", (1, flowable.getPlainText(), page_number))
+                E[0] = 1
+                self.notify('TOCEntry', tuple(E))
             elif style_name == "SubsubsectionHeading":
                 self._toc_entry_count += 1
-                self.notify("TOCEntry", (2, flowable.getPlainText(), page_number))
-
+                E[0] = 2
+                self.notify('TOCEntry', tuple(E))
 
 class BaseReport:
     def __init__(
@@ -110,6 +118,12 @@ class BaseReport:
         )
         self.styles.add(
             ParagraphStyle(
+                name="SectionHeadingNoTOC",
+                parent=self.styles["SectionHeading"],
+            )
+        )
+        self.styles.add(
+            ParagraphStyle(
                 name="TOCHeading",
                 parent=self.styles["SectionHeading"],
             )
@@ -131,11 +145,23 @@ class BaseReport:
         )
         self.styles.add(
             ParagraphStyle(
+                name="SubsectionHeadingNoTOC",
+                parent=self.styles["SubsectionHeading"],
+            )
+        )
+        self.styles.add(
+            ParagraphStyle(
                 name="SubsubsectionHeading",
                 parent=self.styles["Heading3"],
                 fontSize=10.5,
                 leading=12,
                 spaceAfter=3,
+            )
+        )
+        self.styles.add(
+            ParagraphStyle(
+                name="SubsubsectionHeadingNoTOC",
+                parent=self.styles["SubsubsectionHeading"],
             )
         )
         self.styles.add(
@@ -219,33 +245,60 @@ class BaseReport:
     def add_page(self) -> None:
         self.story.append(PageBreak())
 
-    def add_section(self, text: str, anchor: str | None = None) -> None:
+    def add_section(
+        self,
+        text: str,
+        anchor: str | None = None,
+        include_in_toc: bool = True,
+    ) -> None:
         self.section_index += 1
         self.subsection_index = 0
         self.subsubsection_index = 0
         numbered_text = f"{self.section_index}. {text}"
         if anchor:
             numbered_text = f'<a name="{anchor}"/>{numbered_text}'
-        self.story.append(Paragraph(numbered_text, self.styles["SectionHeading"]))
+        style_name = "SectionHeading" if include_in_toc else "SectionHeadingNoTOC"
+        h = Paragraph(numbered_text, self.styles[style_name])
+        if anchor:
+            h._bookmarkName = anchor  # type: ignore
+        self.story.append(h)
         self.story.append(Spacer(1, 6))
 
-    def add_subsection(self, text: str, anchor: str | None = None) -> None:
+    def add_subsection(
+        self,
+        text: str,
+        anchor: str | None = None,
+        include_in_toc: bool = True,
+    ) -> None:
         self.subsection_index += 1
         self.subsubsection_index = 0
         numbered_text = f"{self.section_index}.{self.subsection_index} {text}"
         if anchor:
             numbered_text = f'<a name="{anchor}"/>{numbered_text}'
-        self.story.append(Paragraph(numbered_text, self.styles["SubsectionHeading"]))
+        style_name = "SubsectionHeading" if include_in_toc else "SubsectionHeadingNoTOC"
+        h = Paragraph(numbered_text, self.styles[style_name])
+        if anchor:
+            h._bookmarkName = anchor  # type: ignore
+        self.story.append(h)
         self.story.append(Spacer(1, 4))
 
-    def add_subsubsection(self, text: str, anchor: str | None = None) -> None:
+    def add_subsubsection(
+        self,
+        text: str,
+        anchor: str | None = None,
+        include_in_toc: bool = True,
+    ) -> None:
         self.subsubsection_index += 1
         numbered_text = (
             f"{self.section_index}.{self.subsection_index}.{self.subsubsection_index} {text}"
         )
         if anchor:
             numbered_text = f'<a name="{anchor}"/>{numbered_text}'
-        self.story.append(Paragraph(numbered_text, self.styles["SubsubsectionHeading"]))
+        style_name = "SubsubsectionHeading" if include_in_toc else "SubsubsectionHeadingNoTOC"
+        h = Paragraph(numbered_text, self.styles[style_name])
+        if anchor:
+            h._bookmarkName = anchor  # type: ignore
+        self.story.append(h)
         self.story.append(Spacer(1, 3))
 
     def add_paragraph(self, text: str) -> None:

@@ -47,17 +47,17 @@ class SummarySection(BaseSection):
             return  # No failed error checks to report
         self.report.add_subsection('Failed Error Sanity Checks', 'failed_error_sanity_checks')
         if errors['calibration'] > 0:
-            self.report.add_subsubsection(f"Calibration Level: {errors['calibration']} failed error checks.")
+            self.report.add_subsubsection(f"Calibration Level: {errors['calibration']} failed error checks.", "cal_failed_error_checks", include_in_toc=False)
             for name, check in failed_checks['calibration'].items():
                 add_sanity_check_box(report = self.report, check=check, simplified=True)
         if errors['fileset'] > 0:
             for fs_name, fs_checks in failed_checks['fileset'].items():
-                self.report.add_subsubsection(f"FileSet {fs_name} errors")
+                self.report.add_subsubsection(f"FileSet {fs_name} errors", f"fileset_{fs_name}_failed_error_checks", include_in_toc=False)
                 for name, check in fs_checks.items():
                     add_sanity_check_box(report = self.report, check=check, simplified=True)
         if errors['file'] > 0:
             for file_name, file_checks in failed_checks['file'].items():
-                self.report.add_subsubsection(f"File {file_name} errors")
+                self.report.add_subsubsection(f"File {file_name} errors", f"file_{file_name}_failed_error_checks", include_in_toc=False)
                 for name, check in file_checks.items():
                     add_sanity_check_box(report = self.report, check=check, simplified=True)
         

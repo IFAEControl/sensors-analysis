@@ -7,6 +7,7 @@ from .summary_section import SummarySection
 from .sanity_checks import SanityChecksSection
 from .fileset_section import FileSetSection
 from .toc_section import ToCSection
+from .calib_detail_section import CalibDetailSection
 
 
 class FullReport:
@@ -39,6 +40,7 @@ class FullReport:
 
         self.sections.append(SummarySection(self.data, self.report))
         self.sections.append(ToCSection(self.data, self.report))
+        self.sections.append(CalibDetailSection(self.data, self.report))
         self.sections.append(FileSetSection(self.data, self.report))
         # Load other sections as needed
 
