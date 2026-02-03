@@ -31,7 +31,7 @@ class CalibDetailSection(BaseSection):
         )
         self.report.add_figure(
             calc_plot_path(self.report_data.plots.timeseries),
-            description="Timeseries of acquisition values",
+            caption="Timeseries of acquisition values",
             center=True,
             width_mm=140)
 
@@ -40,7 +40,7 @@ class CalibDetailSection(BaseSection):
         )
         self.report.add_figure(
             calc_plot_path(self.report_data.plots.pedestals_timeseries),
-            description="Timeseries of pedestals values",
+            caption="Timeseries of pedestals values",
             center=True,
             width_mm=125)
 

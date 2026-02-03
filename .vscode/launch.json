@@ -17,7 +17,7 @@
             "request": "launch",
             "module": "calibration.main",
             "console": "integratedTerminal",
-            "args": "${workspaceFolder}/data/calib/calibration_10122025.zip",
+            "args": ["${workspaceFolder}/data/calib/calibration_21012026.zip", "-w"],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

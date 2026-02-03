@@ -44,10 +44,10 @@ class CalibFile(BaseElement):
         self.file_info = {
             'filename': os.path.basename(file_path),
         }
-        self.time_info = {}
         self.initialize()
-        self.level_header = self.file_label
-        self.long_label = f"{self.dh_parent.long_label} - run {self.file_info['run']}" if self.dh_parent else self.file_label
+        if self.valid:
+            self.level_header = self.file_label
+            self.long_label = f"{self.dh_parent.long_label} - run {self.file_info['run']}" if self.dh_parent else self.file_label
 
     @property
     def base_filename(self) -> str:
@@ -160,24 +160,12 @@ class CalibFile(BaseElement):
             os.makedirs(self.output_path, exist_ok=True)
         self.anal.analyze()
         self.set_file_info()
+        self.set_time_info()
 
     def set_file_info(self):
         """Set file info metadata"""
         self.file_info['num_points'] = len(self._df)
         self.file_info['file_size_bytes'] = os.path.getsize(self.file_path)
-        self._set_time_info()
-
-    def _set_time_info(self):
-        min_time = self.df['timestamp'].min()
-        max_time = self.df['timestamp'].max()
-        t_res = {
-            'min_ts': int(min_time),
-            'max_ts': int(max_time),
-            'elapsed_time_s': int(max_time - min_time),
-            'min_dt': pd.to_datetime(min_time, unit='s').strftime('%Y-%m-%d %H:%M:%S'),
-            'max_dt': pd.to_datetime(max_time, unit='s').strftime('%Y-%m-%d %H:%M:%S')
-        }
-        self.time_info = t_res
 
     @property
     def power(self) -> str:

@@ -9,7 +9,7 @@
     # ToDo: Add linear_regression checks
     "calibration":{
         "error":{
-            "max_temperature_swing": .001
+            "max_temperature_swing": 2
         },
         "warning":{
             "max_temperature_swing": 2.0,

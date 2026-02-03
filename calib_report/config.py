@@ -13,4 +13,5 @@ config = CalibReportConfig(paths=ReportPaths(
     input_file="",
     calib_anal_files_path="",
     report_path="",
+    output_path="",
 ))

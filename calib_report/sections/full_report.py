@@ -1,3 +1,4 @@
+import os
 import json
 
 from base_report.base_report import BaseReport
@@ -15,7 +16,10 @@ class FullReport:
         self.report_paths = report_paths
         self._data:ReportData|None = None
         self.load_data()
-
+        self.report_paths.report_path = os.path.join(
+            self.report_paths.output_path, 
+            f'{self.data.meta.calib_id}_report.pdf'
+        )
         self.report = BaseReport(output_path=report_paths.report_path,
                                  logo_path=report_paths.logo_path,
                                  title="Calibration Report",

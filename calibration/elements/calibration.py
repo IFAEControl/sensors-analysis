@@ -102,6 +102,7 @@ class Calibration(BaseElement):
         """Analyze the calibration data"""
         os.makedirs(self.output_path, exist_ok=True)
         self.anal.analyze()
+        self.set_time_info()
     
     def generate_plots(self):
         """Generate calibration plots"""
@@ -118,6 +119,7 @@ class Calibration(BaseElement):
         return {
             'meta': self.meta,
             'analysis': self.anal.to_dict(),
+            'time_info': self.time_info,
             'plots': self.plotter.plots
         }
 

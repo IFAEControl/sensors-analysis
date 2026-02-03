@@ -259,8 +259,8 @@ class FileSetPlots(BasePlots):
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6), sharex=True)
 
         # Slopes
-        w_mean = self._anal.lr_slopes_mean.w_mean
-        w_stderr = self._anal.lr_slopes_mean.w_stderr
+        intercept = self._anal.lr_refpd_vs_pm.slope
+        slope_std = self._anal.lr_refpd_vs_pm.stderr
         ax1.grid(True)
         ax1.errorbar(
             range(len(self._anal.slopes)),
@@ -270,17 +270,17 @@ class FileSetPlots(BasePlots):
             label='Slopes'
         )
         ax1.axhline(
-            y=w_mean,
-            color='r', linestyle='-',
-            label=f'mean slope = {w_mean:.3e}'
+            y=intercept,
+            color='b', linestyle='-',
+            label=f'slope = {intercept:.3e}'
         )
         ax1.fill_between(
             range(-1, len(self._anal.slopes)+1),
-            (w_mean - w_stderr),
-            (w_mean + w_stderr),
-            color='r', alpha=0.2
+            (intercept - slope_std),
+            (intercept + slope_std),
+            color='b', alpha=0.2
         )
-        ax1.set_xlabel('File index in set')
+        ax1.set_xlabel('Run number in set')
         ax1.set_ylabel(f'Slope ({self.power_units}/V)')
         ax1.set_title('Fit slopes')
         ax1.legend()
@@ -294,18 +294,18 @@ class FileSetPlots(BasePlots):
             fmt='.', markersize=10, linewidth=1,
             label='Intercepts'
         )
-        w_mean = self._anal.lr_intercepts_mean.w_mean
-        w_stderr = self._anal.lr_intercepts_mean.w_stderr
+        intercept = self._anal.lr_refpd_vs_pm.intercept
+        intercept_std = self._anal.lr_refpd_vs_pm.intercept_stderr
         ax2.axhline(
-            y=w_mean,
-            color='g', linestyle='-',
-            label=f'mean intercept = {w_mean:.3e}'
+            y=intercept,
+            color='m', linestyle='-',
+            label=f'intercept = {intercept:.3e}'
         )
         ax2.fill_between(
             range(-1, len(self._anal.intercepts)+1),
-            (w_mean - w_stderr),
-            (w_mean + w_stderr),
-            color='r', alpha=0.2
+            (intercept - intercept_std),
+            (intercept + intercept_std),
+            color='m', alpha=0.2
         )
         ax2.set_xlabel('Run number in set')
         ax2.set_ylabel(f'Intercept ({self.power_units})')

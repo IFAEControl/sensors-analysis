@@ -74,12 +74,14 @@ class FileSet(BaseElement):
         """Analyze the set of calibration files."""
         os.makedirs(self.output_path, exist_ok=True)
         self.anal.analyze()
+        self.set_time_info()
 
     def to_dict(self):
         """Convert file set data to dictionary."""
         return {
             'meta': {'wave_length': self.wl,
                      'filter_wheel': self.fw},
+            'time_info': self.time_info,
             'analysis': self.anal.to_dict(),
             'files': {cf.file_label: cf.to_dict() for cf in self.files}
         }

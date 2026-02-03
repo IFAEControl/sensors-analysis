@@ -300,6 +300,7 @@ class Fileset:
     """Complete representation of a fileset (e.g., 1064_FW5)."""
     meta: FilesetMeta
     analysis: FilesetAnalysis
+    time_info: TimeInfo
     files: Dict[str, CalibFile] = field(default_factory=dict)
 
     @classmethod
@@ -312,6 +313,7 @@ class Fileset:
         return cls(
             meta=FilesetMeta.from_dict(data.get("meta", {})),
             analysis=FilesetAnalysis.from_dict(data.get("analysis", {})),
+            time_info=TimeInfo.from_dict(data.get("time_info", {})),
             files=files,
         )
 
@@ -374,7 +376,7 @@ class FileSetPlots:
     RefPD_vs_LaserSetting: Optional[str] = None
     Pedestals_Histogram: Optional[str] = None
     Pedestals_vs_runindex: Optional[str] = None
-    Pedestals_timeseries: Optional[str] = None
+    pedestals_timeseries: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "FileSetPlots":
@@ -400,7 +402,7 @@ class FileSetPlots:
             RefPD_vs_LaserSetting=data.get("RefPD_vs_LaserSetting"),
             Pedestals_Histogram=data.get("Pedestals_Histogram"),
             Pedestals_vs_runindex=data.get("Pedestals_vs_runindex"),
-            Pedestals_timeseries=data.get("Pedestals_timeseries"),
+            pedestals_timeseries=data.get("pedestals_timeseries"),
         )
 
 
@@ -558,6 +560,7 @@ class ReportData:
     """Complete calibration report data structure."""
     meta: Meta
     analysis: Analysis
+    time_info: TimeInfo
     plots: Plots = field(default_factory=Plots)
     sanity_checks: SanityChecks = field(default_factory=SanityChecks)
 
@@ -566,6 +569,7 @@ class ReportData:
         return cls(
             meta=Meta.from_dict(data.get("meta", {})),
             analysis=Analysis.from_dict(data.get("analysis", {})),
+            time_info=TimeInfo.from_dict(data.get("time_info", {})),
             plots=Plots.from_dict(data.get("plots", {})),
             sanity_checks=SanityChecks.from_dict(data.get("sanity_checks", {})),
         )

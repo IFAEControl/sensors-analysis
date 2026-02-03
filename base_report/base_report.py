@@ -379,7 +379,7 @@ class BaseReport:
         self,
         data: Sequence[Sequence[str]],
         keep_together: bool = False,
-        description: str | None = None,
+        caption: str | None = None,
         center: bool = False,
         zebra: bool = False,
     ) -> None:
@@ -406,14 +406,14 @@ class BaseReport:
         self._append_table_with_caption(
             table,
             keep_together=keep_together,
-            description=description,
+            description=caption,
         )
 
     def add_figure(
         self,
         image_path: str,
         width_mm: float = 140,
-        description: str | None = None,
+        caption: str | None = None,
         center: bool = False,
     ) -> None:
         if not os.path.exists(image_path):
@@ -440,8 +440,8 @@ class BaseReport:
             draw_width = image.drawWidth
         self.figure_index += 1
         caption_text = f"Figure {self.figure_index}"
-        if description:
-            caption_text = f"{caption_text}: {description}"
+        if caption:
+            caption_text = f"{caption_text}: {caption}"
         caption = Paragraph(caption_text, self.styles["FigureCaption"])
         if hasattr(image, "hAlign"):
             image.hAlign = "LEFT"

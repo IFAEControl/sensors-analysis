@@ -63,8 +63,7 @@ class SummarySection(BaseSection):
         
     def add_summary_table(self):
         self.report.add_subsection('Calibration Summary Table', 'summary_table')
-        units = 'W' if self.report_data.meta.calling_arguments.use_W_as_power_units else 'uW'
-        sum_table = [["Wavelength", "Filter Wheel", f"slope ({units}/V)", f"intercept ({units})", "r value"]]
+        sum_table = [["Wavelength", "Filter Wheel", f"slope ({self.units}/V)", f"intercept ({self.units})", "r value"]]
         for _, fs_data in self.report_data.analysis.filesets.items():
             sum_table.append([fs_data.meta.wave_length,
                               fs_data.meta.filter_wheel,

@@ -15,6 +15,7 @@ class ReportPaths:
     input_file: str
     calib_anal_files_path: str
     report_path: str
+    output_path: str
     logo_path: str = default_logo_path
 
 
@@ -53,12 +54,13 @@ def calc_paths(input_path: str, output_path: str|None):
         output_path = report_path
     else:
         os.makedirs(output_path, exist_ok=True)
-    report_path = os.path.join(output_path, 'calibration-report.pdf')
+    # report_path = os.path.join(output_path, 'calibration-report.pdf')
 
     return ReportPaths(
         input_file=input_file,
         calib_anal_files_path=calib_anal_files_path,
-        report_path=report_path,
+        report_path='',
+        output_path=output_path,
         logo_path=default_logo_path
     )
 

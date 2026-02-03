@@ -58,7 +58,7 @@ def build_example_report() -> None:
                             description="Small text", passed=True)
     report.add_paragraph(lorem)
     report.add_paragraph(lorem)
-    report.add_figure(pdf_plot_path, description="Sample PDF plot embedded as figure.",
+    report.add_figure(pdf_plot_path, caption="Sample PDF plot embedded as figure.",
                       center=True)
     report.add_paragraph(lorem)
     report.add_paragraph(lorem)
@@ -107,16 +107,16 @@ def build_example_report() -> None:
         ]
 
     report.add_condensed_table(data=table1_data, keep_together=True)
-    report.add_condensed_table(data=table2_data, keep_together=True, description="A centered table", center=True)
-    report.add_condensed_table(data=table2_data, keep_together=True, description="A zebra centered table", 
+    report.add_condensed_table(data=table2_data, keep_together=True, caption="A centered table", center=True)
+    report.add_condensed_table(data=table2_data, keep_together=True, caption="A zebra centered table", 
                                        center=True, zebra=True)
 
     report.add_subsection("Sample Image")
-    report.add_figure(image_path, description="Sample horizontal image.", center=True, width_mm=200)
-    report.add_figure(second_image_path, description="Sample rectangular portrait image. with width setting.", center=True, width_mm=100)
+    report.add_figure(image_path, caption="Sample horizontal image.", center=True, width_mm=200)
+    report.add_figure(second_image_path, caption="Sample rectangular portrait image. with width setting.", center=True, width_mm=100)
     report.add_paragraph('Image description with a link to <a href="https://www.openai.com">OpenAI</a>. It is big, so it does not fit on the current page and should be moved to the next page.')
     desc = "Image from <a href='https://chat.openai.com'>Chat GPT</a>"
-    report.add_figure(mex_image_path, description=desc, center=True)
+    report.add_figure(mex_image_path, caption=desc, center=True)
 
     report.add_page()
     report.add_section("Additional Notes", anchor="additional_notes")

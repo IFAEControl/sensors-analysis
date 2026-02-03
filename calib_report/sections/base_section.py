@@ -13,6 +13,8 @@ class BaseSection(ABC):
         # a section will be added or not
         # to be defined in child classes
         self.section_depth = 4
+        self.units = 'W' if self.report_data.meta.calling_arguments.use_W_as_power_units else 'uW'
+
 
     def build(self, depth: int = 0):
         """Build the section of the report"""
