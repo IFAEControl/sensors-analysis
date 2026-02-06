@@ -43,4 +43,6 @@ class CalibrationPlots(BasePlots):
             self._gen_timeseries_plot()
             self._gen_temp_humidity_hists_plot()
             self._gen_pedestals_timeseries_plot()
+            self._gen_pm_samples_plot_full()
+            self._gen_pm_samples_plot_pedestals()            
 

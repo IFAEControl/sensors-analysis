@@ -81,11 +81,13 @@ class MetaConfig:
             generate_plots=bool(data.get("generate_plots", False)),
             subtract_pedestals=bool(data.get("subtract_pedestals", False)),
             replace_zero_pm_stds=bool(data.get("replace_zero_pm_stds", False)),
-            power_meter_resolutions=data.get("power_meter_resolutions", {}) or {},
+            power_meter_resolutions=data.get(
+                "power_meter_resolutions", {}) or {},
             use_first_pedestal_in_linreg=bool(
                 data.get("use_first_pedestal_in_linreg", False)
             ),
-            use_uW_as_power_units=bool(data.get("use_uW_as_power_units", False)),
+            use_uW_as_power_units=bool(
+                data.get("use_uW_as_power_units", False)),
         )
 
 
@@ -226,12 +228,20 @@ class FileInfo:
 @dataclass
 class FileAnalysis:
     """Analysis results for a single calibration file."""
+    used_columns: Optional[Dict[str, str]] = None
     linregs: Dict[str, LinearRegression] = field(default_factory=dict)
     pedestal_stats: Dict[str, PedestalStats] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "FileAnalysis":
         linregs_raw = data.get("linregs", {}) or {}
+        used_columns = None
+        used_columns_raw = linregs_raw.pop("used_columns", None)
+        if isinstance(used_columns_raw, dict):
+            used_columns = {
+                key: str(value)
+                for key, value in used_columns_raw.items()
+            }
         linregs = {
             key: LinearRegression.from_dict(value)
             for key, value in linregs_raw.items()
@@ -241,7 +251,51 @@ class FileAnalysis:
             key: PedestalStats.from_dict(value)
             for key, value in pedestal_stats_raw.items()
         }
-        return cls(linregs=linregs, pedestal_stats=pedestal_stats)
+        return cls(
+            used_columns=used_columns,
+            linregs=linregs,
+            pedestal_stats=pedestal_stats,
+        )
+
+
+@dataclass
+class PedestalSubtraction:
+    pm_pedestal: Optional[float]
+    refpd_pedestal: Optional[float]
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "PedestalSubtraction":
+        return cls(
+            pm_pedestal=data.get("pm_pedestal"),
+            refpd_pedestal=data.get("refpd_pedestal"),
+        )
+
+
+@dataclass
+class DataPreparation:
+    original_num_rows: Optional[int]
+    use_uW_as_power_units: bool
+    original_pm_std_zero_count: Optional[int]
+    replace_zero_pm_std: bool
+    num_pm_std_replaced: Optional[int]
+    pm_std_replacement_value: Optional[float]
+    original_num_pedestals: Optional[int]
+    pedestal_subtraction: Optional[PedestalSubtraction] = None
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "DataPreparation":
+        return cls(
+            original_num_rows=data.get("original_num_rows"),
+            use_uW_as_power_units=bool(data.get("use_uW_as_power_units", False)),
+            original_pm_std_zero_count=data.get("original_pm_std_zero_count"),
+            replace_zero_pm_std=bool(data.get("replace_zero_pm_std", False)),
+            num_pm_std_replaced=data.get("num_pm_std_replaced"),
+            pm_std_replacement_value=data.get("pm_std_replacement_value"),
+            original_num_pedestals=data.get("original_num_pedestals"),
+            pedestal_subtraction=PedestalSubtraction.from_dict(
+                data.get("pedestal_subtraction", {})
+            ) if data.get("pedestal_subtraction") else None,
+        )
 
 
 @dataclass
@@ -250,6 +304,7 @@ class CalibFile:
     file_info: FileInfo
     time_info: TimeInfo
     analysis: FileAnalysis
+    data_preparation: Optional[DataPreparation] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "CalibFile":
@@ -257,6 +312,9 @@ class CalibFile:
             file_info=FileInfo.from_dict(data.get("file_info", {})),
             time_info=TimeInfo.from_dict(data.get("time_info", {})),
             analysis=FileAnalysis.from_dict(data.get("analysis", {})),
+            data_preparation=DataPreparation.from_dict(
+                data.get("data_preparation", {})
+            ) if data.get("data_preparation") else None,
         )
 
 
@@ -343,6 +401,8 @@ class FilePlots:
     temperature_hist: Optional[str] = None
     humidity_hist: Optional[str] = None
     timeseries: Optional[str] = None
+    pm_samples_full: Optional[str] = None
+    pm_samples_pedestals: Optional[str] = None
     pm_vs_L: Optional[str] = None
     refPD_vs_L: Optional[str] = None
     pm_vs_refPD: Optional[str] = None
@@ -353,6 +413,8 @@ class FilePlots:
             temperature_hist=data.get("temperature_hist"),
             humidity_hist=data.get("humidity_hist"),
             timeseries=data.get("timeseries"),
+            pm_samples_full=data.get("pm_samples_full"),
+            pm_samples_pedestals=data.get("pm_samples_pedestals"),
             pm_vs_L=data.get("pm_vs_L"),
             refPD_vs_L=data.get("refPD_vs_L"),
             pm_vs_refPD=data.get("pm_vs_refPD"),
@@ -366,10 +428,13 @@ class FileSetPlots:
     temperature_hist: Optional[str] = None
     humidity_hist: Optional[str] = None
     timeseries: Optional[str] = None
+    pm_samples_full: Optional[str] = None
+    pm_samples_pedestals: Optional[str] = None
     ConvFactorSlopes_Comparison: Optional[str] = None
     ConvFactorIntercepts_Comparison: Optional[str] = None
     pmVsRefPD_fitSlope_vs_Temperature: Optional[str] = None
     pmVsRefPD_fitSlopes_and_Intercepts_vs_Run: Optional[str] = None
+    pmVsRefPD_fitSlopes_and_Intercepts_vs_Run_vert: Optional[str] = None
     pm_vs_RefPD: Optional[str] = None
     pm_vs_RefPD_runs: Optional[str] = None
     pm_vs_LaserSetting: Optional[str] = None
@@ -390,11 +455,19 @@ class FileSetPlots:
             temperature_hist=data.get("temperature_hist"),
             humidity_hist=data.get("humidity_hist"),
             timeseries=data.get("timeseries"),
-            ConvFactorSlopes_Comparison=data.get("ConvFactorSlopes_Comparison"),
-            ConvFactorIntercepts_Comparison=data.get("ConvFactorIntercepts_Comparison"),
-            pmVsRefPD_fitSlope_vs_Temperature=data.get("pmVsRefPD_fitSlope_vs_Temperature"),
+            pm_samples_full=data.get("pm_samples_full"),
+            pm_samples_pedestals=data.get("pm_samples_pedestals"),
+            ConvFactorSlopes_Comparison=data.get(
+                "ConvFactorSlopes_Comparison"),
+            ConvFactorIntercepts_Comparison=data.get(
+                "ConvFactorIntercepts_Comparison"),
+            pmVsRefPD_fitSlope_vs_Temperature=data.get(
+                "pmVsRefPD_fitSlope_vs_Temperature"),
             pmVsRefPD_fitSlopes_and_Intercepts_vs_Run=data.get(
                 "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run"
+            ),
+            pmVsRefPD_fitSlopes_and_Intercepts_vs_Run_vert=data.get(
+                "pmVsRefPD_fitSlopes_and_Intercepts_vs_Run_vert"
             ),
             pm_vs_RefPD=data.get("pm_vs_RefPD"),
             pm_vs_RefPD_runs=data.get("pm_vs_RefPD_runs"),
@@ -413,6 +486,8 @@ class Plots:
     timeseries: Optional[str] = None
     temperature_hist: Optional[str] = None
     humidity_hist: Optional[str] = None
+    pm_samples_full: Optional[str] = None
+    pm_samples_pedestals: Optional[str] = None
     pedestals_timeseries: Optional[str] = None
 
     @classmethod
@@ -427,6 +502,8 @@ class Plots:
             timeseries=data.get("timeseries"),
             temperature_hist=data.get("temperature_hist"),
             humidity_hist=data.get("humidity_hist"),
+            pm_samples_full=data.get("pm_samples_full"),
+            pm_samples_pedestals=data.get("pm_samples_pedestals"),
             pedestals_timeseries=data.get("pedestals_timeseries"),
         )
 
@@ -495,18 +572,20 @@ class SanityChecksSummary:
 @dataclass
 class SanityChecks:
     """All sanity check results organized by calibration, fileset, and file."""
-    calibration_checks: Dict[str, SanityCheckEntry] = field(default_factory=dict)
-    fileset_checks: Dict[str, Dict[str, SanityCheckEntry]] = field(default_factory=dict)
-    file_checks: Dict[str, Dict[str, Dict[str, SanityCheckEntry]]] = field(
-        default_factory=dict
-    )
+    calibration_checks: Dict[str, SanityCheckEntry] = field(
+        default_factory=dict)
+    fileset_checks: Dict[str, Dict[str, SanityCheckEntry]
+                         ] = field(default_factory=dict)
+    file_checks: Dict[str, Dict[str, SanityCheckEntry]
+                         ] = field(default_factory=dict)
     summary: Optional[SanityChecksSummary] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecks":
         """Parse sanity checks from dict, supporting nested calibration/fileset/file."""
         summary_data = data.get("summary")
-        summary = SanityChecksSummary.from_dict(summary_data) if summary_data else None
+        summary = SanityChecksSummary.from_dict(
+            summary_data) if summary_data else None
 
         calibration_checks: Dict[str, SanityCheckEntry] = {}
         fileset_checks: Dict[str, Dict[str, SanityCheckEntry]] = {}
@@ -538,6 +617,7 @@ class SanityChecks:
                         }
                     fs_files = fs_data.get("files")
                     if isinstance(fs_files, dict):
+                        # file_checks.setdefault(fs_name, {})
                         for file_name, file_checks_block in fs_files.items():
                             if not isinstance(file_checks_block, dict):
                                 continue
@@ -571,7 +651,8 @@ class ReportData:
             analysis=Analysis.from_dict(data.get("analysis", {})),
             time_info=TimeInfo.from_dict(data.get("time_info", {})),
             plots=Plots.from_dict(data.get("plots", {})),
-            sanity_checks=SanityChecks.from_dict(data.get("sanity_checks", {})),
+            sanity_checks=SanityChecks.from_dict(
+                data.get("sanity_checks", {})),
         )
 
 
@@ -579,7 +660,7 @@ if __name__ == "__main__":
     # Example usage
     import json
     import os
-    
+
     json_path = os.path.join(
         os.path.dirname(__file__),
         "..", "..",
@@ -587,7 +668,7 @@ if __name__ == "__main__":
         "calibration_10122025",
         "calibration_10122025-summary.json"
     )
-    
+
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
             data = json.load(f)
@@ -601,4 +682,5 @@ if __name__ == "__main__":
             report_data.analysis.time_info.min_dt,
             report_data.analysis.time_info.max_dt
         ))
-        print("Sanity checks passed:", report_data.sanity_checks.summary.total_passed if report_data.sanity_checks.summary else "N/A")
+        print("Sanity checks passed:",
+              report_data.sanity_checks.summary.total_passed if report_data.sanity_checks.summary else "N/A")

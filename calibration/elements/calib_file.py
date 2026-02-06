@@ -130,6 +130,9 @@ class CalibFile(BaseElement):
         """Load calibration file data into a DataFrame"""
         self._df = pd.read_csv(self.file_path, delimiter ='\t', header=None)
         self._df.columns = ['datetime', 'laser_setpoint', 'pm_mean', 'pm_std', 'ref_pd_mean', 'ref_pd_std', 'temperature', 'RH', 'samples']
+        self._df['laser_sp_1064'] = pd.Series([pd.NA] * len(self._df), dtype='Float64')
+        self._df['laser_sp_532'] = pd.Series([pd.NA] * len(self._df), dtype='Float64')
+        self._df[f'laser_sp_{self.wavelength}'] = self._df['laser_setpoint'].astype('Float64')
         self.data_prep_info['original_num_rows'] = len(self._df)
         self.data_prep_info['use_uW_as_power_units'] = config.use_uW_as_power_units
         if config.use_uW_as_power_units:

@@ -2,7 +2,8 @@ import os
 import argparse
 
 from .helpers.paths import calc_paths, ReportPaths
-from .sections.full_report import FullReport
+# from .sections.full_report import FullReport
+from .slides_sections.full_report import FullReport as FullSlidesReport
 from .helpers.logger import get_logger, add_file_handler
 from .config import config
 
@@ -27,10 +28,15 @@ def gen_report() -> None:
 
     report_paths:ReportPaths = calc_paths(args.input_path, args.output_path)
     config.paths = report_paths
-    report = FullReport(
+    # Report as a A4 document using platypus
+    # report = FullReport(
+    #     report_paths=report_paths,
+    # )
+    # report.build()
+    report = FullSlidesReport(
         report_paths=report_paths,
     )
-    report.build()
+    report.build(depth=0)  # full depth
 
 if __name__ == "__main__":
     gen_report()

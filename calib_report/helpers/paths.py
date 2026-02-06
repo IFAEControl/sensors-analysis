@@ -7,7 +7,7 @@ from calib_report.helpers.logger import get_logger
 logger = get_logger()
 
 this_path = os.path.dirname(os.path.abspath(__file__))
-default_logo_path = os.path.abspath(os.path.join(this_path, "..", "logo", "IFAE_logo_SO.png"))
+default_logo_path = os.path.abspath(os.path.join(this_path, "..", "logo", "IFAE_logo_white_SO.png"))
 
 @dataclass
 class ReportPaths:

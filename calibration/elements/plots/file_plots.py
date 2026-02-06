@@ -51,6 +51,10 @@ class FilePlots(BasePlots):
         
         self._gen_temp_humidity_hists_plot()
         self._gen_timeseries_plot()
+        self._gen_pm_samples_plot_full()
+        self._gen_pm_samples_plot_pedestals()
+        self._gen_pm_samples_plot_full()
+        self._gen_pm_samples_plot_pedestals()        
 
         # Plot Mean pm vs laser_setpoint
         fig_id = "pm_vs_L"

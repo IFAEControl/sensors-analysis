@@ -4,6 +4,7 @@ from venv import logger
 
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 from calibration.config import config
 
@@ -140,6 +141,45 @@ class BasePlots(ABC):
         self.savefig(fig, fig_id)
         plt.close(fig)
 
+    def _gen_samples_plot(self, df: pd.DataFrame, fig_id: str):
+        """Generate samples timeseries and histogram plot using provided DataFrame."""
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=2, ncols=1,
+            figsize=(10, 8),
+            constrained_layout=True
+        )
+
+        ax1.scatter(df['datetime'], df['samples'], c='teal', marker='.', s=20, label='PM Samples')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('PM Samples')
+        ax1.grid(True, alpha=0.3)
+        ax1.legend(loc='best')
+
+        samples = df['samples'].dropna()
+        if not samples.empty:
+            min_s = int(samples.min())
+            max_s = int(samples.max())
+            bins = [x - 0.5 for x in range(min_s, max_s + 2)]
+        else:
+            bins = 1
+        ax2.hist(samples, bins=bins, color='teal', edgecolor='darkslategray', linewidth=0.7, alpha=0.7)
+        ax2.set_xlabel('PM Samples')
+        ax2.set_ylabel('Frequency')
+        ax2.grid(True, alpha=0.3)
+
+        self.savefig(fig, fig_id)
+        plt.close(fig)
+
+    def _gen_pm_samples_plot_full(self):
+        """Generate samples plot using df_full."""
+        fig_id = "pm_samples_full"
+        self._gen_samples_plot(self.df_full, fig_id)
+
+    def _gen_pm_samples_plot_pedestals(self):
+        """Generate samples plot using df_pedestals."""
+        fig_id = "pm_samples_pedestals"
+        self._gen_samples_plot(self.df_pedestals, fig_id)
+
     def _gen_timeseries_plot(self):
         """Generate timeseries plot with dual axes for calibration file data."""
         fig_id = "timeseries"
@@ -167,12 +207,48 @@ class BasePlots(ABC):
         ax1.grid(True, alpha=0.3)
 
 
-        # Middle plot: laser_setpoint vs time (2/6 height)\n        
+        # Middle plot: laser setpoints vs time
         ax2 = plt.subplot2grid((5, 1), (2, 0), rowspan=2)
-        ax2.scatter(self.df['datetime'], self.df['laser_setpoint'], c='m', label=self.level_label, marker='.', s=10)
-        ax2.set_ylabel(self.laser_label, color='m')
-        ax2.tick_params(axis='y', labelcolor='m')
-        ax2.legend(loc='lower right')
+        has_1064 = 'laser_sp_1064' in self.df.columns and self.df['laser_sp_1064'].notna().any()
+        has_532 = 'laser_sp_532' in self.df.columns and self.df['laser_sp_532'].notna().any()
+
+        if has_1064 and has_532:
+            ax2.scatter(
+                self.df['datetime'], self.df['laser_sp_1064'],
+                c='m', label='1064nm laser setpoint (mW)', marker='.', s=10
+            )
+            ax2.set_ylabel('1064nm laser setpoint (mW)', color='m')
+            ax2.tick_params(axis='y', labelcolor='m')
+
+            ax2_twin = ax2.twinx()
+            ax2_twin.scatter(
+                self.df['datetime'], self.df['laser_sp_532'],
+                c='c', label='532nm laser setpoint (mV)', marker='.', s=10
+            )
+            ax2_twin.set_ylabel('532nm laser setpoint (mV)', color='c')
+            ax2_twin.tick_params(axis='y', labelcolor='c')
+
+            h1, l1 = ax2.get_legend_handles_labels()
+            h2, l2 = ax2_twin.get_legend_handles_labels()
+            ax2.legend(h1 + h2, l1 + l2, loc='lower right')
+        elif has_1064 or has_532:
+            if has_1064:
+                ax2.scatter(
+                    self.df['datetime'], self.df['laser_sp_1064'],
+                    c='m', label='1064nm laser setpoint (mW)', marker='.', s=10
+                )
+                ax2.set_ylabel('1064nm laser setpoint (mW)', color='m')
+                ax2.tick_params(axis='y', labelcolor='m')
+            else:
+                ax2.scatter(
+                    self.df['datetime'], self.df['laser_sp_532'],
+                    c='c', label='532nm laser setpoint (mV)', marker='.', s=10
+                )
+                ax2.set_ylabel('532nm laser setpoint (mV)', color='c')
+                ax2.tick_params(axis='y', labelcolor='c')
+
+            ax2.legend(loc='lower right')
+
         ax2.grid(True, alpha=0.3)
         
         # Bottom plot: Temperature and RH vs time (1/6 height)
@@ -218,6 +294,11 @@ class BasePlots(ABC):
             fmt='.', markersize=10, linewidth=1,
             label='pm Pedestals'
         )
+        # Avoid combined exponent like "1e-8-1e-1" from mixed-scale data
+        pm_formatter = ScalarFormatter(useMathText=True)
+        pm_formatter.set_scientific(True)
+        pm_formatter.set_useOffset(False)
+        ax1.yaxis.set_major_formatter(pm_formatter)
         ax1.set_ylabel(f'Pedestals pm ({self.power_units})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
@@ -237,3 +318,4 @@ class BasePlots(ABC):
 
         self.savefig(fig, fig_id)
         plt.close(fig)
+    

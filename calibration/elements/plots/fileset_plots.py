@@ -6,12 +6,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-from scipy.stats import linregress
+from matplotlib.ticker import ScalarFormatter
+
 
 from calibration.helpers import get_logger
-from calibration.config import config
 from .plot_base import BasePlots
-from ..helpers import CalibLinReg
 
 if TYPE_CHECKING:
     from ..calibration import Calibration
@@ -58,12 +57,15 @@ class FileSetPlots(BasePlots):
         self._gen_plot_conv_factor_intercept_method_comparison()
         self._gen_plot_slopes_vs_temperature()
         self._gen_plot_slopes_intercepts_vs_index()
+        self._gen_plot_slopes_intercepts_vs_index(vertical=True)
         self._gen_plot_pmvsRefPD()
         self._gen_plot_pmvsRefPD_all_calfiles()
         self._gen_plots_vs_laser_setting()
         self._gen_pedestals_hist_plot()
         self._gen_mean_pedestals_plot()
         self._gen_pedestals_timeseries_plot()
+        self._gen_pm_samples_plot_full()
+        self._gen_pm_samples_plot_pedestals()
         logger.info("Plots for dataset %s generated", self.level_label)
 
     # Anal results
@@ -251,12 +253,16 @@ class FileSetPlots(BasePlots):
         self.savefig(fig, fig_id)
         plt.close(fig)
 
-    def _gen_plot_slopes_intercepts_vs_index(self):
+    def _gen_plot_slopes_intercepts_vs_index(self, vertical=False):
         # Plot dels slopes i intercepts per la pm en funció de l'índex del fitxer, no cal fer regressió lineal perque
         # totes han de tenir el mateix valor.
 
-        fig_id = 'pmVsRefPD_fitSlopes_and_Intercepts_vs_Run'
-        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6), sharex=True)
+        fig_id = 'pmVsRefPD_fitSlopes_and_Intercepts_vs_Run' + ('_vert' if vertical else '')
+        if vertical:
+            fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 10), sharex=True)
+        else:
+            fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6), sharex=True)
+        
 
         # Slopes
         intercept = self._anal.lr_refpd_vs_pm.slope
@@ -635,6 +641,12 @@ class FileSetPlots(BasePlots):
         mean = self._anal.pedestal_stats.pm.mean
         std = self._anal.pedestal_stats.pm.std
         samples = self._anal.pedestal_stats.pm.samples
+        # Avoid combined exponent like "1e-8-1e-1" from mixed-scale data
+        pm_formatter = ScalarFormatter(useMathText=True)
+        pm_formatter.set_scientific(True)
+        pm_formatter.set_useOffset(False)
+        ax1.yaxis.set_major_formatter(pm_formatter)
+
         ax1.axhline(y=mean, color='orange', linestyle='--', label='PM mean of Pedestal')
         ax1.fill_between(range(-1, samples+1), mean-std, mean+std, color='orange', alpha=0.3, label='pm mean +/- std')
         ax1.set_ylabel(f'Pedestals PM ({self.power_units})')
