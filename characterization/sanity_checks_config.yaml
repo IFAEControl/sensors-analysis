@@ -1,0 +1,33 @@
+{
+  "characterization": {
+    "error": {
+      "max_temperature_change": 3
+    },
+    "warning": {
+      "all_files_analyzed": null,
+      "all_sensors_scanned": null,
+      "expected_runs_acquired": null
+    }
+  },
+  "fileset": {
+    "error": {
+      "minimum_linreg_points": 25
+    },
+    "warning": {
+      "minimum_linreg_points": 20,
+      "minimum_files_in_set": 3,
+      "max_temperature_change": 2
+    }
+  },
+  "sweepfile": {
+    "error": {
+      "minimum_linreg_points": 10,
+      "minimum_saturated_points": 3
+    },
+    "warning": {
+      "minimum_linreg_points": 15,
+      "low_total_counts": 250,
+      "total_square_sum_overflow": 2147483648
+    }
+  }
+}

@@ -5,6 +5,7 @@ now = datetime.now(timezone.utc)
 
 from .helpers import get_logger
 from .elements.characterization import Characterization
+from .elements.sanity_checks import SanityChecks
 from .config import config
 now_libs = datetime.now(timezone.utc)
 logger = get_logger()
@@ -42,7 +43,9 @@ def main():
     characterization.analyze()
     if config.generate_plots:
         characterization.generate_plots()
-    characterization.export_data_summary()
+    san = SanityChecks(characterization)
+    san.run_checks()
+    characterization.export_data_summary({'sanity_checks': san.results})
 
     now_end = datetime.now(timezone.utc)
     logger.info("Finished characterization analysis at %s", now_end.isoformat())

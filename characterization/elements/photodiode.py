@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from characterization.helpers import get_logger
+from characterization.config import config
 from .analysis.photodiode_analysis import PhotodiodeAnalysis
 from .plots.photodiode_plots import PhotodiodePlots
-from .sanity_checks import PhotodiodeSanity
 from .fileset import Fileset
 from .base_element import BaseElement, DataHolderLevel
 
@@ -25,7 +25,6 @@ class Photodiode(BaseElement):
         self.filesets: dict[str, Fileset] = {}
         self.anal = PhotodiodeAnalysis(self)
         self.plotter = PhotodiodePlots(self)
-        self.sanity = PhotodiodeSanity(self)
         self.output_path = os.path.join(
             characterization.output_path,
             f"sensor_{sensor_id}"
@@ -79,18 +78,22 @@ class Photodiode(BaseElement):
         if self.output_path:
             os.makedirs(self.output_path, exist_ok=True)
         self.anal.analyze()
-        self.sanity.run_checks()
         self.set_time_info()
 
     def generate_plots(self):
         self.plotter.generate_plots()
 
     def to_dict(self):
+        gain_info = config.sensor_config.get(self.sensor_id, {})
         return {
-            'meta': {'sensor_id': self.sensor_id},
+            'meta': {
+                'sensor_id': self.sensor_id,
+                'gain': gain_info.get('gain'),
+                'resistor': gain_info.get('resistor'),
+                'expected_runs': gain_info.get('expected_runs')
+            },
             'time_info': self.time_info,
             'analysis': self.anal.to_dict(),
-            'sanity_checks': self.sanity.results,
             'filesets': {key: fs.to_dict() for key, fs in self.filesets.items()},
             'plots': self.plotter.plots
         }

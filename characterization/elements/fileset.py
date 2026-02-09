@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from characterization.helpers import get_logger
-from .analysis.sweep_file_analysis import SweepFileAnalysis
+from .analysis.fileset_analysis import FilesetAnalysis
 from .plots.fileset_plots import FilesetPlots
 from .base_element import BaseElement, DataHolderLevel
 
@@ -26,7 +26,7 @@ class Fileset(BaseElement):
         self.dh_parent = photodiode
         self.board_id = photodiode.board_id if photodiode else None
         self.files: list['SweepFile'] = []
-        self.anal = SweepFileAnalysis(self)
+        self.anal = FilesetAnalysis(self)
         self.plotter = FilesetPlots(self)
         self.output_path = os.path.join(
             photodiode.output_path,
@@ -36,7 +36,7 @@ class Fileset(BaseElement):
         self.long_label = f"{self.dh_parent.level_header} - {self.label}" if self.dh_parent else self.label
         if self.dh_parent and self.dh_parent.dh_parent:
             self.plot_label = f"{self.dh_parent.dh_parent.level_header} - PD{self.dh_parent.sensor_id} - {self.wavelength} - {self.filter_wheel}"
-        self._df_analysis = None
+        self._df_sat = None
 
     @property
     def df(self):
@@ -66,13 +66,14 @@ class Fileset(BaseElement):
         return self._df_full
 
     @property
-    def df_analysis(self):
-        if self._df_analysis is not None:
-            return self._df_analysis
-        return self.df
+    def df_sat(self):
+        if self._df_sat is None:
+            if not self.files:
+                return pd.DataFrame()
+            self._df_sat = pd.concat([cf.df_sat for cf in self.files if cf.df_sat is not None], ignore_index=True)
+            self._df_sat = self._df_sat.sort_values(by='timestamp').reset_index(drop=True)
+        return self._df_sat
 
-    def set_analysis_df(self, df: pd.DataFrame):
-        self._df_analysis = df
 
     def add_file(self, sweep_file: 'SweepFile'):
         if sweep_file.wavelength != self.wavelength or sweep_file.filter_wheel != self.filter_wheel:

@@ -32,12 +32,13 @@ class FilesetPlots(BasePlots):
         return self.fs.output_path if self.fs.output_path else '.'
 
     def generate_plots(self):
-        df = self.fs.df_analysis
+        df = self.fs.df
         if df is None or df.empty:
             logger.error("No analysis dataframe for fileset: %s", self.fs.label)
             return
         self._gen_timeseries_plot()
         self._gen_fit_slopes_intercepts_vs_run()
+        self._gen_saturation_points_vs_run()
 
         fig_id = "dut_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
@@ -53,6 +54,35 @@ class FilesetPlots(BasePlots):
         plt.grid()
         plt.title(f'{self.level_label} - DUT vs {self.laser_label}')
         plt.legend(loc='best', ncol=2, fontsize=8)
+        plt.tight_layout()
+        self.savefig(fig, fig_id)
+        plt.close(fig)
+
+    def _gen_saturation_points_vs_run(self):
+        fig_id = "saturation_points_vs_run"
+        runs = []
+        sat_counts = []
+
+        for sweep in self.fs.files:
+            runs.append(int(sweep.run))
+            sat_counts.append(int(sweep.df_sat.shape[0]))
+
+        if not runs:
+            logger.warning("No runs for saturation plot in fileset %s", self.fs.label)
+            return
+
+        order = sorted(range(len(runs)), key=lambda i: runs[i])
+        runs = [runs[i] for i in order]
+        sat_counts = [sat_counts[i] for i in order]
+
+        fig = plt.figure(figsize=(8, 4))
+        plt.plot(runs, sat_counts, 'o-', color='magenta', label='saturated points')
+        plt.xlabel('Run number in set')
+        plt.ylabel('Saturated points')
+        plt.xticks(runs)
+        plt.xlim([0.5, max(runs) + 0.5])
+        plt.grid(True, alpha=0.3)
+        plt.legend(loc='best')
         plt.tight_layout()
         self.savefig(fig, fig_id)
         plt.close(fig)

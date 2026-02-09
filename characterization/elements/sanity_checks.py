@@ -1,11 +1,28 @@
-"""Sanity checks for characterization data"""
+"""Module for performing sanity checks on characterization data and analysis results"""
+import os
+import sys
+from typing import TYPE_CHECKING
+
+import yaml
 
 from characterization.helpers import get_logger
 from .helpers import SanityCheckResult
 
+from .sanity.characterization import CharacterizationSanityChecker
+from .sanity.fileset import FilesetSanityChecker
+from .sanity.sweepfile import SweepFileSanityChecker
+
+if TYPE_CHECKING:
+    from .characterization import Characterization
+
 logger = get_logger()
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+config_file = os.path.abspath(os.path.join(file_path, '..', 'sanity_checks_config.yaml'))
+
+
 class Counter:
+    """Simple counter class to keep track of passed and failed checks"""
     def __init__(self):
         self._checks = {}
 
@@ -25,57 +42,111 @@ class Counter:
             'details': dict(self._checks)
         }
 
-class PhotodiodeSanityChecker:
-    level_name = 'photodiode'
 
-    def __init__(self, photodiode):
-        self.photodiode = photodiode
-        self.level_header = photodiode.level_header
-
-    def san_check_has_files(self, severity='warning') -> SanityCheckResult:
-        passed = len(self.photodiode.files) > 0
-        return SanityCheckResult(
-            severity=severity,
-            check_name='has_files',
-            check_args={'min_files': 1},
-            passed=passed,
-            info='' if passed else 'No files found for this photodiode',
-            internal=True,
-            check_explanation='Photodiode should have at least one run file.'
-        )
-
-    def san_check_all_files_analyzed(self, severity='warning') -> SanityCheckResult:
-        missing = []
-        for cf in self.photodiode.files:
-            if cf.anal.lr_refpd_vs_adc.linreg is None:
-                missing.append(cf.file_info.get('filename'))
-        passed = len(missing) == 0
-        return SanityCheckResult(
-            severity=severity,
-            check_name='all_files_analyzed',
-            check_args={'missing': missing},
-            passed=passed,
-            info='' if passed else f"Missing linreg in {len(missing)} files",
-            internal=True,
-            check_explanation='Each run file should have a valid linear regression.'
-        )
-
-class PhotodiodeSanity:
-    def __init__(self, photodiode):
-        self.photodiode = photodiode
+class SanityChecks:
+    """Class to perform sanity checks on characterization data"""
+    def __init__(self, characterization: 'Characterization'):
+        self.char = characterization
+        self.config = {}
         self.results = {}
         self._c = Counter()
+        self._load_config()
+
+    def _load_config(self):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                self.config = yaml.safe_load(f)
+            logger.info("Loaded sanity checks configuration from %s", config_file)
+        except Exception as e:
+            logger.error("Failed to load sanity checks configuration: %s", str(e))
+            sys.exit(1)
+
+    @property
+    def characterization_checks_config(self) -> dict:
+        return self.config.get('characterization', {})
+
+    @property
+    def fileset_checks_config(self) -> dict:
+        return self.config.get('fileset', {})
+
+    @property
+    def sweepfile_checks_config(self) -> dict:
+        return self.config.get('sweepfile', {})
+
+    def _run_check_methods(self, severity, checks, checker):
+        results = {}
+        for check_name, check_params in checks.items():
+            method_name = f"san_check_{check_name}"
+            check_method = getattr(checker, method_name, None)
+            if check_method is None:
+                logger.warning("Sanity check method %s not found in %s", method_name, checker.level_name)
+                result = SanityCheckResult(
+                    severity=severity,
+                    check_name=check_name,
+                    check_args=check_params,
+                    passed=False,
+                    info="Sanity check method not found",
+                    exec_error=True
+                )
+                results[f"{severity}.{check_name}"] = result.to_dict()
+                self._c.check(severity, False)
+                continue
+            try:
+                if check_params is None:
+                    result = check_method(severity=severity)
+                elif isinstance(check_params, dict):
+                    result = check_method(**check_params, severity=severity)
+                elif isinstance(check_params, list):
+                    result = check_method(*check_params, severity=severity)
+                else:
+                    result = check_method(check_params, severity=severity)
+                results[f"{severity}.{check_name}"] = result.to_dict()
+                self._c.check(severity, result.passed)
+            except Exception as e:
+                result = SanityCheckResult(
+                    severity=severity,
+                    check_name=check_name,
+                    check_args=check_params,
+                    passed=False,
+                    info=str(e),
+                    exec_error=True
+                )
+                self._c.check(severity, False)
+                results[f"{severity}.{check_name}"] = result.to_dict()
+                logger.warning("Failed to execute check: %s, %s", check_name, str(e))
+        return results
 
     def run_checks(self):
-        checker = PhotodiodeSanityChecker(self.photodiode)
-        checks = [
-            checker.san_check_has_files,
-            checker.san_check_all_files_analyzed,
-        ]
-        self.results = {'checks': {}}
-        for check in checks:
-            res = check()
-            self.results['checks'][res.check_name] = res.to_dict()
-            self._c.check(res.severity, res.passed)
+        logger.info("Running sanity checks...")
+        self.results = {}
+
+        checker = CharacterizationSanityChecker(self.char)
+        self.results[checker.level_header] = {'checks': {}}
+        for severity, checks in self.characterization_checks_config.items():
+            results = self._run_check_methods(severity, checks, checker)
+            self.results[checker.level_header]['checks'].update(results)
+
+        filesets_results = self.results[checker.level_header].setdefault('filesets', {})
+        for pdh in self.char.photodiodes.values():
+            for fs in pdh.filesets.values():
+                checker = FilesetSanityChecker(fs)
+                fs_res = filesets_results.setdefault(fs.level_header, {'checks': {}})
+                for severity, checks in self.fileset_checks_config.items():
+                    results = self._run_check_methods(severity, checks, checker)
+                    fs_res['checks'].update(results)
+                sweep_results = fs_res.setdefault('sweepfiles', {})
+                for sw in fs.files:
+                    checker = SweepFileSanityChecker(sw)
+                    sweep_results.setdefault(sw.level_header, {})
+                    for severity, checks in self.sweepfile_checks_config.items():
+                        results = self._run_check_methods(severity, checks, checker)
+                        sweep_results[sw.level_header].update(results)
+
         self.results['summary'] = self._c.to_dict()
+        c_d = self._c.to_dict()
+        if c_d['total_failed'] > 0:
+            logger.warning("Sanity checks completed. %s passed, %s failed out of %s checks.", c_d['total_passed'], c_d['total_failed'], c_d['total_checks'])
+        else:
+            logger.info("Sanity checks completed. %s passed, %s failed out of %s checks.", c_d['total_passed'], c_d['total_failed'], c_d['total_checks'])
+
         return self.results

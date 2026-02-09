@@ -31,11 +31,11 @@ class FilePlots(BasePlots):
         return self.cf.output_path if self.cf.output_path else '.'
 
     def generate_plots(self):
-        if self.cf.df_analysis is None or self.cf.df_analysis.empty:
+        if self.cf.df is None or self.cf.df.empty:
             logger.error("No analysis dataframe for file: %s", self.cf.file_info['filename'])
             return
 
-        df = self.cf.df_analysis
+        df = self.cf.df
         self._gen_timeseries_plot()
 
         fig_id = "dut_vs_laser_setpoint"

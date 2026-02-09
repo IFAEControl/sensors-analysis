@@ -41,7 +41,7 @@ class SweepFile(BaseElement):
         self.file_info = {
             'filename': os.path.basename(file_path),
         }
-        self._df_analysis = None
+        self._df_sat = None
         self.initialize()
         if self.valid:
             self.level_header = self.file_label
@@ -71,13 +71,11 @@ class SweepFile(BaseElement):
         raise ValueError("Full DataFrame not loaded yet.")
 
     @property
-    def df_analysis(self) -> pd.DataFrame:
-        if self._df_analysis is not None:
-            return self._df_analysis
-        return self.df
+    def df_sat(self) -> pd.DataFrame:
+        if self._df_sat is not None:
+            return self._df_sat
+        raise ValueError("Saturated DataFrame not loaded yet.")
 
-    def set_analysis_df(self, df: pd.DataFrame):
-        self._df_analysis = df
 
     def _calc_output_path(self):
         if self.fileset:
@@ -126,24 +124,26 @@ class SweepFile(BaseElement):
             'datetime', 'laser_setpoint', 'total_sum', 'total_square_sum',
             'ref_pd_mean', 'ref_pd_std', 'temperature', 'RH', 'total_counts'
         ]
+        numeric_cols = [c for c in self._df.columns if c != 'datetime']
+        self._df[numeric_cols] = self._df[numeric_cols].astype('Float64')
 
-        counts = self._df['total_counts'].astype(float)
+        counts = self._df['total_counts']
         mean_adc = self._df['total_sum'] / counts
-        var_adc = (self._df['total_square_sum'] - counts * mean_adc**2) / (counts - 1)
-        var_adc = var_adc.clip(lower=0)
+        var_adc = (self._df['total_square_sum']/counts - mean_adc**2) 
+        # var_adc = var_adc.clip(lower=0)
         std_adc = np.sqrt(var_adc)
         std_adc[counts <= 1] = np.nan
 
         self._df['mean_adc'] = mean_adc
         self._df['std_adc'] = std_adc
-        self._df['mean_pm'] = mean_adc * config.adc_to_power_factor
-        self._df['std_pm'] = std_adc * config.adc_to_power_factor
         self._df['laser_sp_1064'] = pd.Series([pd.NA] * len(self._df), dtype='Float64')
         self._df['laser_sp_532'] = pd.Series([pd.NA] * len(self._df), dtype='Float64')
         if self.wavelength == '1064':
-            self._df['laser_sp_1064'] = self._df['laser_setpoint'].astype('Float64')
+            self._df['laser_sp_1064'] = self._df['laser_setpoint']
         elif self.wavelength == '532':
-            self._df['laser_sp_532'] = self._df['laser_setpoint'].astype('Float64')
+            self._df['laser_sp_532'] = self._df['laser_setpoint']
+        self._df['run'] = pd.Series([self.run] * len(self._df), dtype='string')
+        self._df['sweep_id'] = pd.Series([f"{self.wavelength}_{self.filter_wheel}_run{self.run}"] * len(self._df), dtype='string')
 
         self._df['datetime'] = pd.to_datetime(
             self._df['datetime'],
@@ -154,10 +154,11 @@ class SweepFile(BaseElement):
 
         self.data_prep_info['original_num_rows'] = len(self._df)
 
-        is_pedestal = np.isclose(self._df['laser_setpoint'].astype(float), 0.0)
+        is_pedestal = np.isclose(self._df['laser_setpoint'], 0.0)
         is_saturated = self._df['mean_adc'] >= 4095
         self._df_pedestals = self._df[is_pedestal].copy().reset_index(drop=True)
         self._df_full = self._df.copy()
+        self._df_sat = self._df[is_saturated].copy().reset_index(drop=True)
         self._df = self._df[~is_pedestal & ~is_saturated].reset_index(drop=True)
 
         self.data_prep_info['original_num_pedestals'] = int(is_pedestal.sum())
