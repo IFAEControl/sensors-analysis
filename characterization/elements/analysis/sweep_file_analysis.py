@@ -20,7 +20,7 @@ class SweepFileAnalysis(BaseAnal):
         super().__init__()
         self._data_holder = char_file
         self._data_info = {}
-        self.saturation_adc = None
+        # self.saturation_adc = None
 
     def analyze(self):
         if self.df is None or self.df.empty:
@@ -60,7 +60,7 @@ class SweepFileAnalysis(BaseAnal):
             logger.warning("Analysis has not been performed yet for file: %s", self._data_holder.file_info['filename'])
         return {
             'linreg_refpd_vs_adc': self.lr_refpd_vs_adc.to_dict() if self.lr_refpd_vs_adc.linreg else None,
-            'saturation_adc': None if self.saturation_adc is None else float(self.saturation_adc),
+            # 'saturation_adc': None if self.saturation_adc is None else float(self.saturation_adc),
             'pedestal_stats': self._pedestal_stats,
             'saturation_stats': self._saturation_stats,
         }

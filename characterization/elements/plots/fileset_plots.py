@@ -39,6 +39,8 @@ class FilesetPlots(BasePlots):
         self._gen_timeseries_plot()
         self._gen_fit_slopes_intercepts_vs_run()
         self._gen_saturation_points_vs_run()
+        self._gen_refpd_vs_laser_setpoint()
+        self._gen_refpd_vs_dut()
 
         fig_id = "dut_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
@@ -76,7 +78,7 @@ class FilesetPlots(BasePlots):
         sat_counts = [sat_counts[i] for i in order]
 
         fig = plt.figure(figsize=(8, 4))
-        plt.plot(runs, sat_counts, 'o-', color='magenta', label='saturated points')
+        plt.bar(runs, sat_counts, color="#0E6157", label='saturated points')
         plt.xlabel('Run number in set')
         plt.ylabel('Saturated points')
         plt.xticks(runs)
@@ -87,6 +89,7 @@ class FilesetPlots(BasePlots):
         self.savefig(fig, fig_id)
         plt.close(fig)
 
+    def _gen_refpd_vs_laser_setpoint(self):
         fig_id = "refpd_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
         colors = plt.cm.tab20.colors
@@ -105,6 +108,7 @@ class FilesetPlots(BasePlots):
         self.savefig(fig, fig_id)
         plt.close(fig)
 
+    def _gen_refpd_vs_dut(self):
         fig_id = "refpd_vs_dut"
         fig = plt.figure(figsize=(10, 6))
         colors = plt.cm.tab20.colors

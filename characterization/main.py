@@ -39,7 +39,7 @@ def main():
     logger.info("Starting characterization analysis at %s", now.isoformat())
 
     characterization.load_characterization_files()
-    config.summary_file_name = f"{characterization.meta['charact_id']}-summary.json"
+    config.summary_file_name = f"{characterization.meta['charact_id']}_extended.json"
     characterization.analyze()
     if config.generate_plots:
         characterization.generate_plots()

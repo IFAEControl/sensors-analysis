@@ -19,6 +19,8 @@ class PhotodiodeAnalysis(BaseAnal):
     def analyze(self):
         for fs in self._data_holder.filesets.values():
             fs.analyze()
+        self._calc_pedestal_stats()
+        self.results['pedestal_stats'] = self._pedestal_stats
         self._analyzed = True
 
     def to_dict(self) -> dict:

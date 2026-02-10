@@ -53,6 +53,7 @@ class Characterization(BaseElement):
                 ignore_index=True
             )
             self._df = self._df.sort_values(by='timestamp').reset_index(drop=True)
+            self._df = self._na_adc_columns(self._df)
         return self._df
 
     @property
@@ -65,6 +66,7 @@ class Characterization(BaseElement):
                 ignore_index=True
             )
             self._df_pedestals = self._df_pedestals.sort_values(by='timestamp').reset_index(drop=True)
+            self._df_pedestals = self._na_adc_columns(self._df_pedestals)
         return self._df_pedestals
 
     @property
@@ -77,7 +79,17 @@ class Characterization(BaseElement):
                 ignore_index=True
             )
             self._df_full = self._df_full.sort_values(by='timestamp').reset_index(drop=True)
+            self._df_full = self._na_adc_columns(self._df_full)
         return self._df_full
+
+    @staticmethod
+    def _na_adc_columns(df: pd.DataFrame) -> pd.DataFrame:
+        adc_cols = ['total_sum', 'total_square_sum', 'total_counts', 'mean_adc', 'std_adc']
+        existing = [col for col in adc_cols if col in df.columns]
+        if existing:
+            df = df.copy()
+            df[existing] = pd.NA
+        return df
 
     def load_characterization_files(self):
         for file_name in sorted(os.listdir(self.char_files_path)):
@@ -101,6 +113,7 @@ class Characterization(BaseElement):
         for pdh in self.photodiodes.values():
             pdh.generate_plots()
             pd_plots[pdh.level_header] = pdh.plotter.plots
+            logger.debug("Generated plots for photodiode %s", pdh.sensor_id)
         self.plotter.generate_plots()
 
     def to_dict(self):

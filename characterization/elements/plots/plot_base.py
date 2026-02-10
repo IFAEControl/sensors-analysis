@@ -73,6 +73,16 @@ class BasePlots(ABC):
         """Generate timeseries plot with dual axes for characterization data."""
         if self.df_full is None or self.df_full.empty:
             return
+        dt_min = self.df_full['datetime'].min()
+        dt_max = self.df_full['datetime'].max()
+        if pd.isna(dt_min) or pd.isna(dt_max):
+            return
+        dt_span = dt_max - dt_min
+        if dt_span == pd.Timedelta(0):
+            dt_span = pd.Timedelta(seconds=1)
+        left_pad = dt_span * 0.01
+        right_pad = dt_span * 0.2
+        x_limits = (dt_min - left_pad, dt_max + right_pad)
         fig_id = "timeseries"
         fig = plt.figure(figsize=(12, 10))
 
@@ -110,8 +120,13 @@ class BasePlots(ABC):
 
         h1, l1 = ax1.get_legend_handles_labels()
         h2, l2 = ax1_twin.get_legend_handles_labels()
-        ax1.legend(h1 + h2 + run_patches, l1 + l2 + [p.get_label() for p in run_patches], loc='best')
+        ax1.legend(
+            h1 + h2 + run_patches,
+            l1 + l2 + [p.get_label() for p in run_patches],
+            loc='upper right'
+        )
         ax1.set_title(f'{self._plot_label()} - Time Series')
+        ax1.set_xlim(x_limits)
         ax1.grid(True, alpha=0.3)
 
         # Middle plot: laser setpoints vs time
@@ -137,7 +152,7 @@ class BasePlots(ABC):
 
             h1, l1 = ax2.get_legend_handles_labels()
             h2, l2 = ax2_twin.get_legend_handles_labels()
-            ax2.legend(h1 + h2, l1 + l2, loc='best')
+            ax2.legend(h1 + h2, l1 + l2, loc='upper right')
         elif has_1064 or has_532:
             if has_1064:
                 ax2.scatter(
@@ -153,7 +168,7 @@ class BasePlots(ABC):
                 )
                 ax2.set_ylabel('532nm laser setpoint (mA)', color='c')
                 ax2.tick_params(axis='y', labelcolor='c')
-            ax2.legend(loc='best')
+            ax2.legend(loc='upper right')
 
         if sweep_col in self.df_full.columns:
             runs = sorted(self.df_full[sweep_col].dropna().unique())
@@ -172,6 +187,7 @@ class BasePlots(ABC):
                 if 'ax2_twin' in locals():
                     ax2_twin.axvspan(start, end, color=color, alpha=0.08)
 
+        ax2.set_xlim(x_limits)
         ax2.grid(True, alpha=0.3)
 
         # Bottom plot: Temperature and RH vs time
@@ -203,7 +219,8 @@ class BasePlots(ABC):
 
         h1, l1 = ax3.get_legend_handles_labels()
         h2, l2 = ax3_twin.get_legend_handles_labels()
-        ax3.legend(h1 + h2, l1 + l2, loc='best')
+        ax3.legend(h1 + h2, l1 + l2, loc='upper right')
+        ax3.set_xlim(x_limits)
         ax3.grid(True, alpha=0.3)
 
         plt.tight_layout()
