@@ -31,7 +31,7 @@ class FileSet(BaseElement):
         self.generate_plots = self.plotter.generate_plots
 
         self.output_path = os.path.join(
-            calibration.output_path,
+            calibration.plots_path,
             f"{self.wl}_{self.fw}"
         )
         self.level_header = self.label

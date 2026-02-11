@@ -24,6 +24,7 @@ class CalibDetailSection(BaseSection):
         # Further fileset section building logic goes here
         self._acquisition_conditions()
         self._timeseries()
+        self._calib_evolution_section()
 
     def _acquisition_conditions(self):
         pass
@@ -72,3 +73,49 @@ class CalibDetailSection(BaseSection):
             height= self.lf.y - self.lf.height -10
             )
 
+    def _calib_evolution_section(self):
+        evolutions = []
+        evol_1064 = None
+        for fs_name, fileset in self.report_data.plots.filesets.items():
+            if fileset.calibrations_evolution:
+                if "1064" in fs_name and evol_1064 is None:
+                    evol_1064 = fileset.calibrations_evolution
+                else:
+                    evolutions.append((fs_name, fileset.calibrations_evolution))
+        if evolutions:
+            self.report.add_slide('Calibration', 'Calibration evolution across past and current calibrations')
+            self.report.add_section('Calibrations evolution', 
+                                    x=self.init_x, y=self.init_y,
+                                    width= self.end_x - self.init_x,
+                                    anchor='calibration_evolution')
+            self.report.add_paragraph(
+                text="The following figure shows the evolution of the slope, intercepts, and pedestal values across past and current calibrations for this fileset.",
+                x=self.init_x,
+                y=self.lf.y - self.lf.height - 15,
+                width=525
+            )
+            if evol_1064:
+                self.report.add_plot(
+                    calc_plot_path(evol_1064),
+                    x= self.init_x,
+                    y = self.lf.y - self.lf.height - 20,
+                    width=450,
+                    height= self.lf.y - self.lf.height - self.end_y
+                )
+            
+            init_x = self.init_x + 450 + 10
+            init_y = self.init_y
+            total_height = self.init_y - self.end_y
+            plots_margin = 10
+            plot_height = (total_height - plots_margin * (len(evolutions) + 1)) // len(evolutions)
+
+            for fs_name, plot_path in evolutions:
+                f = self.report.add_plot(
+                    calc_plot_path(plot_path),
+                    x= init_x,
+                    y = init_y,
+                    width= self.end_x -init_x - 10,
+                    height= plot_height
+                )
+                init_y = init_y - plot_height - plots_margin
+                

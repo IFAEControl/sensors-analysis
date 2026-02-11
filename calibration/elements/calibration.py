@@ -3,6 +3,7 @@ Docstring for calibration.elements.calibration
 """
 import os
 import json
+import re
 from datetime import datetime, timezone
 import pandas as pd
 
@@ -25,16 +26,18 @@ class Calibration(BaseElement):
         super().__init__(DataHolderLevel.CALIBRATION)
         cfpath, opath, calib_name =  file_manage.setup_paths(call_args.calib_files_path, call_args.output_path,
                                                overwrite=call_args.overwrite)
+        self.root_output_path = call_args.output_path if call_args.output_path else './output/'
         self.calib_files_path = cfpath
-        self.reports_path = os.path.join(opath)
-        self.output_path = os.path.join(opath, 'calibration_outputs')
+        self.reports_path = opath
+        self.plots_path = os.path.join(opath, 'plots')
         self.filesets = {}
         self.meta = {
             'calling_arguments': vars(call_args),
             'calib_id': calib_name,
             'calib_files_path': cfpath,
-            'root_output_path': opath,
-            'calibration_outputs_path': self.output_path,
+            'root_output_path': self.root_output_path,
+            'calibration_output_path': opath,
+            'calibration_plots_path': self.plots_path,
             'reports_path': self.reports_path,
             'execution_date': datetime.now(timezone.utc).isoformat(),
             'system': system_info.get_system_info(),
@@ -44,10 +47,34 @@ class Calibration(BaseElement):
         self.plotter = CalibrationPlots(self)
         self.level_header = calib_name
         self.long_label = calib_name
+        self.past_calibrations: dict[str, dict] = {}
         self.initialize()
     
     def initialize(self):
-        os.makedirs(self.output_path, exist_ok=True)
+        os.makedirs(self.plots_path, exist_ok=True)
+        self._load_past_calibrations()
+
+    def _load_past_calibrations(self):
+        """Load previously exported reduced calibration json files from output root."""
+        output_root = self.root_output_path
+        file_pattern = re.compile(r"^calibration_\d{8}\.json$")
+        past_calibrations: dict[str, dict] = {}
+        try:
+            for fname in sorted(os.listdir(output_root)):
+                if not file_pattern.match(fname):
+                    continue
+                fpath = os.path.join(output_root, fname)
+                if not os.path.isfile(fpath):
+                    continue
+                key = os.path.splitext(fname)[0]
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        past_calibrations[key] = json.load(f)
+                except Exception as e:
+                    logger.warning("Skipping past calibration file %s: %s", fpath, str(e))
+        except Exception as e:
+            logger.warning("Failed to scan output root for past calibrations at %s: %s", output_root, str(e))
+        self.past_calibrations = past_calibrations
    
     @property
     def df(self):
@@ -100,13 +127,13 @@ class Calibration(BaseElement):
     
     def analyze(self):
         """Analyze the calibration data"""
-        os.makedirs(self.output_path, exist_ok=True)
+        os.makedirs(self.plots_path, exist_ok=True)
         self.anal.analyze()
         self.set_time_info()
     
     def generate_plots(self):
         """Generate calibration plots"""
-        os.makedirs(self.output_path, exist_ok=True)
+        os.makedirs(self.plots_path, exist_ok=True)
         fs_plots = self.plotter.plots.setdefault('filesets', {})
         for fileset in self.filesets.values():
             fileset.generate_plots()
@@ -135,6 +162,28 @@ class Calibration(BaseElement):
                 logger.error("Failed to serialize calibration data to JSON: %s", str(e))
                 print(outdata)
         logger.info("Calibration results saved to %s", results_path)
+
+    def export_reduced_summary(self):
+        results_path = os.path.join(self.reports_path, f"{self.meta['calib_id']}.json")
+        filesets = {}
+        for fileset in self.filesets.values():
+            linreg = fileset.anal.results.get('lr_refpd_vs_pm')
+            pedestals = fileset.anal.results.get('pedestals')
+            filesets[fileset.level_header] = {
+                'full_dataset_linreg': linreg,
+                'pedestals': pedestals
+            }
+        outdata = {
+            'acquisition_time': self.time_info,
+            'filesets': filesets
+        }
+        with open(results_path, 'w', encoding='utf-8') as f:
+            try:
+                json.dump(outdata, f, indent=2)
+            except TypeError as e:
+                logger.error("Failed to serialize reduced calibration summary to JSON: %s", str(e))
+                print(outdata)
+        logger.info("Reduced calibration summary saved to %s", results_path)
     
 
 #-------------------------------------
@@ -151,4 +200,3 @@ class Calibration(BaseElement):
     #     for calfile in self.calib_files:
     #         humidity_data = pd.concat([humidity_data, calfile.df[['datetime', 'RH']].copy()])
     #     return humidity_data
-

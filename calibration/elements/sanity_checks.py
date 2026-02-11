@@ -125,35 +125,87 @@ class SanityChecks:
                 logger.warning("Failed to execute check: %s, %s", check_name, str(e))
         return results
 
+    def _run_info_methods(self, severity, checks, checker) -> dict:
+        results = {}
+        for check_name, check_params in checks.items():
+            method_name = f"san_info_{check_name}"
+            info_method = getattr(checker, method_name, None)
+            if info_method is None:
+                logger.warning("Sanity info method %s not found in %s", method_name, checker.level_name)
+                results[f"{severity}.{check_name}"] = {
+                    'check_name': check_name,
+                    'check_args': check_params,
+                    'severity': severity,
+                    'info': "Sanity info method not found",
+                    'exec_error': True,
+                }
+                continue
+            try:
+                if isinstance(check_params, dict):
+                    info = info_method(**check_params, severity=severity)
+                elif isinstance(check_params, list):
+                    info = info_method(*check_params, severity=severity)
+                else:
+                    info = info_method(check_params, severity=severity)
+                results[f"{severity}.{check_name}"] = info
+            except Exception as e:
+                results[f"{severity}.{check_name}"] = {
+                    'check_name': check_name,
+                    'check_args': check_params,
+                    'severity': severity,
+                    'info': str(e),
+                    'exec_error': True,
+                }
+                logger.warning("Failed to execute info check: %s, %s", check_name, str(e))
+        return results
+
     def run_checks(self):
         """Run all configured sanity checks"""
         logger.info("Running sanity checks...")
         self.results = {}
+        defined_checks = {}
         
+
+
         checker = CalibrationSanityChecker(self.calibration)
         self.results[checker.level_header] = {'checks': {}}
+        defined_checks['calibration_checks'] = {}
         for severity, checks in self.calibration_checks_config.items():
             results = self._run_check_methods(severity, checks, checker)
             self.results[checker.level_header]['checks'].update(results)
+            info_results = self._run_info_methods(severity, checks, checker)
+            defined_checks['calibration_checks'].update(info_results)
         
         filesets_results = self.results[checker.level_header].setdefault('filesets', {})
-        
+        filesets_defined = defined_checks.setdefault('fileset_checks', {})
+        first_fs = True
+        first_calfile = True
         for _, fs in self.calibration.filesets.items():
             checker = FileSetSanityChecker(fs)
             fs_res = filesets_results.setdefault(fs.level_header, {'checks': {}})
             for severity, checks in self.fileset_checks_config.items():
                 results = self._run_check_methods(severity, checks, checker)
                 fs_res['checks'].update(results)
+                info_results = self._run_info_methods(severity, checks, checker)
+                if first_fs:
+                    filesets_defined.update(info_results)
+                    first_fs = False
             file_results = fs_res.setdefault('files', {})
+            file_defined = defined_checks.setdefault('file_checks', {})
             for calfile in fs.files:
                 checker = FileSanityChecker(calfile)
                 file_results.setdefault(calfile.level_header, {})
                 for severity, checks in self.file_checks_config.items():
                     results = self._run_check_methods(severity, checks, checker)
                     file_results[calfile.level_header].update(results)
+                    info_results = self._run_info_methods(severity, checks, checker)
+                    if first_calfile:
+                        file_defined.update(info_results)
+                        first_calfile = False
         
         c_d = self._c.to_dict()
         self.results['summary'] = c_d
+        self.results['defined_checks'] = defined_checks
         if c_d['total_failed'] > 0:
             logger.warning(f"Sanity checks completed. {c_d['total_passed']} passed, {c_d['total_failed']} failed out of {c_d['total_checks']} checks.")
         else:

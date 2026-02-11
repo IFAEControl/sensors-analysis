@@ -24,7 +24,7 @@ class CalibrationPlots(BasePlots):
     def __init__(self, calibration:Calibration):
         super().__init__()
         self._data_holder:Calibration = calibration
-        self.outpath = calibration.output_path
+        self.outpath = calibration.plots_path
     
     @property
     def output_path(self) -> str:

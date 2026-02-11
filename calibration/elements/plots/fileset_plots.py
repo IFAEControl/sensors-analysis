@@ -55,6 +55,7 @@ class FileSetPlots(BasePlots):
 
         self._gen_plot_conv_factor_slope_method_comparison()
         self._gen_plot_conv_factor_intercept_method_comparison()
+        self._gen_calibrations_evolution_plot()
         self._gen_plot_slopes_vs_temperature()
         self._gen_plot_slopes_intercepts_vs_index()
         self._gen_plot_slopes_intercepts_vs_index(vertical=True)
@@ -152,6 +153,140 @@ class FileSetPlots(BasePlots):
 
         # Title on the figure
         fig.suptitle(f'Conv Factor Slope Comparison for {self.level_label}', y=1.02)
+
+        self.savefig(fig, fig_id)
+        plt.close(fig)
+
+    def _gen_calibrations_evolution_plot(self):
+        """Plot calibration evolution across past and current calibrations for this fileset."""
+        fig_id = f"calibrations_evolution"
+        current_calibration = self._data_holder.dh_parent
+        fileset_label = self.level_label
+
+        def _pedestal_value_err(ped_data: dict, key: str):
+            p = ped_data.get(key, {}) if isinstance(ped_data, dict) else {}
+            if not isinstance(p, dict):
+                return None, None
+            weighted = bool(p.get("weighted", False))
+            value = p.get("w_mean") if weighted else p.get("mean")
+            err = p.get("w_stderr") if weighted else p.get("std")
+            return value, err
+
+        entries = []
+        past_calibrations = getattr(current_calibration, "past_calibrations", {})
+        for cal_label, cal_data in past_calibrations.items():
+            filesets = cal_data.get("filesets", {})
+            fs_entry = filesets.get(fileset_label, {})
+            linreg = fs_entry.get("full_dataset_linreg")
+            ped = fs_entry.get("pedestals", {})
+            if not isinstance(linreg, dict):
+                continue
+            if "slope" not in linreg or "intercept" not in linreg:
+                continue
+            pm_ped, pm_ped_err = _pedestal_value_err(ped, "pm")
+            refpd_ped, refpd_ped_err = _pedestal_value_err(ped, "refpd")
+            acq_min_ts = cal_data.get("acquisition_time", {}).get("min_ts")
+            entries.append({
+                "label": cal_label,
+                "sort_ts": acq_min_ts if isinstance(acq_min_ts, (int, float)) else float("inf"),
+                "slope": linreg.get("slope"),
+                "slope_err": linreg.get("stderr"),
+                "intercept": linreg.get("intercept"),
+                "intercept_err": linreg.get("intercept_stderr"),
+                "pm_ped": pm_ped,
+                "pm_ped_err": pm_ped_err,
+                "refpd_ped": refpd_ped,
+                "refpd_ped_err": refpd_ped_err,
+            })
+
+        current_label = current_calibration.meta.get("calib_id", "current")
+        current_linreg = self._anal.lr_refpd_vs_pm
+        current_ped = self._anal.results.get("pedestals", {})
+        current_pm_ped, current_pm_ped_err = _pedestal_value_err(current_ped, "pm")
+        current_refpd_ped, current_refpd_ped_err = _pedestal_value_err(current_ped, "refpd")
+        entries = [e for e in entries if e["label"] != current_label]
+        entries.append({
+            "label": current_label,
+            "sort_ts": self._data_holder.time_info.get("min_ts", float("inf")),
+            "slope": current_linreg.slope,
+            "slope_err": current_linreg.stderr,
+            "pm_ped": current_pm_ped,
+            "pm_ped_err": current_pm_ped_err,
+            "refpd_ped": current_refpd_ped,
+            "refpd_ped_err": current_refpd_ped_err,
+            "intercept": current_linreg.intercept,
+            "intercept_err": current_linreg.intercept_stderr,
+        })
+
+        entries.sort(key=lambda e: (e["sort_ts"], e["label"]))
+        if not entries:
+            logger.warning("No calibration evolution data found for fileset %s", fileset_label)
+            return
+
+        x = np.arange(len(entries))
+        labels = [
+            e["label"].replace("calibration_", "", 1)
+            if isinstance(e["label"], str) and e["label"].startswith("calibration_")
+            else e["label"]
+            for e in entries
+        ]
+        slopes = [e["slope"] for e in entries]
+        slopes_err = [e["slope_err"] for e in entries]
+        intercepts = [e["intercept"] for e in entries]
+        intercepts_err = [e["intercept_err"] for e in entries]
+        pm_ped = [e["pm_ped"] for e in entries]
+        pm_ped_err = [e["pm_ped_err"] for e in entries]
+        refpd_ped = [e["refpd_ped"] for e in entries]
+        refpd_ped_err = [e["refpd_ped_err"] for e in entries]
+
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=2, ncols=1, figsize=(12, 8), sharex=True, constrained_layout=True
+        )
+
+        slope_color = "tab:blue"
+        pm_color = "tab:orange"
+        refpd_color = "tab:green"
+        intercept_color = "tab:purple"
+
+        # Top subplot: slope (left axis) and PM pedestal (right axis)
+        ax1.errorbar(
+            x, slopes, yerr=slopes_err,
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=slope_color
+        )
+        ax1.set_ylabel(f"Slope ({self.power_units}/V)", color=slope_color)
+        ax1.tick_params(axis="y", colors=slope_color)
+        ax1.grid(True, alpha=0.3)
+        ax1.set_title(f"Calibrations evolution {fileset_label}")
+
+        ax1r = ax1.twinx()
+        ax1r.errorbar(
+            x, intercepts, yerr=intercepts_err,
+            fmt='s', markersize=5, linewidth=1.2, capsize=4, color=intercept_color
+        )
+        ax1r.set_ylabel(f"Intercepts ({self.power_units})", color=intercept_color)
+        ax1r.tick_params(axis="y", colors=intercept_color)
+
+        # Lower subplot: pedestals info with PM (left) and RefPD (right)
+        ax2.errorbar(
+            x, pm_ped, yerr=pm_ped_err,
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=pm_color
+        )
+        ax2.set_ylabel(f"PM pedestal ({self.power_units})", color=pm_color)
+        ax2.tick_params(axis="y", colors=pm_color)
+        ax2.set_xlabel("Calibration label")
+        ax2.grid(True, alpha=0.3)
+        ax2.set_title(f"Pedestals evolution {fileset_label}")
+
+        ax2r = ax2.twinx()
+        ax2r.errorbar(
+            x, refpd_ped, yerr=refpd_ped_err,
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=refpd_color
+        )
+        ax2r.set_ylabel("RefPD pedestal (V)", color=refpd_color)
+        ax2r.tick_params(axis="y", colors=refpd_color)
+
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(labels, rotation=45, ha='right')
 
         self.savefig(fig, fig_id)
         plt.close(fig)

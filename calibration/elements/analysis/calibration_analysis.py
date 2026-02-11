@@ -23,7 +23,7 @@ class CalibrationAnalysis:
     """
     def __init__(self, calibration:Calibration):
         self.cal = calibration
-        self.outpath = calibration.output_path
+        self.outpath = calibration.plots_path
         self.filesets = calibration.filesets
         self.plots = {}
         self.results = {}

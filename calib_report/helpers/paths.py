@@ -27,7 +27,7 @@ def calc_paths(input_path: str, output_path: str|None):
         calib_anal_files_path = input_path
         # List files in input_path and find calibration_*_summary.json
         files = os.listdir(input_path)
-        pattern = re.compile(r'calibration_[a-z,A-Z,0-9]*-summary\.json')
+        pattern = re.compile(r'calibration_[a-z,A-Z,0-9]*_extended\.json')
         matching_files = [f for f in files if pattern.match(f)]
         if not matching_files:
             raise FileNotFoundError(f"No calibration summary file found in {input_path}")
@@ -40,7 +40,7 @@ def calc_paths(input_path: str, output_path: str|None):
         report_path = input_path
     elif input_path.endswith('.json'):
         input_file = input_path
-        calib_anal_files_path = os.path.join(os.path.dirname(input_path), 'calibration_outputs')
+        calib_anal_files_path = os.path.join(os.path.dirname(input_path), 'plots')
         report_path = os.path.dirname(input_path)
     else:
         raise ValueError("Input path must be a directory or a .json file.")

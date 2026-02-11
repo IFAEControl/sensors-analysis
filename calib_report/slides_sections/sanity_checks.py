@@ -26,6 +26,8 @@ class SanityChecksSection(BaseSection):
 
     def _build(self, depth: int):
         """Build the sanity checks section of the report"""
+        if not self._has_failed_checks(depth):
+            return
         self.report.add_slide('Sanity Checks')
         self.report.add_section(
             'Sanity Checks', 
@@ -37,6 +39,19 @@ class SanityChecksSection(BaseSection):
         
         # Further sanity checks section building logic goes here
         self.add_sanity_checks(depth)
+
+    def _has_failed_checks(self, depth: int) -> bool:
+        if any(check.passed is False for check in self.report_data.sanity_checks.calibration_checks.values()):
+            return True
+        if depth == 0 or depth >= 2:
+            for fs_checks in self.report_data.sanity_checks.fileset_checks.values():
+                if any(check.passed is False for check in fs_checks.values()):
+                    return True
+        if depth == 0 or depth >= 3:
+            for file_checks in self.report_data.sanity_checks.file_checks.values():
+                if any(check.passed is False for check in file_checks.values()):
+                    return True
+        return False
     
     def _add_sanity_check_box(self, check: SanityCheckEntry):
         f = get_sanity_check_box_frame(
@@ -119,22 +134,37 @@ class SanityChecksSection(BaseSection):
 
     def add_sanity_checks(self, depth: int):
         """Add a subsection for sanity checks"""
-        self._add_subsection(
-            "Calibration Level Sanity Checks", 
-            anchor = 'calib_level_sanity_checks')
-        for name, check in self.report_data.sanity_checks.calibration_checks.items():
-            self._add_sanity_check_box(check)
+        calib_failed = [
+            check for check in self.report_data.sanity_checks.calibration_checks.values()
+            if check.passed is False
+        ]
+        if calib_failed:
+            self._add_subsection("Calibration Level Sanity Checks", anchor='calib_level_sanity_checks')
+            for check in calib_failed:
+                self._add_sanity_check_box(check)
+
         if depth == 0 or depth >=2:
-            self._add_subsection(f"FileSet Level Sanity Checks", 'fileset_level_sanity_checks')
-            for fs_name, fs_checks in self.report_data.sanity_checks.fileset_checks.items():
-                self._add_subsubsection(f"FileSet {fs_name}", anchor=f'fileset_{fs_name}_sanity_checks')
-                for name, check in fs_checks.items():
-                    self._add_sanity_check_box(check)
+            fileset_failed = {
+                fs_name: [check for check in fs_checks.values() if check.passed is False]
+                for fs_name, fs_checks in self.report_data.sanity_checks.fileset_checks.items()
+            }
+            fileset_failed = {fs_name: checks for fs_name, checks in fileset_failed.items() if checks}
+            if fileset_failed:
+                self._add_subsection("FileSet Level Sanity Checks", 'fileset_level_sanity_checks')
+                for fs_name, failed_checks in fileset_failed.items():
+                    self._add_subsubsection(f"FileSet {fs_name}", anchor=f'fileset_{fs_name}_sanity_checks')
+                    for check in failed_checks:
+                        self._add_sanity_check_box(check)
         
         if depth == 0 or depth >=3:
-            self._add_subsection(f"File Level Sanity Checks", 'file_level_sanity_checks')
-            for file_name, file_checks in self.report_data.sanity_checks.file_checks.items():
-                self._add_subsubsection(f"File {file_name}", anchor=f'file_{file_name}_sanity_checks')
-                for name, check in file_checks.items():
-                    self._add_sanity_check_box(check)
-
+            file_failed = {
+                file_name: [check for check in file_checks.values() if check.passed is False]
+                for file_name, file_checks in self.report_data.sanity_checks.file_checks.items()
+            }
+            file_failed = {file_name: checks for file_name, checks in file_failed.items() if checks}
+            if file_failed:
+                self._add_subsection("File Level Sanity Checks", 'file_level_sanity_checks')
+                for file_name, failed_checks in file_failed.items():
+                    self._add_subsubsection(f"File {file_name}", anchor=f'file_{file_name}_sanity_checks')
+                    for check in failed_checks:
+                        self._add_sanity_check_box(check)

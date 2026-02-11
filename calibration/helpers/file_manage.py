@@ -58,6 +58,9 @@ def setup_paths(calib_files_path, output_path=None, overwrite=False):
     if output_path is None:
         output_path = f'./output/{base_name}'
     
+    else:
+        output_path = os.path.join(output_path, base_name)
+    
     if os.path.exists(output_path):
         if not overwrite:
             logger.error("Output path '%s' already exists. Use --overwrite / -w to overwrite.", output_path)

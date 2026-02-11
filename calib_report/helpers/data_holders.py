@@ -97,7 +97,7 @@ class Meta:
     calib_id: Optional[str]
     calib_files_path: Optional[str]
     root_output_path: Optional[str]
-    calibration_outputs_path: Optional[str]
+    calibration_plots_path: Optional[str]
     reports_path: Optional[str]
     execution_date: Optional[str]
     system: SystemInfo
@@ -111,7 +111,7 @@ class Meta:
             calib_id=data.get("calib_id"),
             calib_files_path=data.get("calib_files_path"),
             root_output_path=data.get("root_output_path"),
-            calibration_outputs_path=data.get("calibration_outputs_path"),
+            calibration_plots_path=data.get("calibration_plots_path"),
             reports_path=data.get("reports_path"),
             execution_date=data.get("execution_date"),
             system=SystemInfo.from_dict(data.get("system", {})),
@@ -430,6 +430,7 @@ class FileSetPlots:
     timeseries: Optional[str] = None
     pm_samples_full: Optional[str] = None
     pm_samples_pedestals: Optional[str] = None
+    calibrations_evolution: Optional[str] = None
     ConvFactorSlopes_Comparison: Optional[str] = None
     ConvFactorIntercepts_Comparison: Optional[str] = None
     pmVsRefPD_fitSlope_vs_Temperature: Optional[str] = None
@@ -457,6 +458,7 @@ class FileSetPlots:
             timeseries=data.get("timeseries"),
             pm_samples_full=data.get("pm_samples_full"),
             pm_samples_pedestals=data.get("pm_samples_pedestals"),
+            calibrations_evolution=data.get("calibrations_evolution"),
             ConvFactorSlopes_Comparison=data.get(
                 "ConvFactorSlopes_Comparison"),
             ConvFactorIntercepts_Comparison=data.get(

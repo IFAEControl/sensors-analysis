@@ -1,4 +1,6 @@
 import os
+import shutil
+import zipfile
 import argparse
 from datetime import datetime, timezone
 now = datetime.now(timezone.utc)
@@ -21,8 +23,10 @@ def main():
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
     parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
+    parser.add_argument("--no-gen-report", action="store_true", help="Do not generate calibration report")
+    parser.add_argument("--zip-it", "-z", action="store_true", help="Zip calibration output, move key files to root, and remove output folder")
     parser.add_argument("--do-not-sub-pedestals", "-d", action="store_true", help="Do not subtract pedestals from data")
-    parser.add_argument("--do-not-replace-zero-pm-stds", "-z", action="store_true", help="Do not replace zero PM stds from data")
+    parser.add_argument("--do-not-replace-zero-pm-stds", "-s", action="store_true", help="Do not replace zero PM stds from data")
     parser.add_argument("--use-first-ped-in-linreag", "-p", action="store_true", help="Use first pedestal measurement in linear regression")
     parser.add_argument("--use-W-as-power-units", "-u", action="store_true", help="Use W as power units instead of uW")
     args = parser.parse_args()
@@ -42,22 +46,26 @@ def main():
     
     calibration = Calibration(args)
     if args.log_file:
-        log_file_path = os.path.join(calibration.output_path, f"{now.strftime('%Y%m%d_%H%M%S')}_calibration.log")
+        log_file_path = os.path.join(calibration.plots_path, f"{now.strftime('%Y%m%d_%H%M%S')}_calibration.log")
         logger.info("Logging to file: %s", log_file_path)
         from .helpers import add_file_handler
         add_file_handler(log_file_path)
     logger.info("Calibration files path: %s", args.calib_files_path)
-    logger.info("Output path: %s", calibration.output_path)
+    logger.info("Output path: %s", calibration.plots_path)
     logger.info("Starting calibration analysis at %s", now.isoformat())
 
     calibration.load_calibration_files()
-    config.summary_file_name = f"{calibration.meta['calib_id']}-summary.json"
+    config.summary_file_name = f"{calibration.meta['calib_id']}_extended.json"
     calibration.analyze()
     if config.generate_plots:
         calibration.generate_plots()
     san = SanityChecks(calibration)
     san.run_checks()
     calibration.export_calib_data_summary({'sanity_checks': san.results})
+    calibration.export_reduced_summary()
+    if not args.no_gen_report and config.generate_plots:
+        from calib_report.main import build_report
+        build_report(calibration.reports_path)
     try:
         with open(os.path.join(calibration.reports_path, 'sanity_checks_results.json'), 'w', encoding='utf-8') as f:
             import json
@@ -66,6 +74,27 @@ def main():
         import pprint
         logger.error("Failed to save sanity checks results: %s", str(e))
         pprint.pprint(san.results)
+
+    if args.zip_it:
+        calib_dir = calibration.reports_path
+        root_output = calibration.root_output_path
+        zip_path = os.path.join(root_output, f"{calibration.meta['calib_id']}_analysis.zip")
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for folder, _, files in os.walk(calib_dir):
+                for fname in files:
+                    fpath = os.path.join(folder, fname)
+                    relpath = os.path.relpath(fpath, root_output)
+                    zf.write(fpath, relpath)
+        for fname in (
+            f"{calibration.meta['calib_id']}.json",
+            f"{calibration.meta['calib_id']}_extended.json",
+            f"{calibration.meta['calib_id']}_report.pdf",
+        ):
+            src = os.path.join(calib_dir, fname)
+            if os.path.exists(src):
+                shutil.move(src, os.path.join(root_output, fname))
+        shutil.rmtree(calib_dir)
+
     now_end = datetime.now(timezone.utc)
     logger.info("Finished calibration analysis at %s", now_end.isoformat())
     logger.info("Total duration: %s", str(now_end - now))

@@ -26,3 +26,15 @@ class FileSetSanityChecker(SanityBase):
             info=info,
             check_explanation=f"Checks if there are at least {min_files} files in the fileset."
         )
+
+    def san_info_min_files(self, min_files, severity) -> dict:
+        """Return info for minimum files check."""
+        num_files = len(self.fileset.files)
+        info = f"Number of files: {num_files}, Minimum required: {min_files}"
+        return {
+            'check_name': 'min_files',
+            'check_args': {'min_files': min_files},
+            'severity': severity,
+            'info': info,
+            'check_explanation': f"Checks if there are at least {min_files} files in the fileset.",
+        }

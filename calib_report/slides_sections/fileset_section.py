@@ -125,8 +125,8 @@ class FileSetSection(BaseSection):
             width=text_width,
             height=150
         )
-        print(
-            f"Paragraphs frame: x={f_list[0].x}, y={f_list[0].y}, width={f_list[0].width}, height={f_list[0].height}")
+        # print(
+        #     f"Paragraphs frame: x={f_list[0].x}, y={f_list[0].y}, width={f_list[0].width}, height={f_list[0].height}")
 
         # sc_ix = ts_w + 10
 
