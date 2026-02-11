@@ -136,7 +136,7 @@ class SanityChecks:
                     'check_name': check_name,
                     'check_args': check_params,
                     'severity': severity,
-                    'info': "Sanity info method not found",
+                    'check_explanation': "Sanity info method not found",
                     'exec_error': True,
                 }
                 continue
@@ -153,7 +153,7 @@ class SanityChecks:
                     'check_name': check_name,
                     'check_args': check_params,
                     'severity': severity,
-                    'info': str(e),
+                    'check_explanation': str(e),
                     'exec_error': True,
                 }
                 logger.warning("Failed to execute info check: %s, %s", check_name, str(e))
@@ -189,7 +189,7 @@ class SanityChecks:
                 info_results = self._run_info_methods(severity, checks, checker)
                 if first_fs:
                     filesets_defined.update(info_results)
-                    first_fs = False
+            first_fs = False
             file_results = fs_res.setdefault('files', {})
             file_defined = defined_checks.setdefault('file_checks', {})
             for calfile in fs.files:
@@ -201,7 +201,7 @@ class SanityChecks:
                     info_results = self._run_info_methods(severity, checks, checker)
                     if first_calfile:
                         file_defined.update(info_results)
-                        first_calfile = False
+                first_calfile = False
         
         c_d = self._c.to_dict()
         self.results['summary'] = c_d

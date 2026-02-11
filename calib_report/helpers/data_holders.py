@@ -514,7 +514,7 @@ class Plots:
 class SanityCheckEntry:
     """A single sanity check result."""
     check_name: Optional[str]
-    check_args: Optional[str]
+    check_args: Optional[Any]
     passed: bool
     info: Optional[str]
     severity: Optional[str]
@@ -539,17 +539,30 @@ class SanityCheckEntry:
 @dataclass
 class SanityChecksSummaryDetails:
     """Breakdown of check results by severity."""
-    errors_passed: int
-    warnings_passed: int
-    warnings_failed: int
+    error_passed: int
+    warning_passed: int
+    warning_failed: int
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecksSummaryDetails":
         return cls(
-            errors_passed=int(data.get("errors_passed", 0)),
-            warnings_passed=int(data.get("warnings_passed", 0)),
-            warnings_failed=int(data.get("warnings_failed", 0)),
+            error_passed=int(data.get("error_passed", data.get("errors_passed", 0))),
+            warning_passed=int(data.get("warning_passed", data.get("warnings_passed", 0))),
+            warning_failed=int(data.get("warning_failed", data.get("warnings_failed", 0))),
         )
+
+    # Backward-compatible aliases
+    @property
+    def errors_passed(self) -> int:
+        return self.error_passed
+
+    @property
+    def warnings_passed(self) -> int:
+        return self.warning_passed
+
+    @property
+    def warnings_failed(self) -> int:
+        return self.warning_failed
 
 
 @dataclass
@@ -572,6 +585,54 @@ class SanityChecksSummary:
 
 
 @dataclass
+class SanityCheckDefinition:
+    """A sanity check definition entry from sanity_checks.defined_checks."""
+    check_name: Optional[str]
+    check_args: Optional[Any]
+    severity: Optional[str]
+    check_explanation: Optional[str]
+    exec_error: bool = False
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SanityCheckDefinition":
+        return cls(
+            check_name=data.get("check_name"),
+            check_args=data.get("check_args"),
+            severity=data.get("severity"),
+            check_explanation=data.get("check_explanation"),
+            exec_error=bool(data.get("exec_error", False)),
+        )
+
+
+@dataclass
+class SanityChecksDefined:
+    """Configured sanity checks metadata grouped by level."""
+    calibration_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+    fileset_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+    file_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecksDefined":
+        return cls(
+            calibration_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in (data.get("calibration_checks", {}) or {}).items()
+                if isinstance(check_data, dict)
+            },
+            fileset_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in (data.get("fileset_checks", {}) or {}).items()
+                if isinstance(check_data, dict)
+            },
+            file_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in (data.get("file_checks", {}) or {}).items()
+                if isinstance(check_data, dict)
+            },
+        )
+
+
+@dataclass
 class SanityChecks:
     """All sanity check results organized by calibration, fileset, and file."""
     calibration_checks: Dict[str, SanityCheckEntry] = field(
@@ -581,6 +642,7 @@ class SanityChecks:
     file_checks: Dict[str, Dict[str, SanityCheckEntry]
                          ] = field(default_factory=dict)
     summary: Optional[SanityChecksSummary] = None
+    defined_checks: Optional[SanityChecksDefined] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecks":
@@ -588,13 +650,16 @@ class SanityChecks:
         summary_data = data.get("summary")
         summary = SanityChecksSummary.from_dict(
             summary_data) if summary_data else None
+        defined_checks_data = data.get("defined_checks")
+        defined_checks = SanityChecksDefined.from_dict(
+            defined_checks_data) if isinstance(defined_checks_data, dict) else None
 
         calibration_checks: Dict[str, SanityCheckEntry] = {}
         fileset_checks: Dict[str, Dict[str, SanityCheckEntry]] = {}
         file_checks: Dict[str, Dict[str, SanityCheckEntry]] = {}
 
         for group_name, group_data in (data or {}).items():
-            if group_name == "summary" or not isinstance(group_data, dict):
+            if group_name in {"summary", "defined_checks"} or not isinstance(group_data, dict):
                 continue
 
             checks_block = group_data.get("checks")
@@ -634,6 +699,7 @@ class SanityChecks:
             fileset_checks=fileset_checks,
             file_checks=file_checks,
             summary=summary,
+            defined_checks=defined_checks,
         )
 
 

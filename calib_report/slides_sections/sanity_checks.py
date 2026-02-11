@@ -26,19 +26,24 @@ class SanityChecksSection(BaseSection):
 
     def _build(self, depth: int):
         """Build the sanity checks section of the report"""
-        if not self._has_failed_checks(depth):
+        has_failed = self._has_failed_checks(depth)
+        has_defined = self._has_defined_checks()
+        if not has_failed and not has_defined:
             return
-        self.report.add_slide('Sanity Checks')
-        self.report.add_section(
-            'Sanity Checks', 
-            x=self.init_x,
-            y=self.init_y,
-            width = self.col_width,
-            anchor='sanity_checks')
-        self._update_height()
-        
-        # Further sanity checks section building logic goes here
-        self.add_sanity_checks(depth)
+        if has_failed:
+            self.report.add_slide('Sanity Checks')
+            self.report.add_section(
+                'Sanity Checks', 
+                x=self.init_x,
+                y=self.init_y,
+                width = self.col_width,
+                anchor='sanity_checks')
+            self._update_height()
+            
+            # Further sanity checks section building logic goes here
+            self.add_sanity_checks(depth)
+        if has_defined:
+            self.checks_defined()
 
     def _has_failed_checks(self, depth: int) -> bool:
         if any(check.passed is False for check in self.report_data.sanity_checks.calibration_checks.values()):
@@ -52,6 +57,16 @@ class SanityChecksSection(BaseSection):
                 if any(check.passed is False for check in file_checks.values()):
                     return True
         return False
+
+    def _has_defined_checks(self) -> bool:
+        defined = self.report_data.sanity_checks.defined_checks
+        if defined is None:
+            return False
+        return bool(
+            defined.calibration_checks
+            or defined.fileset_checks
+            or defined.file_checks
+        )
     
     def _add_sanity_check_box(self, check: SanityCheckEntry):
         f = get_sanity_check_box_frame(
@@ -168,3 +183,81 @@ class SanityChecksSection(BaseSection):
                     self._add_subsubsection(f"File {file_name}", anchor=f'file_{file_name}_sanity_checks')
                     for check in failed_checks:
                         self._add_sanity_check_box(check)
+
+    def checks_defined(self):
+        """Add a slide with all configured sanity checks from SanityChecksDefined."""
+        defined = self.report_data.sanity_checks.defined_checks
+        if defined is None:
+            return
+
+        groups = [
+            ("Calibration", defined.calibration_checks),
+            ("FileSet", defined.fileset_checks),
+            ("File", defined.file_checks),
+        ]
+        if not any(checks for _, checks in groups):
+            return
+
+        self.report.add_slide('Defined Sanity Checks')
+        sec = self.report.add_section(
+            'Defined Sanity Checks',
+            x=self.init_x,
+            y=self.init_y,
+            width=self.col_width,
+            anchor='defined_sanity_checks'
+        )
+
+        col_idx = 0
+        curr_y = sec.y - sec.height - 10
+        min_y = self.end_y + 20
+
+        def next_column_or_slide():
+            nonlocal col_idx, curr_y
+            if col_idx == 0:
+                col_idx = 1
+                curr_y = self.init_y
+            else:
+                self.report.add_slide('Defined Sanity Checks (cont.)', '')
+                col_idx = 0
+                curr_y = self.init_y
+
+        def ensure_space(min_height: float):
+            nonlocal curr_y
+            if curr_y - min_height < min_y:
+                next_column_or_slide()
+
+        def add_subsub(title: str):
+            nonlocal curr_y
+            ensure_space(40)
+            f = self.report.add_subsubsection(
+                title,
+                x=self.frames[col_idx].x,
+                y=curr_y,
+                width=self.frames[col_idx].width,
+                toc=False,
+            )
+            curr_y = f.y - f.height - 8
+
+        def add_text(text: str, bold: bool = False):
+            nonlocal curr_y
+            ensure_space(28)
+            f = self.report.add_paragraph(
+                text,
+                x=self.frames[col_idx].x + 8,
+                y=curr_y,
+                width=self.frames[col_idx].width - 8,
+                font_size=9.5,
+                bold=bold,
+            )
+            curr_y = f.y - f.height - 6
+
+        for group_title, checks in groups:
+            add_subsub(group_title)
+            if not checks:
+                add_text("No defined checks.")
+                continue
+            for check_key, check_data in checks.items():
+                sev = check_data.severity or "n/a"
+                add_text(f"{check_key} [{sev}]", bold=True)
+                if check_data.check_explanation:
+                    add_text(check_data.check_explanation)
