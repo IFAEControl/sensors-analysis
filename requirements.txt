@@ -8,6 +8,7 @@ pyyaml
 
 reportlab>=3.6.12
 pdfrw
+playwright
 
 #development tools, do not add to pyproject.toml
 flake8

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from reportlab.lib import colors
+
 from base_report.base_report_slides import BaseReportSlides, Frame
 
 
@@ -57,21 +59,11 @@ def _build_table_rows(photodiodes: dict, sensors: list[str]) -> list[list[str]]:
     return rows
 
 
-def add_characterization_overview(
+def _add_ring_tables(
     report: BaseReportSlides,
-    report_data: dict,
     frame: Frame,
-) -> None:
-    report.add_section(
-        "Characterization Overview",
-        x=frame.x,
-        y=frame.y,
-        width=frame.width,
-        anchor="characterization_overview",
-        toc=True,
-    )
-
-    photodiodes = report_data.get("analysis", {}).get("photodiodes", {}) or {}
+    photodiodes: dict,
+) -> float:
     top_y = report.last_frame.y - report.last_frame.height - 14
 
     horizontal_gap = 12
@@ -113,27 +105,156 @@ def add_characterization_overview(
     row2_start_x = frame.x + (frame.width - bottom_total_width) / 2
     row2_h3 = _draw_ring_table("3", row2_start_x, row2_y)
     row2_h4 = _draw_ring_table("4", row2_start_x + table_width + horizontal_gap, row2_y)
-
     row2_height = max(row2_h3, row2_h4)
-    paragraph_y = row2_y - row2_height - 14
-    available_height = max(60, paragraph_y - 10)
-    text_gap = 16
-    text_width = (frame.width - text_gap)
+    return row2_y - row2_height - 12
 
-    left_paragraphs = [
+
+def _add_note_rectangle(
+    report: BaseReportSlides,
+    frame: Frame,
+    note_y: float,
+) -> None:
+    note_width = frame.width
+    note_x = frame.x
+
+    pad_x = 12
+    pad_top = 10
+    pad_bottom = 10
+    paragraph_gap = 4
+    formula_gap = 2
+
+    inner_x = note_x + pad_x
+    inner_width = note_width - 2 * pad_x
+    col_gap = 12
+    text_col_width = (inner_width - col_gap) / 2
+    formula_col_x = inner_x + text_col_width + col_gap
+    formula_col_width = text_col_width
+
+    note_title = "Note"
+    note_paragraphs = [
         "The values shown in these tables are used to convert read ADC counts to Reference Photodiode volts.",
-        "ADC -> RefPD conversion: <b>V_refpd = <slope_v> * ADC + <intercept_v></b>.",
         "To convert ADC counts to optical power in watts, this conversion must be combined with the setup calibration.",
-        "Setup conversion: <b>P_W = <slope_w> * V_refpd + <intercept_w></b>.",
-        "Combined expression: <b>P_W = <slope_w> * (<slope_v> * ADC + <intercept_v>) + <intercept_w></b>.",
     ]
-    report.add_paragraphs(
-        left_paragraphs,
-        x=frame.x,
-        y=paragraph_y,
-        width=text_width,
-        height=available_height,
-        font_size=10.5,
-        gap=2,
+    formulas = [
+        r"V_{refpd} = <slope_v> \cdot ADC + <intercept_v>",
+        r"P_W = <slope_w> \cdot V_{refpd} + <intercept_w>",
+        r"P_W = <slope_w> \cdot (<slope_v> \cdot ADC + <intercept_v>) + <intercept_w>",
+    ]
+    formula_font_size = 11.0
+    formula_width = formula_col_width * 0.99
+
+    title_frame = report.get_paragraph_frame(
+        note_title,
+        x=inner_x,
+        y=note_y - pad_top,
+        width=inner_width,
+        font_size=12,
+        bold=True,
+    )
+    paragraph_frames = [
+        report.get_paragraph_frame(
+            p,
+            x=inner_x,
+            y=note_y,
+            width=text_col_width,
+            font_size=10.0,
+        )
+        for p in note_paragraphs
+    ]
+    paragraphs_height = sum(f.height for f in paragraph_frames) + paragraph_gap * max(
+        0, len(paragraph_frames) - 1
+    )
+    if paragraphs_height > note_y:
+        raise ValueError(
+            f"Note paragraphs height ({paragraphs_height:.1f}) exceeds available note_y ({note_y:.1f})."
+        )
+
+    top_block_height = pad_top + title_frame.height + 6 + paragraphs_height
+    note_height = top_block_height + pad_bottom
+    if note_height > note_y + 1e-6:
+        raise ValueError(
+            f"Calculated note height ({note_height:.1f}) exceeds note_y ({note_y:.1f})."
+        )
+    note_height = max(note_height, note_y - pad_bottom) # enforce a minimum height for aesthetics
+
+    formulas_gaps = formula_gap * max(0, len(formulas) - 1)
+    formula_start_y = note_y - pad_top - title_frame.height - 6
+    formula_area_height = formula_start_y - 10
+    available_for_formulas = formula_area_height - formulas_gaps
+    if len(formulas) > 0 and available_for_formulas <= 0:
+        raise ValueError(
+            "No vertical space available in the right column to place formulas."
+        )
+    if len(formulas) > 0:
+        formula_box_height = available_for_formulas / len(formulas)
+    else:
+        formula_box_height = 0.0
+    if len(formulas) > 0 and formula_box_height <= 0:
+        raise ValueError("Computed non-positive formula box height.")
+
+    report.add_rectangle(
+        x=note_x,
+        y=note_y,
+        width=note_width,
+        height=note_height,
+        fill_color=colors.HexColor("#F7FAFD"),
+        stroke_color=colors.HexColor("#B7C3D0"),
+        stroke_width=0.6,
     )
 
+    cursor_y = note_y - pad_top
+    title_drawn = report.add_paragraph(
+        note_title,
+        x=inner_x,
+        y=cursor_y,
+        width=inner_width,
+        font_size=12,
+        bold=True,
+    )
+    cursor_y = title_drawn.y - title_drawn.height - 6
+
+    report.add_paragraphs(
+        note_paragraphs,
+        x=inner_x,
+        y=cursor_y,
+        width=text_col_width,
+        height=paragraphs_height,
+        font_size=10.0,
+        gap=paragraph_gap,
+    )
+
+    formula_cursor_y = cursor_y
+    formula_x = formula_col_x + (formula_col_width - formula_width) / 2
+    for eq in formulas:
+        ff = report.add_formula(
+            formula=eq,
+            x=formula_x,
+            y=formula_cursor_y,
+            width=formula_width,
+            height=formula_box_height,
+            font_size=formula_font_size,
+            display_mode=True,
+            fallback_to_text=True,
+            render_horizontal_padding_px=0,
+            render_vertical_padding_px=0,
+        )
+        formula_cursor_y = ff.y - ff.height - formula_gap
+
+
+def add_characterization_overview(
+    report: BaseReportSlides,
+    report_data: dict,
+    frame: Frame,
+) -> None:
+    report.add_section(
+        "Characterization Overview",
+        x=frame.x,
+        y=frame.y,
+        width=frame.width,
+        anchor="characterization_overview",
+        toc=True,
+    )
+
+    photodiodes = report_data.get("analysis", {}).get("photodiodes", {}) or {}
+    note_y = _add_ring_tables(report=report, frame=frame, photodiodes=photodiodes)
+    _add_note_rectangle(report=report, frame=frame, note_y=note_y)

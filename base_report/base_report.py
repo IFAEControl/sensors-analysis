@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import logging
 import os
 from pydoc import text
 from typing import Iterable, Sequence
@@ -33,6 +34,8 @@ except ImportError:  # pragma: no cover - optional dependency
     PdfReader = None
     pagexobj = None
     makerl = None
+
+logger = logging.getLogger(__name__)
 
 
 class PdfFigure(Flowable):
@@ -203,6 +206,7 @@ class BaseReport:
             title=self.title,
         )
         self.story = []
+        self._math_renderer = None
         self.toc = TableOfContents()
         self.figure_index = 0
         self.table_index = 0
@@ -464,6 +468,77 @@ class BaseReport:
         )
         self.story.append(KeepTogether([figure_table]))
         self.story.append(Spacer(1, 10))
+
+    def set_math_renderer(self, renderer) -> None:
+        """Inject a custom math renderer implementing render_formula_pdf()."""
+        self._math_renderer = renderer
+
+    def _get_math_renderer(self):
+        if self._math_renderer is None:
+            from .math_renderer import LocalKaTeXRenderer
+
+            self._math_renderer = LocalKaTeXRenderer()
+        return self._math_renderer
+
+    def add_formula(
+        self,
+        formula: str,
+        width_mm: float = 120,
+        caption: str | None = None,
+        center: bool = False,
+        font_size: float = 13.0,
+        display_mode: bool = True,
+        fallback_to_text: bool = True,
+    ) -> None:
+        try:
+            from .math_renderer import FormulaRenderOptions
+
+            renderer = self._get_math_renderer()
+            opts = FormulaRenderOptions(
+                display_mode=display_mode,
+                font_size_px=max(12, int(font_size * 2.2)),
+                max_width_px=max(600, int(width_mm * 7.0)),
+            )
+            try:
+                rendered_path = renderer.render_formula_pdf(
+                    formula=formula,
+                    options=opts,
+                )
+            except Exception:
+                rendered_path = renderer.render_formula_png(
+                    formula=formula,
+                    options=opts,
+                )
+            self.add_figure(
+                image_path=rendered_path,
+                width_mm=width_mm,
+                caption=caption,
+                center=center,
+            )
+        except Exception as exc:
+            if not fallback_to_text:
+                raise
+            logger.debug("Formula rendering fallback to text: %s", exc)
+            self.add_paragraph(formula)
+
+    def add_formula_block(
+        self,
+        formulas: Sequence[str],
+        width_mm: float = 120,
+        center: bool = False,
+        font_size: float = 13.0,
+        display_mode: bool = True,
+        fallback_to_text: bool = True,
+    ) -> None:
+        for formula in formulas:
+            self.add_formula(
+                formula=formula,
+                width_mm=width_mm,
+                center=center,
+                font_size=font_size,
+                display_mode=display_mode,
+                fallback_to_text=fallback_to_text,
+            )
 
     def build(self) -> None:
         self.doc.multiBuild(

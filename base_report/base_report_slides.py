@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
+import logging
 import os
 from typing import Sequence
 
@@ -20,6 +21,8 @@ except ImportError:  # pragma: no cover - optional dependency
     PdfReader = None
     pagexobj = None
     makerl = None
+
+logger = logging.getLogger(__name__)
 
 
 SLIDE_16x9 = (13.333 * inch, 7.5 * inch)
@@ -79,6 +82,7 @@ class BaseReportSlides:
         self._ops: list[tuple[str, tuple, dict]] = []
         self._suspend_recording = False
         self.last_frame: Frame | None = None
+        self._math_renderer = None
 
         self.header_background = colors.HexColor("#085F3E")
         self.header_text = colors.white
@@ -731,6 +735,175 @@ class BaseReportSlides:
         self._maybe_draw_debug(frame)
         self._set_last_frame(frame)
         return frame
+
+    def set_math_renderer(self, renderer) -> None:
+        """Inject a custom math renderer implementing render_formula_pdf()."""
+        self._math_renderer = renderer
+
+    def _get_math_renderer(self):
+        if self._math_renderer is None:
+            from .math_renderer import LocalKaTeXRenderer
+
+            self._math_renderer = LocalKaTeXRenderer()
+        return self._math_renderer
+
+    def _add_formula_impl(
+        self,
+        formula: str,
+        x: float,
+        y: float,
+        width: float,
+        height: float | None,
+        font_size: float,
+        display_mode: bool,
+        fallback_to_text: bool,
+        render_horizontal_padding_px: int | None,
+        render_vertical_padding_px: int | None,
+    ) -> Frame:
+        try:
+            from .math_renderer import FormulaRenderOptions
+
+            renderer = self._get_math_renderer()
+            opts = FormulaRenderOptions(
+                display_mode=display_mode,
+                font_size_px=max(12, int(font_size * 2.2)),
+                horizontal_padding_px=(
+                    12 if render_horizontal_padding_px is None else render_horizontal_padding_px
+                ),
+                vertical_padding_px=(
+                    8 if render_vertical_padding_px is None else render_vertical_padding_px
+                ),
+                max_width_px=max(400, int(width * 2.5)),
+            )
+            try:
+                rendered_path = renderer.render_formula_pdf(
+                    formula=formula,
+                    options=opts,
+                )
+            except Exception:
+                rendered_path = renderer.render_formula_png(
+                    formula=formula,
+                    options=opts,
+                )
+            prev_suspend = self._suspend_recording
+            self._suspend_recording = True
+            try:
+                return self.add_plot(
+                    path=rendered_path,
+                    x=x,
+                    y=y,
+                    width=width,
+                    height=height,
+                )
+            finally:
+                self._suspend_recording = prev_suspend
+        except Exception as exc:
+            if not fallback_to_text:
+                raise
+            logger.debug("Formula rendering fallback to text: %s", exc)
+            prev_suspend = self._suspend_recording
+            self._suspend_recording = True
+            try:
+                return self.add_paragraph(
+                    text=formula,
+                    x=x,
+                    y=y,
+                    width=width,
+                    font_size=font_size,
+                    preserve_newlines=True,
+                )
+            finally:
+                self._suspend_recording = prev_suspend
+
+    def add_formula(
+        self,
+        formula: str,
+        x: float,
+        y: float,
+        width: float,
+        height: float | None = None,
+        font_size: float = 13.0,
+        display_mode: bool = True,
+        fallback_to_text: bool = True,
+        render_horizontal_padding_px: int | None = None,
+        render_vertical_padding_px: int | None = None,
+    ) -> Frame:
+        self._record_op(
+            "add_formula",
+            formula,
+            x,
+            y,
+            width,
+            height=height,
+            font_size=font_size,
+            display_mode=display_mode,
+            fallback_to_text=fallback_to_text,
+            render_horizontal_padding_px=render_horizontal_padding_px,
+            render_vertical_padding_px=render_vertical_padding_px,
+        )
+        return self._add_formula_impl(
+            formula=formula,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            font_size=font_size,
+            display_mode=display_mode,
+            fallback_to_text=fallback_to_text,
+            render_horizontal_padding_px=render_horizontal_padding_px,
+            render_vertical_padding_px=render_vertical_padding_px,
+        )
+
+    def add_formula_block(
+        self,
+        formulas: Sequence[str],
+        x: float,
+        y: float,
+        width: float,
+        height: float | None = None,
+        font_size: float = 13.0,
+        display_mode: bool = True,
+        fallback_to_text: bool = True,
+        gap: float = 6.0,
+        render_horizontal_padding_px: int | None = None,
+        render_vertical_padding_px: int | None = None,
+    ) -> list[Frame]:
+        self._record_op(
+            "add_formula_block",
+            formulas,
+            x,
+            y,
+            width,
+            height=height,
+            font_size=font_size,
+            display_mode=display_mode,
+            fallback_to_text=fallback_to_text,
+            gap=gap,
+            render_horizontal_padding_px=render_horizontal_padding_px,
+            render_vertical_padding_px=render_vertical_padding_px,
+        )
+        frames: list[Frame] = []
+        cursor_y = y
+        used_height = 0.0
+        for formula in formulas:
+            if height is not None and used_height >= height:
+                break
+            f = self._add_formula_impl(
+                formula=formula,
+                x=x,
+                y=cursor_y,
+                width=width,
+                height=None,
+                font_size=font_size,
+                display_mode=display_mode,
+                fallback_to_text=fallback_to_text,
+                render_horizontal_padding_px=render_horizontal_padding_px,
+                render_vertical_padding_px=render_vertical_padding_px,
+            )
+            frames.append(f)
+            cursor_y = f.y - f.height - gap
+            used_height = y - cursor_y
+        return frames
 
     def get_plot_frame(
         self,
