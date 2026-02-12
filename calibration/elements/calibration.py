@@ -175,6 +175,7 @@ class Calibration(BaseElement):
             }
         outdata = {
             'acquisition_time': self.time_info,
+            'power_unit': self.power_units,
             'filesets': filesets
         }
         with open(results_path, 'w', encoding='utf-8') as f:

@@ -15,6 +15,8 @@ class FilesetAnalysis(BaseAnal):
     def __init__(self, fileset: 'Fileset'):
         super().__init__()
         self._data_holder = fileset
+        self.adc_to_power = None
+        self.calibration_ref = None
 
 
     def analyze(self):
@@ -33,8 +35,13 @@ class FilesetAnalysis(BaseAnal):
     def to_dict(self) -> dict:
         if not self._analyzed:
             logger.warning("Analysis has not been performed yet for fileset: %s", self._data_holder.label)
-        return {
+        out = {
             'linreg_refpd_vs_adc': self.lr_refpd_vs_adc.to_dict() if self.lr_refpd_vs_adc.linreg else None,
             'pedestal_stats': self._pedestal_stats,
             'saturation_stats': self._saturation_stats,
         }
+        # if self.calibration_ref is not None:
+        #     out['calibration_ref'] = self.calibration_ref
+        if self.adc_to_power is not None:
+            out['adc_to_power'] = self.adc_to_power
+        return out

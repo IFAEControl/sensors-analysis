@@ -44,7 +44,10 @@ def setup_paths(char_files_path, output_path=None, overwrite=False):
                         os.rename(source, dest)
 
     if output_path is None:
-        output_path = f'./output/{base_name}'
+        output_root = './output'
+    else:
+        output_root = output_path
+    output_path = os.path.join(output_root, base_name)
 
     if os.path.exists(output_path):
         if not overwrite:
@@ -63,4 +66,4 @@ def setup_paths(char_files_path, output_path=None, overwrite=False):
     logger.info("Characterization files path: %s", files_path)
     logger.info("Output path: %s", output_path)
 
-    return files_path, output_path, base_name
+    return files_path, output_root, output_path, base_name
