@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
     parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
+    parser.add_argument("--no-gen-report", action="store_true", help="Do not generate characterization report")
     args = parser.parse_args()
 
     if args.plot_format:
@@ -46,6 +47,9 @@ def main():
     san = SanityChecks(characterization)
     san.run_checks()
     characterization.export_data_summary({'sanity_checks': san.results})
+    if not args.no_gen_report:
+        from characterization_report.main import build_report
+        build_report(characterization.reports_path)
 
     now_end = datetime.now(timezone.utc)
     logger.info("Finished characterization analysis at %s", now_end.isoformat())
