@@ -3,10 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from base_report.base_report_slides import BaseReportSlides, Frame
+from ..helpers.data_holders import ReportData
 
 
 class BaseSection(ABC):
-    def __init__(self, report_data: dict, report: BaseReportSlides) -> None:
+    def __init__(self, report_data: ReportData, report: BaseReportSlides) -> None:
         self.report_data = report_data
         self.report = report
         self.section_depth = 3

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from base_report.base_report_slides import BaseReportSlides, Frame
+from ..helpers.data_holders import Fileset, ReportData
 
 
 def add_fileset_detail(
     report: BaseReportSlides,
-    report_data: dict,
+    report_data: ReportData,
     sensor_id: str,
     fileset_key: str,
-    fileset_data: dict,
+    fileset_data: Fileset,
     frame: Frame,
 ) -> None:
     report.add_section(

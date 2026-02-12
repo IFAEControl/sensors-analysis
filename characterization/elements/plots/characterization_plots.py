@@ -26,8 +26,9 @@ class CharacterizationPlots(BasePlots):
         if not config.generate_plots:
             return
         self._gen_saturation_points_by_filter()
-        self._gen_run_linreg_summary(include_rp=True)
-        self._gen_run_linreg_summary(include_rp=False)
+        self._gen_refpd_vs_adc_linregs(include_rp=True)
+        self._gen_refpd_vs_adc_linregs(include_rp=False)
+        self._gen_power_vs_adc_linregs(include_extra=False)
         self._gen_refpd_pedestals_timeseries(include_temp=False)
         self._gen_refpd_pedestals_timeseries(include_temp=True)
         self._gen_refpd_pedestals_histogram()
@@ -95,7 +96,7 @@ class CharacterizationPlots(BasePlots):
         self.savefig(fig, "saturation_points_by_filter")
         plt.close(fig)
 
-    def _gen_run_linreg_summary(self, include_rp: bool = True):
+    def _gen_refpd_vs_adc_linregs(self, include_rp: bool = True):
         run_labels = sorted({
             run
             for sensor_cfg in config.sensor_config.values()
@@ -104,6 +105,7 @@ class CharacterizationPlots(BasePlots):
         if not run_labels:
             logger.warning("No wavelength/filter combinations found; skipping run linreg summary.")
             return
+        wavelength_labels = sorted({run.split('_', 1)[0] for run in run_labels})
 
         def sensor_sort_key(sensor_id: str):
             try:
@@ -115,8 +117,9 @@ class CharacterizationPlots(BasePlots):
         intercept_color = "#F4A261"
         r_color = "#2A9D8F"
         p_color = "#8E9AAF"
-        for run_label in run_labels:
+        for wavelength_label in wavelength_labels:
             sensors = []
+            sensor_labels = []
             slopes = []
             slope_errs = []
             intercepts = []
@@ -125,11 +128,29 @@ class CharacterizationPlots(BasePlots):
             p_values = []
 
             for sensor_id, pdh in self._data_holder.photodiodes.items():
-                fs = pdh.filesets.get(run_label)
-                if fs is None or fs.anal.lr_refpd_vs_adc.linreg is None:
+                matching = [
+                    (cfg_key, fs)
+                    for cfg_key, fs in pdh.filesets.items()
+                    if cfg_key.split('_', 1)[0] == wavelength_label
+                ]
+                if not matching:
                     continue
+                matching.sort(key=lambda x: x[0])
+                if len(matching) > 1:
+                    logger.warning(
+                        "Multiple %s filesets found for photodiode %s; using %s",
+                        wavelength_label,
+                        sensor_id,
+                        matching[0][0]
+                    )
+                cfg_key, fs = matching[0]
+                if fs.anal.lr_refpd_vs_adc.linreg is None:
+                    continue
+
+                filter_wheel = cfg_key.split('_', 1)[1] if '_' in cfg_key else ''
                 lr = fs.anal.lr_refpd_vs_adc
                 sensors.append(sensor_id)
+                sensor_labels.append(f"{sensor_id} ({filter_wheel})" if filter_wheel else str(sensor_id))
                 slopes.append(float(lr.slope))
                 slope_errs.append(float(lr.stderr))
                 intercepts.append(float(lr.intercept))
@@ -138,27 +159,28 @@ class CharacterizationPlots(BasePlots):
                 p_values.append(float(lr.p_value))
 
             if not sensors:
-                logger.warning("No sensors with linreg data for %s; skipping plot.", run_label)
+                logger.warning("No sensors with linreg data for wavelength %s; skipping plot.", wavelength_label)
                 continue
 
             rows = sorted(
-                zip(sensors, slopes, slope_errs, intercepts, intercept_errs, r_values, p_values),
+                zip(sensors, sensor_labels, slopes, slope_errs, intercepts, intercept_errs, r_values, p_values),
                 key=lambda row: sensor_sort_key(row[0])
             )
-            sensors, slopes, slope_errs, intercepts, intercept_errs, r_values, p_values = map(list, zip(*rows))
+            sensors, sensor_labels, slopes, slope_errs, intercepts, intercept_errs, r_values, p_values = map(list, zip(*rows))
 
             nrows = 3 if include_rp else 2
             fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(12, 4 * nrows), sharex=True)
+            x = list(range(len(sensor_labels)))
 
-            axes[0].errorbar(sensors, slopes, yerr=slope_errs, fmt='o', color=slope_color, label='Slope')
-            axes[0].set_ylabel("Slope", color=slope_color)
+            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt='o', color=slope_color, label='Slope')
+            axes[0].set_ylabel("Slope (V/#adc)", color=slope_color)
             axes[0].tick_params(axis='y', labelcolor=slope_color)
             axes[0].grid(True, axis='y', alpha=0.3)
             axes[0].legend(loc='upper right')
-            axes[0].set_title(f"Summary of linear regression values for {run_label.replace('_', ' - ')}")
+            axes[0].set_title(f"V RefPD vs Adc counts for {wavelength_label}")
 
-            axes[1].errorbar(sensors, intercepts, yerr=intercept_errs, fmt='s', color=intercept_color, label='Intercept')
-            axes[1].set_ylabel("Intercept", color=intercept_color)
+            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt='s', color=intercept_color, label='Intercept')
+            axes[1].set_ylabel("Intercept (V)", color=intercept_color)
             axes[1].tick_params(axis='y', labelcolor=intercept_color)
             axes[1].grid(True, axis='y', alpha=0.3)
             axes[1].legend(loc='upper right')
@@ -166,12 +188,12 @@ class CharacterizationPlots(BasePlots):
             if include_rp:
                 ax_r = axes[2]
                 ax_p = ax_r.twinx()
-                ax_r.scatter(sensors, r_values, marker='o', color=r_color, label='r-value')
+                ax_r.scatter(x, r_values, marker='o', color=r_color, label='r-value')
                 ax_r.set_ylabel("r", color=r_color)
                 ax_r.tick_params(axis='y', labelcolor=r_color)
                 ax_r.grid(True, axis='y', alpha=0.3)
 
-                ax_p.scatter(sensors, p_values, marker='s', color=p_color, label='p-value')
+                ax_p.scatter(x, p_values, marker='s', color=p_color, label='p-value')
                 ax_p.set_ylabel("p", color=p_color)
                 ax_p.tick_params(axis='y', labelcolor=p_color)
 
@@ -180,10 +202,124 @@ class CharacterizationPlots(BasePlots):
                 ax_r.legend(h1 + h2, l1 + l2, loc='upper right')
 
             axes[-1].set_xlabel("Sensor")
+            axes[-1].set_xticks(x)
+            axes[-1].set_xticklabels(sensor_labels)
             plt.setp(axes[-1].get_xticklabels(), rotation=45, ha='right')
             plt.tight_layout(rect=[0, 0, 1, 0.95])
             suffix = "" if include_rp else "_simp"
-            self.savefig(fig, f"linreg_summary_{run_label}{suffix}")
+            self.savefig(fig, f"refpd_vs_adc_linregs_{wavelength_label}{suffix}")
+            plt.close(fig)
+
+    def _gen_power_vs_adc_linregs(self, include_extra: bool = True):
+        run_labels = sorted({
+            run
+            for sensor_cfg in config.sensor_config.values()
+            for run in sensor_cfg.get('expected_runs', [])
+        })
+        if not run_labels:
+            logger.warning("No wavelength/filter combinations found; skipping power vs adc linreg summary.")
+            return
+        wavelength_labels = sorted({run.split('_', 1)[0] for run in run_labels})
+
+        def sensor_sort_key(sensor_id: str):
+            try:
+                return float(sensor_id)
+            except ValueError:
+                return sensor_id
+
+        power_unit = self._data_holder.calibration_info.get('power_unit') or 'power'
+        slope_color = "#1D3557"
+        intercept_color = "#E76F51"
+        slope_err_color = "#2A9D8F"
+        intercept_err_color = "#7B2CBF"
+
+        for wavelength_label in wavelength_labels:
+            sensors = []
+            sensor_labels = []
+            slopes = []
+            slope_errs = []
+            intercepts = []
+            intercept_errs = []
+
+            for sensor_id, pdh in self._data_holder.photodiodes.items():
+                matching = [
+                    (cfg_key, fs)
+                    for cfg_key, fs in pdh.filesets.items()
+                    if cfg_key.split('_', 1)[0] == wavelength_label
+                ]
+                if not matching:
+                    continue
+                matching.sort(key=lambda x: x[0])
+                if len(matching) > 1:
+                    logger.warning(
+                        "Multiple %s filesets found for photodiode %s; using %s",
+                        wavelength_label,
+                        sensor_id,
+                        matching[0][0]
+                    )
+                cfg_key, fs = matching[0]
+                conv = fs.anal.adc_to_power
+                if not isinstance(conv, dict):
+                    continue
+
+                filter_wheel = cfg_key.split('_', 1)[1] if '_' in cfg_key else ''
+                sensors.append(sensor_id)
+                sensor_labels.append(f"{sensor_id} ({filter_wheel})" if filter_wheel else str(sensor_id))
+                slopes.append(float(conv.get('slope', 0.0)))
+                slope_errs.append(float(conv.get('slope_err', 0.0)))
+                intercepts.append(float(conv.get('intercept', 0.0)))
+                intercept_errs.append(float(conv.get('intercept_err', 0.0)))
+
+            if not sensors:
+                logger.warning("No sensors with power-vs-adc conversion data for wavelength %s; skipping plot.", wavelength_label)
+                continue
+
+            rows = sorted(
+                zip(sensors, sensor_labels, slopes, slope_errs, intercepts, intercept_errs),
+                key=lambda row: sensor_sort_key(row[0])
+            )
+            sensors, sensor_labels, slopes, slope_errs, intercepts, intercept_errs = map(list, zip(*rows))
+
+            nrows = 3 if include_extra else 2
+            fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(12, 4 * nrows), sharex=True)
+            x = list(range(len(sensor_labels)))
+
+            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt='o', color=slope_color, label='Slope')
+            axes[0].set_ylabel(f"Slope ({power_unit}/#adc)", color=slope_color)
+            axes[0].tick_params(axis='y', labelcolor=slope_color)
+            axes[0].grid(True, axis='y', alpha=0.3)
+            axes[0].legend(loc='upper right')
+            axes[0].set_title(f"Power vs Adc counts for {wavelength_label}")
+
+            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt='s', color=intercept_color, label='Intercept')
+            axes[1].set_ylabel(f"Intercept ({power_unit})", color=intercept_color)
+            axes[1].tick_params(axis='y', labelcolor=intercept_color)
+            axes[1].grid(True, axis='y', alpha=0.3)
+            axes[1].legend(loc='upper right')
+
+            if include_extra:
+                ax_err = axes[2]
+                ax_err2 = ax_err.twinx()
+                ax_err.scatter(x, slope_errs, marker='o', color=slope_err_color, label='slope_err')
+                ax_err.set_ylabel(f"slope_err ({power_unit}/#adc)", color=slope_err_color)
+                ax_err.tick_params(axis='y', labelcolor=slope_err_color)
+                ax_err.grid(True, axis='y', alpha=0.3)
+
+                ax_err2.scatter(x, intercept_errs, marker='s', color=intercept_err_color, label='intercept_err')
+                ax_err2.set_ylabel(f"intercept_err ({power_unit})", color=intercept_err_color)
+                ax_err2.tick_params(axis='y', labelcolor=intercept_err_color)
+
+                h1, l1 = ax_err.get_legend_handles_labels()
+                h2, l2 = ax_err2.get_legend_handles_labels()
+                ax_err.legend(h1 + h2, l1 + l2, loc='upper right')
+
+            axes[-1].set_xlabel("Sensor")
+            axes[-1].set_xticks(x)
+            axes[-1].set_xticklabels(sensor_labels)
+            plt.setp(axes[-1].get_xticklabels(), rotation=45, ha='right')
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
+            suffix = "" if include_extra else "_simp"
+            self.savefig(fig, f"power_vs_adc_linregs_{wavelength_label}{suffix}")
             plt.close(fig)
 
     def _gen_refpd_pedestals_timeseries(self, include_temp: bool = False):

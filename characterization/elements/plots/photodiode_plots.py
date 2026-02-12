@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from matplotlib import pyplot as plt
 
 from characterization.helpers import get_logger
+from characterization.config import config
 from .plot_base import BasePlots
 
 if TYPE_CHECKING:
@@ -25,10 +26,11 @@ class PhotodiodePlots(BasePlots):
         self._gen_refpd_pedestals_timeseries(include_temp=False)
         self._gen_refpd_pedestals_timeseries(include_temp=True)
         self._gen_refpd_pedestals_histogram()
-        fileplots = self.plots.setdefault('files', {})
-        for cf in self._data_holder.files:
-            cf.plotter.generate_plots()
-            fileplots[cf.level_header] = cf.plotter.plots
+        if config.generate_file_plots:
+            fileplots = self.plots.setdefault('files', {})
+            for cf in self._data_holder.files:
+                cf.plotter.generate_plots()
+                fileplots[cf.level_header] = cf.plotter.plots
 
         fileset_plots = self.plots.setdefault('filesets', {})
         for key, fs in self._data_holder.filesets.items():

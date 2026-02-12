@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from base_report.base_report_slides import BaseReportSlides, Frame
+from ..helpers.data_holders import Photodiode, ReportData
 
 
 def add_photodiode_overview(
     report: BaseReportSlides,
-    report_data: dict,
+    report_data: ReportData,
     sensor_id: str,
-    photodiode_data: dict,
+    photodiode_data: Photodiode,
     frame: Frame,
 ) -> None:
     report.add_section(

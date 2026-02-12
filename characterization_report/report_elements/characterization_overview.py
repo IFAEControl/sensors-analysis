@@ -1,36 +1,60 @@
 from __future__ import annotations
 
-from reportlab.lib import colors
+import os
+from typing import Dict
 
 from base_report.base_report_slides import BaseReportSlides, Frame
+from ..helpers.data_holders import Photodiode, ReportData
 
 
 RINGS = ["0", "1", "2", "3", "4"]
 COLUMNS = ["0", "1", "2", "3"]
 
 
-def _extract_linreg_for_sensor(photodiode_data: dict) -> dict | None:
-    analysis = photodiode_data.get("analysis", {}) or {}
-    pd_linreg = analysis.get("linreg_refpd_vs_adc")
-    if isinstance(pd_linreg, dict):
-        return pd_linreg
+def _extract_refpd_for_sensor(photodiode_data: Photodiode, wavelength: str):
+    pd_linreg = None
+    if photodiode_data and photodiode_data.analysis:
+        pd_linreg = getattr(photodiode_data.analysis, "linreg_refpd_vs_adc", None)
+    # Prefer fileset-level linreg by wavelength for overview tables.
 
-    filesets = photodiode_data.get("filesets", {}) or {}
-    preferred_order = ("1064_FW5", "532_FW4", "532_FW5")
+    filesets = photodiode_data.filesets if photodiode_data else {}
+    preferred_order = (f"{wavelength}_FW5", f"{wavelength}_FW4")
     for key in preferred_order:
         fs = filesets.get(key)
-        if not isinstance(fs, dict):
+        if fs is None:
             continue
-        lr = (fs.get("analysis", {}) or {}).get("linreg_refpd_vs_adc")
-        if isinstance(lr, dict):
+        lr = fs.analysis.linreg_refpd_vs_adc if fs.analysis else None
+        if lr is not None:
             return lr
 
-    for fs in filesets.values():
-        if not isinstance(fs, dict):
+    for key, fs in filesets.items():
+        if not key.startswith(f"{wavelength}_"):
             continue
-        lr = (fs.get("analysis", {}) or {}).get("linreg_refpd_vs_adc")
-        if isinstance(lr, dict):
+        lr = fs.analysis.linreg_refpd_vs_adc if fs.analysis else None
+        if lr is not None:
             return lr
+    if pd_linreg is not None:
+        return pd_linreg
+    return None
+
+
+def _extract_power_for_sensor(photodiode_data: Photodiode, wavelength: str):
+    filesets = photodiode_data.filesets if photodiode_data else {}
+    preferred_order = (f"{wavelength}_FW5", f"{wavelength}_FW4")
+    for key in preferred_order:
+        fs = filesets.get(key)
+        if fs is None:
+            continue
+        cf = fs.analysis.adc_to_power if fs.analysis else None
+        if cf is not None:
+            return cf
+
+    for key, fs in filesets.items():
+        if not key.startswith(f"{wavelength}_"):
+            continue
+        cf = fs.analysis.adc_to_power if fs.analysis else None
+        if cf is not None:
+            return cf
     return None
 
 
@@ -42,18 +66,50 @@ def _fmt(value: object, precision: int = 3) -> str:
     return str(value)
 
 
-def _build_table_rows(photodiodes: dict, sensors: list[str]) -> list[list[str]]:
-    rows = [["Sensor", "Slope", "Slope err", "Intercept", "Intercept err"]]
+def _build_table_rows(
+    photodiodes: Dict[str, Photodiode],
+    sensors: list[str],
+    wavelength: str,
+    mode: str,
+    power_unit: str,
+) -> list[list[str]]:
+    if mode == "power":
+        rows = [[
+            "Sensor",
+            f"Slope ({power_unit}/#adc)",
+            f"Slope err ({power_unit}/#adc)",
+            f"Intercept ({power_unit})",
+            f"Intercept err ({power_unit})",
+        ]]
+    else:
+        rows = [[
+            "Sensor",
+            "Slope (V/#adc)",
+            "Slope err (V/#adc)",
+            "Intercept (V)",
+            "Intercept err (V)",
+        ]]
     for sensor_id in sensors:
-        pd_data = photodiodes.get(sensor_id, {}) or {}
-        linreg = _extract_linreg_for_sensor(pd_data) or {}
+        pd_data = photodiodes.get(sensor_id)
+        if mode == "power":
+            fit = _extract_power_for_sensor(pd_data, wavelength=wavelength)
+            slope = getattr(fit, "slope", None)
+            slope_err = getattr(fit, "slope_err", None)
+            intercept = getattr(fit, "intercept", None)
+            intercept_err = getattr(fit, "intercept_err", None)
+        else:
+            fit = _extract_refpd_for_sensor(pd_data, wavelength=wavelength)
+            slope = getattr(fit, "slope", None)
+            slope_err = getattr(fit, "stderr", None)
+            intercept = getattr(fit, "intercept", None)
+            intercept_err = getattr(fit, "intercept_stderr", None)
         rows.append(
             [
                 sensor_id,
-                _fmt(linreg.get("slope")),
-                _fmt(linreg.get("stderr")),
-                _fmt(linreg.get("intercept")),
-                _fmt(linreg.get("intercept_stderr")),
+                _fmt(slope),
+                _fmt(slope_err),
+                _fmt(intercept),
+                _fmt(intercept_err),
             ]
         )
     return rows
@@ -62,8 +118,11 @@ def _build_table_rows(photodiodes: dict, sensors: list[str]) -> list[list[str]]:
 def _add_ring_tables(
     report: BaseReportSlides,
     frame: Frame,
-    photodiodes: dict,
-) -> float:
+    photodiodes: Dict[str, Photodiode],
+    wavelength: str,
+    mode: str,
+    power_unit: str,
+) -> Frame:
     top_y = report.last_frame.y - report.last_frame.height - 14
 
     horizontal_gap = 12
@@ -80,7 +139,13 @@ def _add_ring_tables(
             toc=False,
         )
         ring_sensors = [f"{ring}.{col}" for col in COLUMNS]
-        rows = _build_table_rows(photodiodes, ring_sensors)
+        rows = _build_table_rows(
+            photodiodes,
+            ring_sensors,
+            wavelength=wavelength,
+            mode=mode,
+            power_unit=power_unit,
+        )
         table_frame = report.add_table(
             data=rows,
             x=x,
@@ -89,172 +154,97 @@ def _add_ring_tables(
             zebra=True,
             col_align=["center", "center", "center", "center", "center"],
         )
-        return sub_frame.height + subtitle_gap + table_frame.height
+        return table_frame.y - table_frame.height
 
     row1_y = top_y
+    ring0_bottom = _draw_ring_table("0", frame.x, row1_y)
+    ring1_bottom = _draw_ring_table("1", frame.x + table_width + horizontal_gap, row1_y)
+    ring2_bottom = _draw_ring_table("2", frame.x + 2 * (table_width + horizontal_gap), row1_y)
+    row1_bottom = min(ring0_bottom, ring1_bottom, ring2_bottom)
 
-    # Top row: Rings 0,1,2
-    row1_h0 = _draw_ring_table("0", frame.x, row1_y)
-    row1_h1 = _draw_ring_table("1", frame.x + table_width + horizontal_gap, row1_y)
-    row1_h2 = _draw_ring_table("2", frame.x + 2 * (table_width + horizontal_gap), row1_y)
-    row1_height = max(row1_h0, row1_h1, row1_h2)
-    row2_y = row1_y - row1_height - vertical_gap
+    ring3_top = row1_bottom - vertical_gap
+    ring3_bottom = _draw_ring_table("3", frame.x, ring3_top)
+    ring4_top = ring3_bottom - vertical_gap
+    _draw_ring_table("4", frame.x, ring4_top)
 
-    # Bottom row: Rings 3,4 centered under top row
-    bottom_total_width = 2 * table_width + horizontal_gap
-    row2_start_x = frame.x + (frame.width - bottom_total_width) / 2
-    row2_h3 = _draw_ring_table("3", row2_start_x, row2_y)
-    row2_h4 = _draw_ring_table("4", row2_start_x + table_width + horizontal_gap, row2_y)
-    row2_height = max(row2_h3, row2_h4)
-    return row2_y - row2_height - 12
-
-
-def _add_note_rectangle(
-    report: BaseReportSlides,
-    frame: Frame,
-    note_y: float,
-) -> None:
-    note_width = frame.width
-    note_x = frame.x
-
-    pad_x = 12
-    pad_top = 10
-    pad_bottom = 10
-    paragraph_gap = 4
-    formula_gap = 2
-
-    inner_x = note_x + pad_x
-    inner_width = note_width - 2 * pad_x
-    col_gap = 12
-    text_col_width = (inner_width - col_gap) / 2
-    formula_col_x = inner_x + text_col_width + col_gap
-    formula_col_width = text_col_width
-
-    note_title = "Note"
-    note_paragraphs = [
-        "The values shown in these tables are used to convert read ADC counts to Reference Photodiode volts.",
-        "To convert ADC counts to optical power in watts, this conversion must be combined with the setup calibration.",
-    ]
-    formulas = [
-        r"V_{refpd} = <slope_v> \cdot ADC + <intercept_v>",
-        r"P_W = <slope_w> \cdot V_{refpd} + <intercept_w>",
-        r"P_W = <slope_w> \cdot (<slope_v> \cdot ADC + <intercept_v>) + <intercept_w>",
-    ]
-    formula_font_size = 11.0
-    formula_width = formula_col_width * 0.99
-
-    title_frame = report.get_paragraph_frame(
-        note_title,
-        x=inner_x,
-        y=note_y - pad_top,
-        width=inner_width,
-        font_size=12,
-        bold=True,
-    )
-    paragraph_frames = [
-        report.get_paragraph_frame(
-            p,
-            x=inner_x,
-            y=note_y,
-            width=text_col_width,
-            font_size=10.0,
-        )
-        for p in note_paragraphs
-    ]
-    paragraphs_height = sum(f.height for f in paragraph_frames) + paragraph_gap * max(
-        0, len(paragraph_frames) - 1
-    )
-    if paragraphs_height > note_y:
+    plot_x = frame.x + table_width + horizontal_gap
+    plot_y = ring3_top
+    plot_width = 2 * table_width + horizontal_gap
+    plot_height = plot_y - 10
+    if plot_height <= 0:
         raise ValueError(
-            f"Note paragraphs height ({paragraphs_height:.1f}) exceeds available note_y ({note_y:.1f})."
+            f"Not enough vertical space for plot area: computed height={plot_height:.2f}"
         )
+    return Frame(plot_x, plot_y, plot_width, plot_height)
 
-    top_block_height = pad_top + title_frame.height + 6 + paragraphs_height
-    note_height = top_block_height + pad_bottom
-    if note_height > note_y + 1e-6:
-        raise ValueError(
-            f"Calculated note height ({note_height:.1f}) exceeds note_y ({note_y:.1f})."
-        )
-    note_height = max(note_height, note_y - pad_bottom) # enforce a minimum height for aesthetics
 
-    formulas_gaps = formula_gap * max(0, len(formulas) - 1)
-    formula_start_y = note_y - pad_top - title_frame.height - 6
-    formula_area_height = formula_start_y - 10
-    available_for_formulas = formula_area_height - formulas_gaps
-    if len(formulas) > 0 and available_for_formulas <= 0:
-        raise ValueError(
-            "No vertical space available in the right column to place formulas."
-        )
-    if len(formulas) > 0:
-        formula_box_height = available_for_formulas / len(formulas)
+def _resolve_plot_path(report_data: ReportData, wavelength: str, mode: str) -> str:
+    if mode == "power":
+        key = f"power_vs_adc_linregs_{wavelength}_simp"
     else:
-        formula_box_height = 0.0
-    if len(formulas) > 0 and formula_box_height <= 0:
-        raise ValueError("Computed non-positive formula box height.")
+        key = f"refpd_vs_adc_linregs_{wavelength}"
 
-    report.add_rectangle(
-        x=note_x,
-        y=note_y,
-        width=note_width,
-        height=note_height,
-        fill_color=colors.HexColor("#F7FAFD"),
-        stroke_color=colors.HexColor("#B7C3D0"),
-        stroke_width=0.6,
-    )
+    plot_rel_path = getattr(report_data.plots, key, None)
+    if not plot_rel_path:
+        raise ValueError(f"Missing plot path for key '{key}' in report data.")
 
-    cursor_y = note_y - pad_top
-    title_drawn = report.add_paragraph(
-        note_title,
-        x=inner_x,
-        y=cursor_y,
-        width=inner_width,
-        font_size=12,
-        bold=True,
-    )
-    cursor_y = title_drawn.y - title_drawn.height - 6
+    if os.path.isabs(plot_rel_path):
+        return plot_rel_path
 
-    report.add_paragraphs(
-        note_paragraphs,
-        x=inner_x,
-        y=cursor_y,
-        width=text_col_width,
-        height=paragraphs_height,
-        font_size=10.0,
-        gap=paragraph_gap,
-    )
+    # Plot paths in extended summaries are typically relative to the run folder
+    # (e.g. "characterization_outputs/..."), not to root_output_path.
+    candidate_bases = [
+        report_data.meta.characterization_folder_path or "",
+        report_data.meta.reports_path or "",
+        report_data.meta.root_output_path or "",
+    ]
+    for base in candidate_bases:
+        if not base:
+            continue
+        candidate = os.path.join(base, plot_rel_path)
+        if os.path.exists(candidate):
+            return candidate
 
-    formula_cursor_y = cursor_y
-    formula_x = formula_col_x + (formula_col_width - formula_width) / 2
-    for eq in formulas:
-        ff = report.add_formula(
-            formula=eq,
-            x=formula_x,
-            y=formula_cursor_y,
-            width=formula_width,
-            height=formula_box_height,
-            font_size=formula_font_size,
-            display_mode=True,
-            fallback_to_text=True,
-            render_horizontal_padding_px=0,
-            render_vertical_padding_px=0,
-        )
-        formula_cursor_y = ff.y - ff.height - formula_gap
+    # Fallback to first non-empty base even if it doesn't exist, to keep a clear error path.
+    for base in candidate_bases:
+        if base:
+            return os.path.join(base, plot_rel_path)
+    return plot_rel_path
 
 
 def add_characterization_overview(
     report: BaseReportSlides,
-    report_data: dict,
+    report_data: ReportData,
     frame: Frame,
+    wavelength: str,
+    title: str,
+    mode: str = "refpd",
+    power_unit: str = "W",
+    show_note: bool = False,
 ) -> None:
     report.add_section(
-        "Characterization Overview",
+        title,
         x=frame.x,
         y=frame.y,
         width=frame.width,
-        anchor="characterization_overview",
+        anchor=f"characterization_overview_{wavelength}",
         toc=True,
     )
 
-    photodiodes = report_data.get("analysis", {}).get("photodiodes", {}) or {}
-    note_y = _add_ring_tables(report=report, frame=frame, photodiodes=photodiodes)
-    _add_note_rectangle(report=report, frame=frame, note_y=note_y)
+    photodiodes = report_data.analysis.photodiodes
+    plot_frame = _add_ring_tables(
+        report=report,
+        frame=frame,
+        photodiodes=photodiodes,
+        wavelength=wavelength,
+        mode=mode,
+        power_unit=power_unit,
+    )
+    plot_path = _resolve_plot_path(report_data, wavelength=wavelength, mode=mode)
+    report.add_plot(
+        path=plot_path,
+        x=plot_frame.x,
+        y=plot_frame.y,
+        width=plot_frame.width,
+        height=plot_frame.height,
+    )
