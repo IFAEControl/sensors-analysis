@@ -11,6 +11,10 @@ class BaseSection(ABC):
         self.report_data = report_data
         self.report = report
         self.section_depth = 3
+        self.init_x = 10
+        self.end_x = 950
+        self.init_y = 480
+        self.end_y = 10        
 
     @property
     def lf(self) -> Frame:

@@ -16,12 +16,12 @@ class PhotodiodeOverviewSection(BaseSection):
         photodiodes = self.report_data.analysis.photodiodes
         if not photodiodes:
             self.report.add_slide("Photodiode Overview", "No photodiodes found")
-            frame = self.report.get_active_area()
+            active_area = self.report.get_active_area()
             self.report.add_section(
                 "Photodiode Overview",
-                x=frame.x,
-                y=frame.y,
-                width=frame.width,
+                x=active_area.x,
+                y=active_area.y,
+                width=active_area.width,
                 anchor="photodiode_overview",
                 toc=True,
             )
@@ -29,12 +29,13 @@ class PhotodiodeOverviewSection(BaseSection):
                 title="No photodiodes available",
                 description="No photodiode analysis entries were found in the input summary.",
                 level="Warning",
-                x=frame.x,
+                x=active_area.x,
                 y=self.report.last_frame.y - self.report.last_frame.height - 20,
                 width=520,
             )
             return
 
+        active_area = self.report.get_active_area()
         for sensor_id in sorted(photodiodes.keys()):
             sensor_data = photodiodes[sensor_id]
             filesets_keys = sensor_data.filesets.keys() if sensor_data.filesets else []
@@ -45,29 +46,25 @@ class PhotodiodeOverviewSection(BaseSection):
                 fs = sensor_data.filesets.get(fs_1064)
                 
                 self.report.add_slide(f"Photodiode {sensor_id}", f"{fs.meta.wavelength}nm - {fs.meta.filter_wheel}")
-                if first_slide:
-                    first_slide = False
-                frame = self.report.get_active_area()
                 add_photodiode_fileset_overview(
-                    report=self.report,
+                    section=self,
                     sensor_id=sensor_id,
                     fileset_data=fs,
                     fileset_plots=fs.plots,
-                    frame=frame,
-                    add_section=True,
+                    frame=active_area,
+                    add_section=first_slide,
                 )
+                first_slide = False
 
             if fs_532:
                 fs = sensor_data.filesets.get(fs_532)
-                if first_slide:
-                    self.report.add_slide(f"Photodiode {sensor_id}", f"{fs.meta.wavelength}nm - {fs.meta.filter_wheel}")
-                    first_slide = False
-                frame = self.report.get_active_area()
+                self.report.add_slide(f"Photodiode {sensor_id}", f"{fs.meta.wavelength}nm - {fs.meta.filter_wheel}")
                 add_photodiode_fileset_overview(
-                    report=self.report,
+                    section=self,
                     sensor_id=sensor_id,
                     fileset_data=fs,
                     fileset_plots=fs.plots,
-                    frame=frame,
-                    add_section=not first_slide,
+                    frame=active_area,
+                    add_section=first_slide,
                 )
+                first_slide = False

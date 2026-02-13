@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--output-path", "-o", help="Output path (default: './output/<name_of_char_files>')")
     parser.add_argument("--log-file", "-l", action="store_true", help="Stores log at output folder(default: None, logs only to console)")
     parser.add_argument("--overwrite", "-w", action="store_true", help="Overwrite output directory if it exists")
-    parser.add_argument("--zip", action="store_true", help="Zip characterization folder into output root and remove uncompressed folder")
+    parser.add_argument("--zip", "-z", action="store_true", help="Zip characterization folder into output root and remove uncompressed folder")
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
     parser.add_argument("--no-sweepfile-plots", "-e", action="store_true", help="Do not generate sweepfile-level plots")
     parser.add_argument("--no-gen-report", action="store_true", help="Do not generate characterization report")

@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from .data_holders import ReportData
 
 from .logger import get_logger
-from ..config import config
 
 logger = get_logger()
 
@@ -42,14 +41,26 @@ def _looks_like_characterization_summary(path: str) -> bool:
     return data.meta.charact_id
 
 
-def calc_plot_path(plot_path_in_json: str) -> str:
-    if not config.paths.char_plots_path:
+def _resolve_char_root_path(char_root_path: str | None = None) -> str:
+    if char_root_path:
+        return char_root_path
+
+    # Import lazily to avoid import-time cycles:
+    # config -> helpers.paths -> config
+    from ..config import config
+
+    return config.paths.root_path
+
+
+def calc_plot_path(plot_path_in_json: str, root_path: str | None = None) -> str:
+    resolved_char_plots_path = _resolve_char_root_path(root_path)
+    if not resolved_char_plots_path:
         raise ValueError("char_plots_path cannot be empty")
     if not plot_path_in_json:
         raise ValueError("plot_path_in_json cannot be empty")
     if os.path.isabs(plot_path_in_json):
         return plot_path_in_json
-    return os.path.join(config.paths.char_plots_path, plot_path_in_json)
+    return os.path.join(resolved_char_plots_path, plot_path_in_json)
 
 
 def _extract_plots_path(input_file: str, fallback_root: str) -> str:
