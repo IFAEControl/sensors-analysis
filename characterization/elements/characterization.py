@@ -25,7 +25,7 @@ class Characterization(BaseElement):
         )
         self.char_files_path = cfpath
         self.reports_path = char_folder_path
-        self.output_path = os.path.join(char_folder_path, 'characterization_outputs')
+        self.output_path = os.path.join(char_folder_path, 'plots')
         self.photodiodes: dict[str, Photodiode] = {}
         self.calibration_info: dict = {}
         self.conversion_factors: dict = {}
@@ -35,7 +35,7 @@ class Characterization(BaseElement):
             'charact_files_path': cfpath,
             'root_output_path': output_root,
             'characterization_folder_path': char_folder_path,
-            'characterization_outputs_path': self.output_path,
+            'plots_path': self.output_path,
             'reports_path': self.reports_path,
             'execution_date': datetime.now(timezone.utc).isoformat(),
             'system': system_info.get_system_info(),

@@ -8,7 +8,6 @@ from base_report.base_report_slides import BaseReportSlides
 from ..helpers.data_holders import ReportData
 from ..helpers.paths import ReportPaths
 from .characterization_overview_section import CharacterizationOverviewSection
-from .fileset_detail_section import FilesetDetailSection
 from .photodiode_overview_section import PhotodiodeOverviewSection
 from .toc_section import ToCSection
 
@@ -43,12 +42,13 @@ class FullReport:
     def load_data(self) -> None:
         with open(self.report_paths.input_file, "r", encoding="utf-8") as f:
             self._data = ReportData.from_dict(json.load(f))
+        # Canonical root for all relative plot paths across the report modules.
+        self._data.meta.characterization_folder_path = self.report_paths.root_path
 
     def load_sections(self) -> None:
         self.sections.append(CharacterizationOverviewSection(self.data, self.report))
         self.sections.append(ToCSection(self.data, self.report))
         self.sections.append(PhotodiodeOverviewSection(self.data, self.report))
-        self.sections.append(FilesetDetailSection(self.data, self.report))
 
     def build(self, depth: int = 0) -> None:
         self.load_sections()

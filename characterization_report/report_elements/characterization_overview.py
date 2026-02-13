@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import os
 from typing import Dict
 
 from base_report.base_report_slides import BaseReportSlides, Frame
 from ..helpers.data_holders import Photodiode, ReportData
+from ..helpers.paths import calc_plot_path
 
 
 RINGS = ["0", "1", "2", "3", "4"]
@@ -168,7 +168,7 @@ def _add_ring_tables(
     _draw_ring_table("4", frame.x, ring4_top)
 
     plot_x = frame.x + table_width + horizontal_gap
-    plot_y = ring3_top
+    plot_y = row1_bottom
     plot_width = 2 * table_width + horizontal_gap
     plot_height = plot_y - 10
     if plot_height <= 0:
@@ -187,29 +187,7 @@ def _resolve_plot_path(report_data: ReportData, wavelength: str, mode: str) -> s
     plot_rel_path = getattr(report_data.plots, key, None)
     if not plot_rel_path:
         raise ValueError(f"Missing plot path for key '{key}' in report data.")
-
-    if os.path.isabs(plot_rel_path):
-        return plot_rel_path
-
-    # Plot paths in extended summaries are typically relative to the run folder
-    # (e.g. "characterization_outputs/..."), not to root_output_path.
-    candidate_bases = [
-        report_data.meta.characterization_folder_path or "",
-        report_data.meta.reports_path or "",
-        report_data.meta.root_output_path or "",
-    ]
-    for base in candidate_bases:
-        if not base:
-            continue
-        candidate = os.path.join(base, plot_rel_path)
-        if os.path.exists(candidate):
-            return candidate
-
-    # Fallback to first non-empty base even if it doesn't exist, to keep a clear error path.
-    for base in candidate_bases:
-        if base:
-            return os.path.join(base, plot_rel_path)
-    return plot_rel_path
+    return calc_plot_path(plot_rel_path)
 
 
 def add_characterization_overview(

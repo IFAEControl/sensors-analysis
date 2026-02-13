@@ -131,7 +131,7 @@ class Meta:
     charact_files_path: Optional[str]
     root_output_path: Optional[str]
     characterization_folder_path: Optional[str]
-    characterization_outputs_path: Optional[str]
+    plots_path: Optional[str]
     reports_path: Optional[str]
     execution_date: Optional[str]
     system: SystemInfo
@@ -147,7 +147,7 @@ class Meta:
             charact_files_path=data.get("charact_files_path"),
             root_output_path=data.get("root_output_path"),
             characterization_folder_path=data.get("characterization_folder_path"),
-            characterization_outputs_path=data.get("characterization_outputs_path"),
+            plots_path=data.get("plots_path"),
             reports_path=data.get("reports_path"),
             execution_date=data.get("execution_date"),
             system=SystemInfo.from_dict(data.get("system", {})),

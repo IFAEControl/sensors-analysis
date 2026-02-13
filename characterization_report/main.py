@@ -18,7 +18,7 @@ def build_report(input_path: str, output_path: str | None = None) -> None:
     report.build(depth=0)
 
 
-def gen_report() -> None:
+def main() -> None:
     parser = argparse.ArgumentParser(description="Generate a characterization PDF report")
     parser.add_argument(
         "input_path",
@@ -37,4 +37,4 @@ def gen_report() -> None:
 
 
 if __name__ == "__main__":
-    gen_report()
+    main()
