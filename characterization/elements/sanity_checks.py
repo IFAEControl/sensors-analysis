@@ -116,17 +116,60 @@ class SanityChecks:
                 logger.warning("Failed to execute check: %s, %s", check_name, str(e))
         return results
 
+    def _run_info_methods(self, severity, checks, checker) -> dict:
+        results = {}
+        for check_name, check_params in checks.items():
+            method_name = f"san_info_{check_name}"
+            info_method = getattr(checker, method_name, None)
+            if info_method is None:
+                logger.warning("Sanity info method %s not found in %s", method_name, checker.level_name)
+                results[f"{severity}.{check_name}"] = {
+                    'check_name': check_name,
+                    'check_args': check_params,
+                    'severity': severity,
+                    'check_explanation': "Sanity info method not found",
+                    'exec_error': True,
+                }
+                continue
+            try:
+                if check_params is None:
+                    info = info_method(severity=severity)
+                elif isinstance(check_params, dict):
+                    info = info_method(**check_params, severity=severity)
+                elif isinstance(check_params, list):
+                    info = info_method(*check_params, severity=severity)
+                else:
+                    info = info_method(check_params, severity=severity)
+                results[f"{severity}.{check_name}"] = info
+            except Exception as e:
+                results[f"{severity}.{check_name}"] = {
+                    'check_name': check_name,
+                    'check_args': check_params,
+                    'severity': severity,
+                    'check_explanation': str(e),
+                    'exec_error': True,
+                }
+                logger.warning("Failed to execute info check: %s, %s", check_name, str(e))
+        return results
+
     def run_checks(self):
         logger.info("Running sanity checks...")
         self.results = {}
+        defined_checks = {}
 
         checker = CharacterizationSanityChecker(self.char)
         self.results[checker.level_header] = {'checks': {}}
+        defined_checks['characterization_checks'] = {}
         for severity, checks in self.characterization_checks_config.items():
             results = self._run_check_methods(severity, checks, checker)
             self.results[checker.level_header]['checks'].update(results)
+            info_results = self._run_info_methods(severity, checks, checker)
+            defined_checks['characterization_checks'].update(info_results)
 
         filesets_results = self.results[checker.level_header].setdefault('filesets', {})
+        filesets_defined = defined_checks.setdefault('fileset_checks', {})
+        first_fs = True
+        first_sw = True
         for pdh in self.char.photodiodes.values():
             for fs in pdh.filesets.values():
                 checker = FilesetSanityChecker(fs)
@@ -134,15 +177,25 @@ class SanityChecks:
                 for severity, checks in self.fileset_checks_config.items():
                     results = self._run_check_methods(severity, checks, checker)
                     fs_res['checks'].update(results)
+                    info_results = self._run_info_methods(severity, checks, checker)
+                    if first_fs:
+                        filesets_defined.update(info_results)
+                first_fs = False
                 sweep_results = fs_res.setdefault('sweepfiles', {})
+                sweep_defined = defined_checks.setdefault('sweepfile_checks', {})
                 for sw in fs.files:
                     checker = SweepFileSanityChecker(sw)
                     sweep_results.setdefault(sw.level_header, {})
                     for severity, checks in self.sweepfile_checks_config.items():
                         results = self._run_check_methods(severity, checks, checker)
                         sweep_results[sw.level_header].update(results)
+                        info_results = self._run_info_methods(severity, checks, checker)
+                        if first_sw:
+                            sweep_defined.update(info_results)
+                    first_sw = False
 
         self.results['summary'] = self._c.to_dict()
+        self.results['defined_checks'] = defined_checks
         c_d = self._c.to_dict()
         if c_d['total_failed'] > 0:
             logger.warning("Sanity checks completed. %s passed, %s failed out of %s checks.", c_d['total_passed'], c_d['total_failed'], c_d['total_checks'])

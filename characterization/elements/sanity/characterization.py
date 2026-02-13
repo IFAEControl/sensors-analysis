@@ -27,6 +27,14 @@ class CharacterizationSanityChecker:
             check_explanation='Max temperature swing in dataset'
         )
 
+    def san_info_max_temperature_change(self, max_temperature_change: float, severity='warning') -> dict:
+        return {
+            'check_name': 'max_temperature_change',
+            'check_args': max_temperature_change,
+            'severity': severity,
+            'check_explanation': f'Max temperature swing in dataset allowed: {max_temperature_change} degrees',
+        }
+
     def san_check_all_files_analyzed(self, severity='warning') -> SanityCheckResult:
         missing = []
         for pdh in self.char.photodiodes.values():
@@ -44,6 +52,14 @@ class CharacterizationSanityChecker:
             check_explanation='Each sweep file should have a valid linear regression.'
         )
 
+    def san_info_all_files_analyzed(self, severity='warning') -> dict:
+        return {
+            'check_name': 'all_files_analyzed',
+            'check_args': None,
+            'severity': severity,
+            'check_explanation': 'Verifies if each sweep file has a valid linear regression.',
+        }
+
     def san_check_all_sensors_scanned(self, severity='warning') -> SanityCheckResult:
         expected = set(config.sensor_config.keys())
         scanned = set(self.char.photodiodes.keys())
@@ -58,6 +74,14 @@ class CharacterizationSanityChecker:
             info='' if passed else f"Missing sensors: {missing}, unexpected sensors: {extra}",
             check_explanation='All sensors should be scanned.'
         )
+
+    def san_info_all_sensors_scanned(self, severity='warning') -> dict:
+        return {
+            'check_name': 'all_sensors_scanned',
+            'check_args': None,
+            'severity': severity,
+            'check_explanation': 'Verify if all sensors in the board are scanned.',
+        }
 
     def san_check_expected_runs_acquired(self, severity='warning') -> SanityCheckResult:
         missing_by_sensor = {}
@@ -76,3 +100,11 @@ class CharacterizationSanityChecker:
             info='' if passed else f"Missing runs for {len(missing_by_sensor)} sensors",
             check_explanation='Each sensor should have all expected runs acquired.'
         )
+
+    def san_info_expected_runs_acquired(self, severity='warning') -> dict:
+        return {
+            'check_name': 'expected_runs_acquired',
+            'check_args': None,
+            'severity': severity,
+            'check_explanation': 'Each sensor should have all expected runs acquired.',
+        }

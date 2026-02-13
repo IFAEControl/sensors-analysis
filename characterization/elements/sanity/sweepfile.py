@@ -21,8 +21,16 @@ class SweepFileSanityChecker:
             check_args=minimum_linreg_points,
             passed=passed,
             info=f"The linear regression uses {n} points, minimum required is {minimum_linreg_points}",
-            check_explanation='Minimum points used in linear regression'
+            check_explanation=f'Verifies if there are at least {minimum_linreg_points} points used in linear regression'
         )
+
+    def san_info_minimum_linreg_points(self, minimum_linreg_points: int, severity='warning') -> dict:
+        return {
+            'check_name': 'minimum_linreg_points',
+            'check_args': minimum_linreg_points,
+            'severity': severity,
+            'check_explanation': f'Verifies if there are at least {minimum_linreg_points} points used in linear regression',
+        }
 
     def san_check_low_total_counts(self, min_total_counts: int = 250, severity='warning') -> SanityCheckResult:
         df = self.sw.df_full
@@ -37,8 +45,16 @@ class SweepFileSanityChecker:
             check_args=min_total_counts,
             passed=passed,
             info=f"There are {count} total_counts values below {min_total_counts}",
-            check_explanation='Check if total_counts has values below threshold'
+            check_explanation=f'Verifies if the total_counts has values below the threshold of {min_total_counts}'
         )
+
+    def san_info_low_total_counts(self, min_total_counts: int = 250, severity='warning') -> dict:
+        return {
+            'check_name': 'low_total_counts',
+            'check_args': min_total_counts,
+            'severity': severity,
+            'check_explanation': f'Verifies if the total_counts has values below the threshold of {min_total_counts}',
+        }
 
     def san_check_minimum_saturated_points(self, minimum_saturated_points: int = 3, severity='error') -> SanityCheckResult:
         df = self.sw.df_sat
@@ -52,8 +68,16 @@ class SweepFileSanityChecker:
             check_args=minimum_saturated_points,
             passed=passed,
             info=f"There are {count} saturated points, minimum required is {minimum_saturated_points}",
-            check_explanation='Require at least N saturated points'
+            check_explanation=f'Verifies if there are at least {minimum_saturated_points} saturated points'
         )
+
+    def san_info_minimum_saturated_points(self, minimum_saturated_points: int = 3, severity='error') -> dict:
+        return {
+            'check_name': 'minimum_saturated_points',
+            'check_args': minimum_saturated_points,
+            'severity': severity,
+            'check_explanation': f'Verifies if there are at least {minimum_saturated_points} saturated points',
+        }
 
     def san_check_minimum_linreg_r(self, minimum_linreg_r: float, severity='error') -> SanityCheckResult:
         linreg = self.sw.anal.lr_refpd_vs_adc
@@ -67,5 +91,13 @@ class SweepFileSanityChecker:
             check_args=minimum_linreg_r,
             passed=passed,
             info=f"The linear regression r value is {r_value:.6f}, minimum required is {minimum_linreg_r}",
-            check_explanation='Minimum r for linear regression'
+            check_explanation=f'Verifies if the linear regression r value is at least {minimum_linreg_r}'
         )
+
+    def san_info_minimum_linreg_r(self, minimum_linreg_r: float, severity='error') -> dict:
+        return {
+            'check_name': 'minimum_linreg_r',
+            'check_args': minimum_linreg_r,
+            'severity': severity,
+            'check_explanation': f'Verifies if the linear regression r value is at least {minimum_linreg_r}',
+        }

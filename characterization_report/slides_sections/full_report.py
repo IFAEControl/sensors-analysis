@@ -9,6 +9,7 @@ from ..helpers.data_holders import ReportData
 from ..helpers.paths import ReportPaths
 from .characterization_overview_section import CharacterizationOverviewSection
 from .photodiode_overview_section import PhotodiodeOverviewSection
+from .sanity_checks import SanityChecksSection
 from .toc_section import ToCSection
 
 
@@ -49,6 +50,7 @@ class FullReport:
         self.sections.append(CharacterizationOverviewSection(self.data, self.report))
         self.sections.append(ToCSection(self.data, self.report))
         self.sections.append(PhotodiodeOverviewSection(self.data, self.report))
+        self.sections.append(SanityChecksSection(self.data, self.report))
 
     def build(self, depth: int = 0) -> None:
         self.load_sections()

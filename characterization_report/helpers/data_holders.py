@@ -626,6 +626,53 @@ class SanityChecksSummary:
 
 
 @dataclass
+class SanityCheckDefinition:
+    check_name: Optional[str]
+    check_args: Optional[Any]
+    severity: Optional[str]
+    check_explanation: Optional[str]
+    exec_error: bool = False
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SanityCheckDefinition":
+        return cls(
+            check_name=data.get("check_name"),
+            check_args=data.get("check_args"),
+            severity=data.get("severity"),
+            check_explanation=data.get("check_explanation"),
+            exec_error=bool(data.get("exec_error", False)),
+        )
+
+
+@dataclass
+class SanityChecksDefined:
+    characterization_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+    fileset_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+    sweepfile_checks: Dict[str, SanityCheckDefinition] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecksDefined":
+        sweepfile_raw = data.get("sweepfile_checks", data.get("file_checks", {})) or {}
+        return cls(
+            characterization_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in (data.get("characterization_checks", data.get("calibration_checks", {})) or {}).items()
+                if isinstance(check_data, dict)
+            },
+            fileset_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in (data.get("fileset_checks", {}) or {}).items()
+                if isinstance(check_data, dict)
+            },
+            sweepfile_checks={
+                check_name: SanityCheckDefinition.from_dict(check_data)
+                for check_name, check_data in sweepfile_raw.items()
+                if isinstance(check_data, dict)
+            },
+        )
+
+
+@dataclass
 class FilesetSanity:
     checks: Dict[str, SanityCheckEntry] = field(default_factory=dict)
     sweepfiles: Dict[str, Dict[str, SanityCheckEntry]] = field(default_factory=dict)
@@ -679,18 +726,21 @@ class SanityRun:
 class SanityChecks:
     runs: Dict[str, SanityRun] = field(default_factory=dict)
     summary: Optional[SanityChecksSummary] = None
+    defined_checks: Optional[SanityChecksDefined] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SanityChecks":
         summary_data = data.get("summary")
+        defined_checks_data = data.get("defined_checks")
         runs: Dict[str, SanityRun] = {}
         for key, value in (data or {}).items():
-            if key == "summary" or not isinstance(value, dict):
+            if key in {"summary", "defined_checks"} or not isinstance(value, dict):
                 continue
             runs[key] = SanityRun.from_dict(value)
         return cls(
             runs=runs,
             summary=SanityChecksSummary.from_dict(summary_data) if isinstance(summary_data, dict) else None,
+            defined_checks=SanityChecksDefined.from_dict(defined_checks_data) if isinstance(defined_checks_data, dict) else None,
         )
 
 

@@ -22,6 +22,14 @@ class FilesetSanityChecker:
             check_explanation='Minimum number of runs in the fileset'
         )
 
+    def san_info_minimum_files_in_set(self, minimum_files_in_set: int, severity='warning') -> dict:
+        return {
+            'check_name': 'minimum_files_in_set',
+            'check_args': minimum_files_in_set,
+            'severity': severity,
+            'check_explanation': f'Verifies if there are at least {minimum_files_in_set} sweepfiles in the fileset',
+        }
+
     def san_check_minimum_linreg_points(self, minimum_linreg_points: int, severity='warning') -> SanityCheckResult:
         df = self.fs.df
         n = 0 if df is None else int(df.shape[0])
@@ -34,6 +42,14 @@ class FilesetSanityChecker:
             info=f"There are {n} points to do the linear regression, minimum required is {minimum_linreg_points}",
             check_explanation='Minimum points used in linear regression'
         )
+
+    def san_info_minimum_linreg_points(self, minimum_linreg_points: int, severity='warning') -> dict:
+        return {
+            'check_name': 'minimum_linreg_points',
+            'check_args': minimum_linreg_points,
+            'severity': severity,
+            'check_explanation': f'Verifies if there are at least {minimum_linreg_points} points used in linear regression',
+        }
 
     def san_check_max_temperature_change(self, max_temperature_change: float, severity='warning') -> SanityCheckResult:
         df = self.fs.df_full
@@ -50,6 +66,14 @@ class FilesetSanityChecker:
             check_explanation='Max temperature swing in fileset'
         )
 
+    def san_info_max_temperature_change(self, max_temperature_change: float, severity='warning') -> dict:
+        return {
+            'check_name': 'max_temperature_change',
+            'check_args': max_temperature_change,
+            'severity': severity,
+            'check_explanation': f'Max temperature swing in fileset allowed: {max_temperature_change} degrees',
+        }
+
     def san_check_minimum_linreg_r(self, minimum_linreg_r: float, severity='error') -> SanityCheckResult:
         linreg = self.fs.anal.lr_refpd_vs_adc
         if linreg is None or linreg.linreg is None:
@@ -62,5 +86,13 @@ class FilesetSanityChecker:
             check_args=minimum_linreg_r,
             passed=passed,
             info=f"The linear regression r value is {r_value:.6f}, minimum required is {minimum_linreg_r}",
-            check_explanation='Minimum r for linear regression'
+            check_explanation=f'Verifies if the linear regression r value is at least {minimum_linreg_r}'
         )
+
+    def san_info_minimum_linreg_r(self, minimum_linreg_r: float, severity='error') -> dict:
+        return {
+            'check_name': 'minimum_linreg_r',
+            'check_args': minimum_linreg_r,
+            'severity': severity,
+            'check_explanation': f'Verifies if the linear regression r value is at least {minimum_linreg_r}',
+        }
