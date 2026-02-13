@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 
 from reportlab.lib import colors
 
@@ -14,7 +15,6 @@ from .base_section import BaseSection
 def _anchor_slug(value: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9_]+", "_", value).strip("_").lower()
     return slug or "sanity"
-
 
 class SanityChecksSection(BaseSection):
     def __init__(self, report_data: ReportData, report: BaseReportSlides) -> None:
@@ -58,14 +58,18 @@ class SanityChecksSection(BaseSection):
             if any(check.passed is False for check in run.checks.values()):
                 return True
             if depth == 0 or depth >= 2:
-                for fs in run.filesets.values():
-                    if any(check.passed is False for check in fs.checks.values()):
+                for pd_data in run.photodiodes.values():
+                    if any(check.passed is False for check in pd_data.checks.values()):
                         return True
-            if depth == 0 or depth >= 3:
-                for fs in run.filesets.values():
-                    for file_checks in fs.sweepfiles.values():
-                        if any(check.passed is False for check in file_checks.values()):
+                    for fs in pd_data.filesets.values():
+                        if any(check.passed is False for check in fs.checks.values()):
                             return True
+            if depth == 0 or depth >= 3:
+                for pd_data in run.photodiodes.values():
+                    for fs in pd_data.filesets.values():
+                        for file_checks in fs.sweepfiles.values():
+                            if any(check.passed is False for check in file_checks.values()):
+                                return True
         return False
 
     def _has_defined_checks(self) -> bool:
@@ -78,10 +82,16 @@ class SanityChecksSection(BaseSection):
             or defined.sweepfile_checks
         )
 
-    def _add_sanity_check_box(self, check: SanityCheckEntry) -> None:
+    def _add_sanity_check_box(self, check: SanityCheckEntry, context: str | None = None) -> None:
+        display_check = check
+        if context:
+            context_line = f"Linked context: {context}"
+            merged_info = context_line if not check.info else f"{context_line}\n{check.info}"
+            display_check = replace(check, info=merged_info)
+
         f = get_sanity_check_box_frame(
             self.report,
-            check,
+            display_check,
             x=self.frames[self.curr_frame_idx].x,
             y=self.curr_height,
             width=self.frames[self.curr_frame_idx].width,
@@ -114,7 +124,7 @@ class SanityChecksSection(BaseSection):
 
         f = add_sanity_check_box(
             self.report,
-            check,
+            display_check,
             x=self.frames[self.curr_frame_idx].x + self.sec_padding,
             y=self.curr_height,
             width=self.frames[self.curr_frame_idx].width - self.sec_padding,
@@ -166,21 +176,27 @@ class SanityChecksSection(BaseSection):
         for run_name in sorted(self.report_data.sanity_checks.runs.keys()):
             run = self.report_data.sanity_checks.runs[run_name]
             run_failed = [check for check in run.checks.values() if check.passed is False]
-            fileset_failed = {
-                fs_name: [check for check in fs_data.checks.values() if check.passed is False]
-                for fs_name, fs_data in run.filesets.items()
+            pd_failed = {
+                sensor_id: [check for check in pd_data.checks.values() if check.passed is False]
+                for sensor_id, pd_data in run.photodiodes.items()
             }
-            fileset_failed = {fs_name: checks for fs_name, checks in fileset_failed.items() if checks}
-            file_failed = {}
-            for fs_name, fs_data in run.filesets.items():
-                for file_name, file_checks in fs_data.sweepfiles.items():
-                    failed_checks = [check for check in file_checks.values() if check.passed is False]
-                    if failed_checks:
-                        file_failed[f"{fs_name}:{file_name}"] = failed_checks
+            pd_failed = {sensor_id: checks for sensor_id, checks in pd_failed.items() if checks}
+            fileset_failed: dict[tuple[str, str], list[SanityCheckEntry]] = {}
+            file_failed: dict[tuple[str, str, str], list[SanityCheckEntry]] = {}
+            for sensor_id, pd_data in run.photodiodes.items():
+                for fs_name, fs_data in pd_data.filesets.items():
+                    failed_fs_checks = [check for check in fs_data.checks.values() if check.passed is False]
+                    if failed_fs_checks:
+                        fileset_failed[(sensor_id, fs_name)] = failed_fs_checks
+                    for file_name, file_checks in fs_data.sweepfiles.items():
+                        failed_file_checks = [check for check in file_checks.values() if check.passed is False]
+                        if failed_file_checks:
+                            file_failed[(sensor_id, fs_name, file_name)] = failed_file_checks
 
             include_filesets = (depth == 0 or depth >= 2) and bool(fileset_failed)
             include_files = (depth == 0 or depth >= 3) and bool(file_failed)
-            if not run_failed and not include_filesets and not include_files:
+            include_pd_level = (depth == 0 or depth >= 2) and bool(pd_failed)
+            if not run_failed and not include_pd_level and not include_filesets and not include_files:
                 continue
 
             run_slug = _anchor_slug(run_name)
@@ -192,33 +208,48 @@ class SanityChecksSection(BaseSection):
                     anchor=f"sanity_run_{run_slug}_characterization",
                 )
                 for check in run_failed:
-                    self._add_sanity_check_box(check)
+                    self._add_sanity_check_box(check, context=f"run={run_name}, level=characterization")
+
+            if include_pd_level:
+                self._add_subsubsection(
+                    "Photodiode Level",
+                    anchor=f"sanity_run_{run_slug}_photodiodes",
+                )
+                for sensor_id, failed_checks in pd_failed.items():
+                    self._add_subsubsection(
+                        f"Photodiode {sensor_id}",
+                        anchor=f"sanity_run_{run_slug}_pd_{_anchor_slug(sensor_id)}",
+                    )
+                    for check in failed_checks:
+                        self._add_sanity_check_box(
+                            check,
+                            context=f"run={run_name}, photodiode={sensor_id}",
+                        )
 
             if include_filesets:
                 self._add_subsubsection(
                     "FileSet Level",
                     anchor=f"sanity_run_{run_slug}_filesets",
                 )
-                for fs_name, failed_checks in fileset_failed.items():
-                    self._add_subsubsection(
-                        f"FileSet {fs_name}",
-                        anchor=f"sanity_run_{run_slug}_fileset_{_anchor_slug(fs_name)}",
-                    )
+                for (sensor_id, fs_name), failed_checks in fileset_failed.items():
                     for check in failed_checks:
-                        self._add_sanity_check_box(check)
+                        self._add_sanity_check_box(
+                            check,
+                            context=f"run={run_name}, fileset={fs_name}, photodiode={sensor_id}",
+                        )
 
             if include_files:
                 self._add_subsubsection(
                     "File Level",
                     anchor=f"sanity_run_{run_slug}_files",
                 )
-                for fs_file, failed_checks in file_failed.items():
-                    self._add_subsubsection(
-                        f"File {fs_file}",
-                        anchor=f"sanity_run_{run_slug}_file_{_anchor_slug(fs_file)}",
-                    )
+                for (sensor_id, fs_name, file_name), failed_checks in file_failed.items():
+                    fs_file = f"{fs_name}:{file_name}"
                     for check in failed_checks:
-                        self._add_sanity_check_box(check)
+                        self._add_sanity_check_box(
+                            check,
+                            context=f"run={run_name}, file={fs_file}, photodiode={sensor_id}",
+                        )
 
     def checks_defined(self) -> None:
         defined = self.report_data.sanity_checks.defined_checks

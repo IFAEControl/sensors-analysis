@@ -701,12 +701,12 @@ class FilesetSanity:
 
 
 @dataclass
-class SanityRun:
+class PhotodiodeSanity:
     checks: Dict[str, SanityCheckEntry] = field(default_factory=dict)
     filesets: Dict[str, FilesetSanity] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "SanityRun":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PhotodiodeSanity":
         filesets_raw = data.get("filesets", {}) or {}
         return cls(
             checks={
@@ -719,6 +719,43 @@ class SanityRun:
                 for fs, fv in filesets_raw.items()
                 if isinstance(fv, dict)
             },
+        )
+
+
+@dataclass
+class SanityRun:
+    checks: Dict[str, SanityCheckEntry] = field(default_factory=dict)
+    photodiodes: Dict[str, PhotodiodeSanity] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SanityRun":
+        photodiodes_raw = data.get("photodiodes", {}) or {}
+        legacy_filesets_raw = data.get("filesets", {}) or {}
+        photodiodes: Dict[str, PhotodiodeSanity] = {
+            sensor_id: PhotodiodeSanity.from_dict(pd_data)
+            for sensor_id, pd_data in photodiodes_raw.items()
+            if isinstance(pd_data, dict)
+        }
+
+        # Backward compatibility with older schema:
+        # sanity_checks.<run>.filesets.<fileset>
+        if legacy_filesets_raw and not photodiodes:
+            photodiodes["unknown"] = PhotodiodeSanity(
+                checks={},
+                filesets={
+                    fs: FilesetSanity.from_dict(fv)
+                    for fs, fv in legacy_filesets_raw.items()
+                    if isinstance(fv, dict)
+                },
+            )
+
+        return cls(
+            checks={
+                ck: SanityCheckEntry.from_dict(cv)
+                for ck, cv in (data.get("checks", {}) or {}).items()
+                if isinstance(cv, dict)
+            },
+            photodiodes=photodiodes,
         )
 
 

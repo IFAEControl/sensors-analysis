@@ -158,7 +158,7 @@ class SanityChecks:
         defined_checks = {}
 
         checker = CharacterizationSanityChecker(self.char)
-        self.results[checker.level_header] = {'checks': {}}
+        self.results[checker.level_header] = {'checks': {}, 'photodiodes': {}}
         defined_checks['characterization_checks'] = {}
         for severity, checks in self.characterization_checks_config.items():
             results = self._run_check_methods(severity, checks, checker)
@@ -166,11 +166,13 @@ class SanityChecks:
             info_results = self._run_info_methods(severity, checks, checker)
             defined_checks['characterization_checks'].update(info_results)
 
-        filesets_results = self.results[checker.level_header].setdefault('filesets', {})
+        photodiodes_results = self.results[checker.level_header]['photodiodes']
         filesets_defined = defined_checks.setdefault('fileset_checks', {})
         first_fs = True
         first_sw = True
         for pdh in self.char.photodiodes.values():
+            pd_res = photodiodes_results.setdefault(pdh.level_header, {'checks': {}, 'filesets': {}})
+            filesets_results = pd_res['filesets']
             for fs in pdh.filesets.values():
                 checker = FilesetSanityChecker(fs)
                 fs_res = filesets_results.setdefault(fs.level_header, {'checks': {}})

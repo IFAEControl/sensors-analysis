@@ -120,6 +120,8 @@ class SweepFile(BaseElement):
 
     def load_data(self):
         self._df = pd.read_csv(self.file_path, delimiter='\t', header=None)
+        # logger.debug("Loaded raw data for file %s with shape %s", self.file_info['filename'], self._df.shape)
+
         self._df.columns = [
             'datetime', 'laser_setpoint', 'total_sum', 'total_square_sum',
             'ref_pd_mean', 'ref_pd_std', 'temperature', 'RH', 'total_counts'
@@ -160,10 +162,11 @@ class SweepFile(BaseElement):
         self._df_full = self._df.copy()
         self._df_sat = self._df[is_saturated].copy().reset_index(drop=True)
         self._df = self._df[~is_pedestal & ~is_saturated].reset_index(drop=True)
-
+        if self._df.empty:
+            logger.error("After removing pedestals and saturated points, no data remains for file: %s", self.file_info['filename'])
         self.data_prep_info['original_num_pedestals'] = int(is_pedestal.sum())
         self.data_prep_info['original_num_saturated'] = int(is_saturated.sum())
-        logger.info("Loaded data for sweep file: %s", self.file_info['filename'])
+        logger.info("Loaded data for sweep file: %s \t shape: %s", self.file_info['filename'], self._df.shape)
 
     def analyze(self):
         if self.output_path:

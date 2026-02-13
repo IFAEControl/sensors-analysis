@@ -25,6 +25,7 @@ class SweepFileAnalysis(BaseAnal):
     def analyze(self):
         if self.df is None or self.df.empty:
             logger.error("Dataframe is not loaded for file: %s", self._data_holder.file_info['filename'])
+            print(self._data_holder._df)
             return
         self._calc_pedestal_stats()
         self._calc_saturation_stats()

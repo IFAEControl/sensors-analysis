@@ -14,6 +14,13 @@ def _fmt_linreg_value(value: object, precision: int = 3) -> str:
     return str(value)
 
 
+def _fmt_r_value(value: object) -> str:
+    if value is None:
+        return "N/A"
+    if isinstance(value, (int, float)):
+        return f"{value:.6f}"
+    return str(value)
+
 def add_photodiode_fileset_overview(
     section: BaseSection,
     sensor_id: str,
@@ -77,7 +84,7 @@ def add_photodiode_fileset_overview(
         _fmt_linreg_value(getattr(linreg, "stderr", None)),
         _fmt_linreg_value(getattr(linreg, "intercept", None)),
         _fmt_linreg_value(getattr(linreg, "intercept_stderr", None)),
-        _fmt_linreg_value(getattr(linreg, "r_value", None)),
+        _fmt_r_value(getattr(linreg, "r_value", None)),
         _fmt_linreg_value(getattr(linreg, "p_value", None)),
     ]]
 
