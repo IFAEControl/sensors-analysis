@@ -11,7 +11,7 @@ pip install -e .
 
 ## Characterization Module
 
-
+You need the calibration outputs, so first run the calibration, then execute the characterization module. What I've done is to linke each characterization to the calibration immediately anterior in time, even if another calibration is closer in time ahead.
 
 ### Execution without installing
 
