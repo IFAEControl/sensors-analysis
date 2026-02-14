@@ -8,6 +8,17 @@ To install the package, use:
 pip install -e .
 ```
 
+
+## Characterization Module
+
+
+
+### Execution without installing
+
+```
+PYTHONPATH='.' python -m characterization.main -wez -o out-char data/charact/09022026_30R1.zip out-calibs/calibration_21012026.json
+```
+
 ## Calibration Module
 
 To execute it without installing the package, use:
@@ -39,3 +50,4 @@ Output paths for plots and results are structured to reflect this hierarchy, ens
         - **results.json**: Analysis results of the file set (contains aggregated results and all run files results in the hierarchy)
     - ***.png**: Plots and analysis results of the overall calibration (mostly environment of the whole data taking and some plot representing different filter wheels and/or wavelengths)
     - **results.json**: Analysis results of the overall calibration (contains aggregated results and all file sets results in the hierarchy)
+
