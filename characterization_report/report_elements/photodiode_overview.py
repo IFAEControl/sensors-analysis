@@ -54,7 +54,7 @@ def add_photodiode_fileset_overview(
         anchor=f"photodiode_{sensor_id}_{fileset_data.meta.wavelength}",
         toc=False,
     )
-
+    
     section.report.add_plot(
         path=calc_plot_path(fileset_plots.refpd_vs_dut),
         x=col_1_x,

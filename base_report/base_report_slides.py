@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 SLIDE_16x9 = (13.333 * inch, 7.5 * inch)
+MISSING_PLOT_IMAGE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "media",
+    "FileNotFound_white.png",
+)
 
 
 @dataclass(frozen=True)
@@ -697,7 +702,11 @@ class BaseReportSlides:
             height=height,
         )
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Plot not found: {path}")
+            logger.warning("Plot not found: %s. Drawing missing-plot placeholder.", path)
+            frame = self._draw_missing_plot_placeholder(x=x, y=y, width=width, height=height)
+            self._maybe_draw_debug(frame)
+            self._set_last_frame(frame)
+            return frame
 
         ext = os.path.splitext(path)[1].lower()
         frame = self.get_plot_frame(path, x, y, width=width, height=height)
@@ -734,6 +743,45 @@ class BaseReportSlides:
 
         self._maybe_draw_debug(frame)
         self._set_last_frame(frame)
+        return frame
+
+    def _draw_missing_plot_placeholder(
+        self,
+        x: float,
+        y: float,
+        width: float | None,
+        height: float | None,
+    ) -> Frame:
+        fallback_w, fallback_h = (1.0, 1.0)
+        if os.path.exists(MISSING_PLOT_IMAGE):
+            fallback_w, fallback_h = self._get_plot_source_size(MISSING_PLOT_IMAGE)
+        if width is not None and height is not None:
+            frame = Frame(x, y, width, height)
+            icon_frame = self._resolve_plot_frame(fallback_w, fallback_h, x, y, width, height)
+        else:
+            frame = self._resolve_plot_frame(fallback_w, fallback_h, x, y, width, height)
+            icon_frame = frame
+
+        self._canvas.setFillColor(colors.HexColor("#C91F37"))
+        self._canvas.setStrokeColor(colors.HexColor("#8E1122"))
+        self._canvas.setLineWidth(0.8)
+        self._canvas.rect(frame.x, frame.y - frame.height, frame.width, frame.height, fill=1, stroke=1)
+
+        if os.path.exists(MISSING_PLOT_IMAGE):
+            img = ImageReader(MISSING_PLOT_IMAGE)
+            self._canvas.drawImage(
+                img,
+                icon_frame.x,
+                icon_frame.y - icon_frame.height,
+                width=icon_frame.width,
+                height=icon_frame.height,
+                preserveAspectRatio=True,
+                anchor="c",
+                mask="auto",
+            )
+        else:
+            logger.warning("Missing placeholder image not found: %s", MISSING_PLOT_IMAGE)
+
         return frame
 
     def set_math_renderer(self, renderer) -> None:

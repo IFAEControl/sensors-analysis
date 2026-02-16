@@ -266,7 +266,9 @@ class Characterization(BaseElement):
                 if cal_lr is None:
                     raise ValueError(f"Missing calibration linear regression for configuration {cfg_label}")
                 if fs.anal.lr_refpd_vs_adc.linreg is None:
-                    raise ValueError(f"Missing characterization linear regression for sensor {sensor_id}, {cfg_label}")
+                    logger.error("Missing characterization linear regression for sensor %s, configuration %s", sensor_id, cfg_label)
+                    # raise ValueError(f"Missing characterization linear regression for sensor {sensor_id}, {cfg_label}")
+                    continue
 
                 conv = self._combine_refpd_adc_with_pm_refpd(fs.anal.lr_refpd_vs_adc.to_dict(), cal_lr)
                 conv['configuration'] = cfg_label

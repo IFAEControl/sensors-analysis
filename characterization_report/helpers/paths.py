@@ -52,12 +52,16 @@ def _resolve_char_root_path(char_root_path: str | None = None) -> str:
     return config.paths.root_path
 
 
-def calc_plot_path(plot_path_in_json: str, root_path: str | None = None) -> str:
+def calc_plot_path(plot_path_in_json: str, root_path: str | None = None, strict:bool = False) -> str:
     resolved_char_plots_path = _resolve_char_root_path(root_path)
-    if not resolved_char_plots_path:
-        raise ValueError("char_plots_path cannot be empty")
-    if not plot_path_in_json:
-        raise ValueError("plot_path_in_json cannot be empty")
+    if strict:
+        if not resolved_char_plots_path:
+            raise ValueError("char_plots_path cannot be empty")
+        if not plot_path_in_json:
+            raise ValueError("plot_path_in_json cannot be empty")
+    elif plot_path_in_json is None or plot_path_in_json.strip() == "":
+        logger.warning("Plot path in JSON is empty. Returning empty string.")
+        return ""
     if os.path.isabs(plot_path_in_json):
         return plot_path_in_json
     return os.path.join(resolved_char_plots_path, plot_path_in_json)

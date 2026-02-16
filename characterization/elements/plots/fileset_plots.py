@@ -33,15 +33,19 @@ class FilesetPlots(BasePlots):
 
     def generate_plots(self):
         df = self.fs.df
-        if df is None or df.empty:
+        if df is None:
             logger.error("No analysis dataframe for fileset: %s", self.fs.label)
             return
         self._gen_timeseries_plot()
-        self._gen_fit_slopes_intercepts_vs_run()
-        self._gen_saturation_points_vs_run()
-        self._gen_refpd_vs_laser_setpoint()
-        self._gen_refpd_vs_dut()
-
+        try:
+            self._gen_fit_slopes_intercepts_vs_run()
+            self._gen_saturation_points_vs_run()
+            self._gen_refpd_vs_laser_setpoint()
+            self._gen_refpd_vs_dut()
+            self._gen_dut_vs_laser_setpoint()
+        except Exception as e:
+            logger.error("Error generating plots for fileset %s: %s", self.fs.label, str(e))
+    def _gen_dut_vs_laser_setpoint(self):
         fig_id = "dut_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
         colors = plt.cm.tab20.colors
