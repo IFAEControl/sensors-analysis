@@ -7,6 +7,9 @@ output/
 *.pdf
 DriveBaffleDataRepo
 out-calibs/
+out-char/
+out-cross/
+out-report-char/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
