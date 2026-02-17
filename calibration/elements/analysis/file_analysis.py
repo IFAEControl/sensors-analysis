@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from scipy.stats import linregress
 
 from calibration.helpers import get_logger
-from calibration.config import config
 
 from ..helpers import CalibLinReg
 from .analysis_base import BaseAnal
@@ -47,22 +46,29 @@ class CalibFileAnalysis(BaseAnal):
         if self.df is None:
             logger.error("Dataframe is not loaded for file: %s", self._data_holder.file_info['filename'])
             return
-        
-        if config.subtract_pedestals:
-            pm_mean = 'pm_zeroed'
-            ref_pd_mean = 'ref_pd_zeroed'
-            
-        else:
-            pm_mean = 'pm_mean'
-            ref_pd_mean = 'ref_pd_mean'
-        
-        self._data_info['used_pm_column'] = pm_mean
-        self._data_info['used_refpd_column'] = ref_pd_mean
+
+        pm_col = self._data_holder.pm_col
+        refpd_col = self._data_holder.refpd_col
+
+        self._data_info['used_pm_column'] = pm_col
+        self._data_info['used_refpd_column'] = refpd_col
 
         # Perform linear regressions
-        self.lr_refpd_vs_pm.linreg = linregress(self.df[ref_pd_mean], self.df[pm_mean])
-        self.lr_pm_mean_vs_laser.linreg = linregress(self.df['laser_setpoint'], self.df[pm_mean])
-        self.lr_refpd_vs_laser.linreg = linregress(self.df['laser_setpoint'], self.df[ref_pd_mean])
+        self.lr_refpd_vs_pm = CalibLinReg(
+            refpd_col,
+            pm_col,
+            linregress(self.df[refpd_col], self.df[pm_col])
+        )
+        self.lr_pm_mean_vs_laser = CalibLinReg(
+            'laser_setpoint',
+            pm_col,
+            linregress(self.df['laser_setpoint'], self.df[pm_col])
+        )
+        self.lr_refpd_vs_laser = CalibLinReg(
+            'laser_setpoint',
+            refpd_col,
+            linregress(self.df['laser_setpoint'], self.df[refpd_col])
+        )
     
 
     def to_dict(self):

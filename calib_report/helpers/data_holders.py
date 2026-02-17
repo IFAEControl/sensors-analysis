@@ -12,6 +12,8 @@ class CallingArguments:
     log_file: bool
     overwrite: bool
     no_plots: bool
+    no_gen_report: bool
+    zip_it: bool
     do_not_sub_pedestals: bool
     do_not_replace_zero_pm_stds: bool
     use_first_ped_in_linreag: bool
@@ -26,6 +28,8 @@ class CallingArguments:
             log_file=bool(data.get("log_file", False)),
             overwrite=bool(data.get("overwrite", False)),
             no_plots=bool(data.get("no_plots", False)),
+            no_gen_report=bool(data.get("no_gen_report", False)),
+            zip_it=bool(data.get("zip_it", False)),
             do_not_sub_pedestals=bool(data.get("do_not_sub_pedestals", False)),
             do_not_replace_zero_pm_stds=bool(
                 data.get("do_not_replace_zero_pm_stds", False)
@@ -73,6 +77,7 @@ class MetaConfig:
     power_meter_resolutions: Dict[str, float] = field(default_factory=dict)
     use_first_pedestal_in_linreg: bool = False
     use_uW_as_power_units: bool = False
+    summary_file_name: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "MetaConfig":
@@ -88,6 +93,7 @@ class MetaConfig:
             ),
             use_uW_as_power_units=bool(
                 data.get("use_uW_as_power_units", False)),
+            summary_file_name=data.get("summary_file_name"),
         )
 
 
@@ -97,6 +103,7 @@ class Meta:
     calib_id: Optional[str]
     calib_files_path: Optional[str]
     root_output_path: Optional[str]
+    calibration_output_path: Optional[str]
     calibration_plots_path: Optional[str]
     reports_path: Optional[str]
     execution_date: Optional[str]
@@ -111,6 +118,7 @@ class Meta:
             calib_id=data.get("calib_id"),
             calib_files_path=data.get("calib_files_path"),
             root_output_path=data.get("root_output_path"),
+            calibration_output_path=data.get("calibration_output_path"),
             calibration_plots_path=data.get("calibration_plots_path"),
             reports_path=data.get("reports_path"),
             execution_date=data.get("execution_date"),
@@ -274,6 +282,7 @@ class PedestalSubtraction:
 @dataclass
 class DataPreparation:
     original_num_rows: Optional[int]
+    use_zeroed_columns: bool
     use_uW_as_power_units: bool
     original_pm_std_zero_count: Optional[int]
     replace_zero_pm_std: bool
@@ -286,6 +295,7 @@ class DataPreparation:
     def from_dict(cls, data: Mapping[str, Any]) -> "DataPreparation":
         return cls(
             original_num_rows=data.get("original_num_rows"),
+            use_zeroed_columns=bool(data.get("use_zeroed_columns", False)),
             use_uW_as_power_units=bool(data.get("use_uW_as_power_units", False)),
             original_pm_std_zero_count=data.get("original_pm_std_zero_count"),
             replace_zero_pm_std=bool(data.get("replace_zero_pm_std", False)),
@@ -441,7 +451,8 @@ class FileSetPlots:
     pm_vs_LaserSetting: Optional[str] = None
     RefPD_vs_LaserSetting: Optional[str] = None
     Pedestals_Histogram: Optional[str] = None
-    Pedestals_vs_runindex: Optional[str] = None
+    pedestals_points_with_mean: Optional[str] = None
+    pedestals_vs_run: Optional[str] = None
     pedestals_timeseries: Optional[str] = None
 
     @classmethod
@@ -476,7 +487,8 @@ class FileSetPlots:
             pm_vs_LaserSetting=data.get("pm_vs_LaserSetting"),
             RefPD_vs_LaserSetting=data.get("RefPD_vs_LaserSetting"),
             Pedestals_Histogram=data.get("Pedestals_Histogram"),
-            Pedestals_vs_runindex=data.get("Pedestals_vs_runindex"),
+            pedestals_points_with_mean=data.get("pedestals_points_with_mean"),
+            pedestals_vs_run=data.get("pedestals_vs_run"),
             pedestals_timeseries=data.get("pedestals_timeseries"),
         )
 

@@ -211,9 +211,10 @@ class FileSetSection(BaseSection):
 
         pm_resol_replace = fs_data.files.get(list(fs_data.files.keys())[
                                              0]).data_preparation.pm_std_replacement_value
+        power_unit = "uW" if self.report_data.meta.config.use_uW_as_power_units else "W"
         if pm_resol_replace:
             texts = [
-                f"The power meter (PM) may provide values of pedestals with std value of 0. In order to do weighted means, for values with std = 0, we use the value of the pm resolution ({pm_resol_replace}) instead of the std. This behaviour can be disabled when analyzing the files. The resolution depends on the scale of the power meter and changes from fileset to fileset."
+                f"The power meter (PM) may provide values of pedestals with std value of 0. In order to do weighted means, for values with std = 0, we use the value of the pm resolution ({pm_resol_replace:.3e} {power_unit}) instead of the std. This behaviour can be disabled when analyzing the files. The resolution depends on the scale of the power meter and changes from fileset to fileset."
                 # "In this plot we analyze the pedestals, by doing the average for each run file in the fileset and compare it to the mean and std of the whole fileset pedestals."
             ]
         else:
@@ -232,8 +233,9 @@ class FileSetSection(BaseSection):
 
         pr_d = pr_d[-1]
         plot_y = min(pr_d.y - pr_d.height - 10, t_f.y - t_f.height - 10)
+        pedestal_vs_run_plot = fs_plots.pedestals_vs_run or fs_plots.pedestals_points_with_mean
         self.report.add_plot(
-            calc_plot_path(fs_plots.Pedestals_vs_runindex),
+            calc_plot_path(pedestal_vs_run_plot),
             x=col2_start,
             y=plot_y,
             width=col2_width,

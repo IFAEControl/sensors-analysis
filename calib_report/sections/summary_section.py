@@ -75,11 +75,14 @@ class SummarySection(BaseSection):
                               center=True, zebra=True)
         self.report.add_paragraph("The calibration analysis was executed with the following options:")
         exec_table = [
-            ['Subtracted pedestals from values', 'No' if self.report_data.meta.calling_arguments.do_not_sub_pedestals else 'Yes'],
-            ['Replace zero PM stds with resolution', 'No' if self.report_data.meta.calling_arguments.do_not_replace_zero_pm_stds else 'Yes'],
-            ['Use first pedestal in linear regression', 'Yes' if self.report_data.meta.calling_arguments.use_first_ped_in_linreag else 'No'],
-            ['Use W as power units', 'Yes' if self.report_data.meta.calling_arguments.use_W_as_power_units else 'No'],
+            ['Property', 'Value'],
+            ['Subtract pedestals from values', 'Yes' if self.report_data.meta.config.subtract_pedestals else 'No'],
+            ['Replace zero PM stds with resolution', 'Yes' if self.report_data.meta.config.replace_zero_pm_stds else 'No'],
+            ['Use first pedestal in linear regression', 'Yes' if self.report_data.meta.config.use_first_pedestal_in_linreg else 'No'],
+            ['Power units', 'uW' if self.report_data.meta.config.use_uW_as_power_units else 'W'],
+            ['Plot output format', str(self.report_data.meta.config.plot_output_format)],
         ]
+
         self.report.add_table(exec_table, keep_together=True, 
                               description="Summary of calibration execution options",
                               center=True, zebra=True, headers='col')

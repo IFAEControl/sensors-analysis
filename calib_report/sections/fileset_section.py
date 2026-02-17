@@ -90,7 +90,7 @@ class FileSetSection(BaseSection):
         
         if pm_ped_stats.weighted and pm_ped_stats.chi2_reduced > 10.0:
             extra_text = ""
-            if not self.report_data.meta.calling_arguments.do_not_replace_zero_pm_stds:
+            if self.report_data.meta.config.replace_zero_pm_stds:
                 extra_text = ' In the analysis settings, you\'ve set to replace zero PM stds with the ' \
                 'resolution value which is usually very small and can lead to high Chi2 values.'
             self.report.add_warning_box("The weighted pedestal fit for the Power Meter shows a high reduced Chi2 value, indicating a poor fit." \

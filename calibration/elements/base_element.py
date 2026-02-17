@@ -43,6 +43,26 @@ class BaseElement(ABC):
     def pm_std_col(self) -> str:
         """Column name for power meter standard deviation data."""
         return 'pm_std'
+
+    @property
+    def pedestal_pm_col(self) -> str:
+        # Pedestal plots/analysis must always use raw pedestal measurements, not zeroed columns.
+        # zeroed columns are done using the mean of the pedestals, so they are not suitable for pedestal analysis.
+        return 'pm_mean'
+
+    @property
+    def pedestal_refpd_col(self) -> str:
+        # Pedestal plots/analysis must always use raw pedestal measurements, not zeroed columns.
+        # zeroed columns are done using the mean of the pedestals, so they are not suitable for pedestal analysis.
+        return 'ref_pd_mean'
+
+    @property
+    def pedestal_pm_std_col(self) -> str:
+        return 'pm_std'
+
+    @property
+    def pedestal_refpd_std_col(self) -> str:
+        return 'ref_pd_std'
     
     @property
     def power_units(self) -> str:

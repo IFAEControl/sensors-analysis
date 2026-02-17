@@ -13,7 +13,7 @@ class BaseSection(ABC):
         # a section will be added or not
         # to be defined in child classes
         self.section_depth = 4
-        self.units = 'W' if self.report_data.meta.calling_arguments.use_W_as_power_units else 'uW'
+        self.units = 'uW' if self.report_data.meta.config.use_uW_as_power_units else 'W'
         self.init_x = 10
         self.end_x = 950
         self.init_y = 480

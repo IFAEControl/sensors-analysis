@@ -3,6 +3,7 @@ import os
 
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
 from matplotlib.ticker import ScalarFormatter
 
 from calibration.config import config
@@ -43,6 +44,26 @@ class BasePlots(ABC):
     def pm_std_col(self) -> str:
         """Column name for power meter standard deviation data."""
         return self._data_holder.pm_std_col
+
+    @property
+    def ped_pm_col(self) -> str:
+        """Column name for raw pedestal power meter data."""
+        return self._data_holder.pedestal_pm_col
+
+    @property
+    def ped_refpd_col(self) -> str:
+        """Column name for raw pedestal reference photodiode data."""
+        return self._data_holder.pedestal_refpd_col
+
+    @property
+    def ped_pm_std_col(self) -> str:
+        """Column name for raw pedestal power meter standard deviation data."""
+        return self._data_holder.pedestal_pm_std_col
+
+    @property
+    def ped_refpd_std_col(self) -> str:
+        """Column name for raw pedestal reference photodiode standard deviation data."""
+        return self._data_holder.pedestal_refpd_std_col
 
     @property
     def level_label(self) -> str:
@@ -153,6 +174,7 @@ class BasePlots(ABC):
         ax1.set_ylabel('PM Samples')
         ax1.grid(True, alpha=0.3)
         ax1.legend(loc='best')
+        self._format_datetime_axis(ax1)
 
         samples = df['samples'].dropna()
         if not samples.empty:
@@ -168,6 +190,11 @@ class BasePlots(ABC):
 
         self.savefig(fig, fig_id)
         plt.close(fig)
+
+    def _format_datetime_axis(self, ax):
+        """Format datetime x-axis to show only hour:minute labels."""
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 
     def _gen_pm_samples_plot_full(self):
         """Generate samples plot using df_full."""
@@ -204,6 +231,7 @@ class BasePlots(ABC):
 
         ax1.set_title(f'{self.level_label} - Time Series')
         ax1.grid(True, alpha=0.3)
+        self._format_datetime_axis(ax1)
 
 
         # Middle plot: laser setpoints vs time
@@ -249,6 +277,7 @@ class BasePlots(ABC):
             ax2.legend(loc='lower right')
 
         ax2.grid(True, alpha=0.3)
+        self._format_datetime_axis(ax2)
         
         # Bottom plot: Temperature and RH vs time (1/6 height)
         ax3 = plt.subplot2grid((5, 1), (4, 0), rowspan=1)
@@ -267,6 +296,7 @@ class BasePlots(ABC):
         ax3.legend(h1 + h2, l1 + l2, loc='lower right')
 
         ax3.grid(True, alpha=0.3)
+        self._format_datetime_axis(ax3)
         plt.tight_layout()
         self.savefig(fig, fig_id)
         plt.close(fig)
@@ -288,8 +318,8 @@ class BasePlots(ABC):
         # Top plot: pm pedestals
         # ─────────────────────────────
         ax1.errorbar(
-            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals['pm_mean'],
-            yerr=self._data_holder.df_pedestals['pm_std'],
+            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals[self.ped_pm_col],
+            yerr=self._data_holder.df_pedestals[self.ped_pm_std_col],
             fmt='.', markersize=10, linewidth=1,
             label='pm Pedestals'
         )
@@ -301,19 +331,21 @@ class BasePlots(ABC):
         ax1.set_ylabel(f'Pedestals pm ({self.power_units})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
+        self._format_datetime_axis(ax1)
 
         # ─────────────────────────────
         # Bottom plot: RefPD pedestals
         # ─────────────────────────────
         ax2.errorbar(
-            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals["ref_pd_mean"],
-            yerr=self._data_holder.df_pedestals["ref_pd_std"],
+            self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals[self.ped_refpd_col],
+            yerr=self._data_holder.df_pedestals[self.ped_refpd_std_col],
             fmt='.', markersize=10, linewidth=1,
             label='RefPD Pedestals'
         )
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.grid(True, alpha=0.3)
         ax2.legend()
+        self._format_datetime_axis(ax2)
 
         self.savefig(fig, fig_id)
         plt.close(fig)

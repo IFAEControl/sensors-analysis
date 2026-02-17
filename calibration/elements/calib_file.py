@@ -139,6 +139,7 @@ class CalibFile(BaseElement):
         self._df['laser_sp_532'] = pd.Series([pd.NA] * len(self._df), dtype='Float64')
         self._df[f'laser_sp_{self.wavelength}'] = self._df['laser_setpoint'].astype('Float64')
         self.data_prep_info['original_num_rows'] = len(self._df)
+        self.data_prep_info['use_zeroed_columns'] = config.subtract_pedestals
         self.data_prep_info['use_uW_as_power_units'] = config.use_uW_as_power_units
         if config.use_uW_as_power_units:
             self._df['pm_mean'] = self._df['pm_mean'] * 1e6

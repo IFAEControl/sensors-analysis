@@ -63,7 +63,8 @@ class FileSetPlots(BasePlots):
         self._gen_plot_pmvsRefPD_all_calfiles()
         self._gen_plots_vs_laser_setting()
         self._gen_pedestals_hist_plot()
-        self._gen_mean_pedestals_plot()
+        self._gen_pedestal_points_with_mean_plot()
+        self._gen_pedestal_vs_run_plot()
         self._gen_pedestals_timeseries_plot()
         self._gen_pm_samples_plot_full()
         self._gen_pm_samples_plot_pedestals()
@@ -498,9 +499,9 @@ class FileSetPlots(BasePlots):
 
             # Errorbar → grab color
             eb = ax_top.errorbar(
-                calfile._df[self.refpd_col],
-                calfile._df[self.pm_col],
-                yerr=calfile._df[self.pm_std_col],
+                calfile.df[calfile.refpd_col],
+                calfile.df[calfile.pm_col],
+                yerr=calfile.df[calfile.pm_std_col],
                 fmt='.', markersize=8, linewidth=1,
                 label=calfile.file_label
             )
@@ -509,8 +510,8 @@ class FileSetPlots(BasePlots):
             colors[calfile.file_label] = color
 
             ax_top.plot(
-                calfile._df[self.refpd_col],
-                intercept + slope * calfile._df[self.refpd_col],
+                calfile.df[calfile.refpd_col],
+                intercept + slope * calfile.df[calfile.refpd_col],
                 linewidth=1,
                 color=color,
                 label=f'{calfile.file_info["run"]}: '
@@ -538,9 +539,9 @@ class FileSetPlots(BasePlots):
             color = colors[calfile.file_label]
 
             ax.errorbar(
-                calfile._df[self.refpd_col],
-                calfile._df[self.pm_col],
-                yerr=calfile._df[self.pm_std_col],
+                calfile.df[calfile.refpd_col],
+                calfile.df[calfile.pm_col],
+                yerr=calfile.df[calfile.pm_std_col],
                 fmt='.', markersize=4, linewidth=0.8,
                 color=color
             )
@@ -598,9 +599,9 @@ class FileSetPlots(BasePlots):
 
             # Errorbar → grab color
             eb = ax_top.errorbar(
-                calfile._df[self.refpd_col],
-                calfile._df[self.pm_col],
-                yerr=calfile._df[self.pm_std_col],
+                calfile.df[calfile.refpd_col],
+                calfile.df[calfile.pm_col],
+                yerr=calfile.df[calfile.pm_std_col],
                 fmt='x', markersize=4, linewidth=1,
                 label=calfile.file_label
             )
@@ -640,9 +641,9 @@ class FileSetPlots(BasePlots):
             color = colors[calfile.file_label]
 
             ax.errorbar(
-                calfile._df[self.refpd_col],
-                calfile._df[self.pm_col],
-                yerr=calfile._df[self.pm_std_col],
+                calfile.df[calfile.refpd_col],
+                calfile.df[calfile.pm_col],
+                yerr=calfile.df[calfile.pm_std_col],
                 fmt='.', markersize=4, linewidth=0.8,
                 color=color
             )
@@ -674,7 +675,7 @@ class FileSetPlots(BasePlots):
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         for calfile in self._data_holder.files:
-            plt.errorbar(calfile.df['laser_setpoint'], calfile.df[self.pm_col], yerr=calfile.df[self.pm_std_col],
+            plt.errorbar(calfile.df['laser_setpoint'], calfile.df[calfile.pm_col], yerr=calfile.df[calfile.pm_std_col],
                          fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
         plt.ylabel(f'Power meter ({self.power_units})')
         plt.xlabel(self.laser_label)
@@ -688,7 +689,7 @@ class FileSetPlots(BasePlots):
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         for calfile in self._data_holder.files:
-            plt.errorbar(calfile.df['laser_setpoint'], calfile.df[self.refpd_col], yerr=calfile.df[self.refpd_std_col],
+            plt.errorbar(calfile.df['laser_setpoint'], calfile.df[calfile.refpd_col], yerr=calfile.df[calfile.refpd_std_col],
                          fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
         plt.ylabel('ref PD (V)')
         plt.xlabel(self.laser_label)
@@ -709,10 +710,10 @@ class FileSetPlots(BasePlots):
         # Concatenate pedestal data
         # Pedestals do not use zeroed data
         df_pm_ped = pd.concat(
-            [calfile.df_pedestals['pm_mean'] for calfile in self._data_holder.files]
+            [calfile.df_pedestals[calfile.pedestal_pm_col] for calfile in self._data_holder.files]
         )
         df_refpd_ped = pd.concat(
-            [calfile.df_pedestals['ref_pd_mean'] for calfile in self._data_holder.files]
+            [calfile.df_pedestals[calfile.pedestal_refpd_col] for calfile in self._data_holder.files]
         )
 
         # ─────────────────────────────
@@ -750,9 +751,9 @@ class FileSetPlots(BasePlots):
         self.savefig(fig, fig_id)
         plt.close(fig)
     
-    def _gen_mean_pedestals_plot(self):
+    def _gen_pedestal_points_with_mean_plot(self):
         """Generate pedestal plot for the set of calibration files"""
-        fig_id = "Pedestals_vs_runindex"
+        fig_id = "pedestals_points_with_mean"
 
         fig, (ax1, ax2) = plt.subplots(
             nrows=2, ncols=1,
@@ -760,30 +761,37 @@ class FileSetPlots(BasePlots):
             sharex=True,
             constrained_layout=True
         )
-
-        x = range(len(self.df_pedestals))
+        points = len(self.df_pedestals)
+        x = range(points)
 
         # ─────────────────────────────
         # Top plot: pm pedestals
         # ─────────────────────────────
         # pedestals do not use zeroed data
         ax1.errorbar(
-            x, self.df_pedestals['pm_mean'], yerr=self.df_pedestals['pm_std'],
+            x, self.df_pedestals[self.ped_pm_col], yerr=self.df_pedestals[self.ped_pm_std_col],
             fmt='.', markersize=10, linewidth=1,
             label='PM Pedestals'
         )
+        if self._anal.pedestal_stats.pm.weighted:
+            label = 'PM Weighted mean of Pedestal'
+            label_area = 'PM weighted mean +/- stderr'
+            mean = self._anal.pedestal_stats.pm.w_mean
+            std = self._anal.pedestal_stats.pm.w_stderr
+        else:
+            label = 'PM Mean of Pedestal'
+            label_area = 'PM mean +/- std'
+            mean = self._anal.pedestal_stats.pm.mean
+            std = self._anal.pedestal_stats.pm.std
 
-        mean = self._anal.pedestal_stats.pm.mean
-        std = self._anal.pedestal_stats.pm.std
-        samples = self._anal.pedestal_stats.pm.samples
         # Avoid combined exponent like "1e-8-1e-1" from mixed-scale data
         pm_formatter = ScalarFormatter(useMathText=True)
         pm_formatter.set_scientific(True)
         pm_formatter.set_useOffset(False)
         ax1.yaxis.set_major_formatter(pm_formatter)
 
-        ax1.axhline(y=mean, color='orange', linestyle='--', label='PM mean of Pedestal')
-        ax1.fill_between(range(-1, samples+1), mean-std, mean+std, color='orange', alpha=0.3, label='pm mean +/- std')
+        ax1.axhline(y=mean, color='orange', linestyle='--', label=label)
+        ax1.fill_between(range(-1, points+1), mean-std, mean+std, color='orange', alpha=0.3, label=label_area)
         ax1.set_ylabel(f'Pedestals PM ({self.power_units})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
@@ -792,15 +800,114 @@ class FileSetPlots(BasePlots):
         # Bottom plot: RefPD pedestals
         # ─────────────────────────────
         ax2.errorbar(
-            x, self.df_pedestals['ref_pd_mean'], yerr=self.df_pedestals['ref_pd_std'],
+            x, self.df_pedestals[self.ped_refpd_col], yerr=self.df_pedestals[self.ped_refpd_std_col],
             fmt='.', markersize=10, linewidth=1,
             label='RefPD Pedestals'
         )
-        mean = self._anal.pedestal_stats.refpd.mean
-        std = self._anal.pedestal_stats.refpd.std
-        samples = self._anal.pedestal_stats.refpd.samples
-        ax2.axhline(y=mean, color='purple', linestyle='--', label='RefPD Mean of Pedestals')
-        ax2.fill_between(range(-1, samples+1), mean-std, mean+std, color='red', alpha=0.3, label='RefPD mean +/- std')
+        if self._anal.pedestal_stats.refpd.weighted:
+            label = 'RefPD Weighted mean of Pedestal'
+            label_area = 'RefPD weighted mean +/- stderr'
+            mean = self._anal.pedestal_stats.refpd.w_mean
+            std = self._anal.pedestal_stats.refpd.w_stderr
+        else:
+            label = 'RefPD Mean of Pedestal'
+            label_area = 'RefPD mean +/- std'
+            mean = self._anal.pedestal_stats.refpd.mean
+            std = self._anal.pedestal_stats.refpd.std
+        ax2.axhline(y=mean, color='purple', linestyle='--', label=label)
+        ax2.fill_between(range(-1, points+1), mean-std, mean+std, color='red', alpha=0.3, label=label_area)
+        ax2.set_ylabel('Pedestals RefPD (V)')
+        ax2.set_xlabel('Pedestal index')
+        ax2.set_xticks(range(points))
+        ax2.grid(True, alpha=0.3)
+        ax2.set_xlim([-1, points])
+        ax2.legend()
+
+        self.savefig(fig, fig_id)
+        plt.close(fig)
+
+    def _gen_pedestal_vs_run_plot(self):
+        """Generate a pedestal-per-run plot and compare with fileset pedestal mean/std."""
+        fig_id = "pedestals_vs_run"
+
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=2, ncols=1,
+            figsize=(10, 6),
+            sharex=True,
+            constrained_layout=True
+        )
+
+        x = range(len(self._data_holder.files))
+        pm_means = []
+        pm_errs = []
+        refpd_means = []
+        refpd_errs = []
+
+        for calfile in self._data_holder.files:
+            pm_stats = calfile.anal.pedestal_stats.pm
+            refpd_stats = calfile.anal.pedestal_stats.refpd
+
+            if pm_stats.weighted:
+                pm_means.append(pm_stats.w_mean)
+                pm_errs.append(pm_stats.w_stderr)
+            else:
+                pm_means.append(pm_stats.mean)
+                pm_errs.append(pm_stats.std)
+
+            if refpd_stats.weighted:
+                refpd_means.append(refpd_stats.w_mean)
+                refpd_errs.append(refpd_stats.w_stderr)
+            else:
+                refpd_means.append(refpd_stats.mean)
+                refpd_errs.append(refpd_stats.std)
+
+        # Top plot: PM pedestal mean per file
+        ax1.errorbar(
+            x, pm_means, yerr=pm_errs,
+            fmt='.', markersize=10, linewidth=1,
+            label='PM pedestal mean per file'
+        )
+        if self._anal.pedestal_stats.pm.weighted:
+            label = 'Fileset PM weighted mean'
+            label_area = 'Fileset PM weighted mean +/- stderr'
+            mean = self._anal.pedestal_stats.pm.w_mean
+            std = self._anal.pedestal_stats.pm.w_stderr
+        else:
+            label = 'Fileset PM mean'
+            label_area = 'Fileset PM mean +/- std'
+            mean = self._anal.pedestal_stats.pm.mean
+            std = self._anal.pedestal_stats.pm.std
+
+        pm_formatter = ScalarFormatter(useMathText=True)
+        pm_formatter.set_scientific(True)
+        pm_formatter.set_useOffset(False)
+        ax1.yaxis.set_major_formatter(pm_formatter)
+
+        ax1.axhline(y=mean, color='orange', linestyle='--', label=label)
+        ax1.fill_between(range(-1, len(self._data_holder.files) + 1), mean - std, mean + std, color='orange', alpha=0.3, label=label_area)
+        ax1.set_ylabel(f'Pedestals PM ({self.power_units})')
+        ax1.grid(True, alpha=0.3)
+        ax1.legend()
+
+        # Bottom plot: RefPD pedestal mean per file
+        ax2.errorbar(
+            x, refpd_means, yerr=refpd_errs,
+            fmt='.', markersize=10, linewidth=1,
+            label='RefPD pedestal mean per file'
+        )
+        if self._anal.pedestal_stats.refpd.weighted:
+            label = 'Fileset RefPD weighted mean'
+            label_area = 'Fileset RefPD weighted mean +/- stderr'
+            mean = self._anal.pedestal_stats.refpd.w_mean
+            std = self._anal.pedestal_stats.refpd.w_stderr
+        else:
+            label = 'Fileset RefPD mean'
+            label_area = 'Fileset RefPD mean +/- std'
+            mean = self._anal.pedestal_stats.refpd.mean
+            std = self._anal.pedestal_stats.refpd.std
+
+        ax2.axhline(y=mean, color='purple', linestyle='--', label=label)
+        ax2.fill_between(range(-1, len(self._data_holder.files) + 1), mean - std, mean + std, color='red', alpha=0.3, label=label_area)
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.set_xlabel('Run index')
         ax2.set_xticks(range(len(self._data_holder.files)))
