@@ -100,10 +100,16 @@ class FileSetAnalysis(BaseAnal):
 
     def analyze_concatenated_data_sets(self):
         """Analyze the full concatenated data set of the file set."""
-        linreg = linregress(self.df['ref_pd_mean'], self.df['pm_mean'])
-        self.lr_refpd_vs_pm = CalibLinReg(
-            'ref_pd_mean', 'pm_mean', linreg)
+        x_col = self._data_holder.refpd_col
+        y_col = self._data_holder.pm_col
+
+        if self.df is None or self.df.empty:
+            raise ValueError(f"[{self.fs.level_header}] Empty dataframe for fileset regression")
+
+        linreg = linregress(self.df[x_col], self.df[y_col])
+        self.lr_refpd_vs_pm = CalibLinReg(x_col, y_col, linreg)
         self.results['lr_refpd_vs_pm'] = self.lr_refpd_vs_pm.to_dict()
+        self.results['lr_refpd_vs_pm']['used_columns'] = {'x': x_col, 'y': y_col}
 
     def calc_means_of_lin_regs(self):
         """Analyze weighted mean of linear regressions of the calibration files"""

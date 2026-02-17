@@ -83,6 +83,7 @@ class BaseAnal(ABC):
                 
             else:
                 mean.exec_error = True
+                mean.weighted = False
                 logger.warning(f"[{self._data_holder.level_header}] Not enough data [{val_col}] points to analyze weighted mean")
             
         return mean

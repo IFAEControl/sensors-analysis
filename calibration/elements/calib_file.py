@@ -106,6 +106,9 @@ class CalibFile(BaseElement):
         self.data_prep_info['replace_zero_pm_std'] = config.replace_zero_pm_stds
         if config.replace_zero_pm_stds:
             resolution = config.power_meter_resolutions.get(f"{self.wavelength}-{self.filter_wheel}")
+            if resolution is None:
+                logger.error("Power meter resolution not found for wavelength %s and filter wheel %s. Cannot replace zero PM std values.", self.wavelength, self.filter_wheel)
+                raise ValueError(f"Power meter resolution not found for wavelength {self.wavelength} and filter wheel {self.filter_wheel}. Cannot replace zero PM std values.")
             self.data_prep_info['num_pm_std_replaced'] = int(zero_std_count)
             self.data_prep_info['pm_std_replacement_value'] = resolution
             if zero_std_count > 0:
@@ -137,6 +140,7 @@ class CalibFile(BaseElement):
         self.data_prep_info['use_uW_as_power_units'] = config.use_uW_as_power_units
         if config.use_uW_as_power_units:
             self._df['pm_mean'] = self._df['pm_mean'] * 1e6
+            self._df['pm_std'] = self._df['pm_std'] * 1e6
         self._df["datetime"] = pd.to_datetime(
             self._df["datetime"],
             format="%Y-%m-%d-%H:%M:%S",
