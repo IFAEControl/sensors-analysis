@@ -80,8 +80,15 @@ class Calibration(BaseElement):
     def df(self):
         """Concatenated DataFrame of all calibration files."""
         if self._df is None:
-            self._df = pd.concat(
-                [calfile.df for fileset in self.filesets.values() for calfile in fileset.files if calfile.df is not None], ignore_index=True)
+            frames = [
+                calfile.df
+                for fileset in self.filesets.values()
+                for calfile in fileset.files
+                if calfile.df is not None and not calfile.df.empty
+            ]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty calibration dataframes to concatenate")
+            self._df = pd.concat(frames, ignore_index=True)
             self._df = self._df.sort_values(by='timestamp').reset_index(drop=True)
         return self._df
     
@@ -89,8 +96,14 @@ class Calibration(BaseElement):
     def df_pedestals(self):
         """Concatenated DataFrame of all pedestal data."""
         if self._df_pedestals is None:
-            self._df_pedestals = pd.concat(
-                [fileset.df_pedestals for fileset in self.filesets.values() if fileset.df_pedestals is not None], ignore_index=True)
+            frames = [
+                fileset.df_pedestals
+                for fileset in self.filesets.values()
+                if fileset.df_pedestals is not None and not fileset.df_pedestals.empty
+            ]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty pedestal dataframes to concatenate")
+            self._df_pedestals = pd.concat(frames, ignore_index=True)
             self._df_pedestals = self._df_pedestals.sort_values(by='timestamp').reset_index(drop=True)
         return self._df_pedestals
     
@@ -98,8 +111,14 @@ class Calibration(BaseElement):
     def df_full(self):
         """Concatenated DataFrame of all full data."""
         if self._df_full is None:
-            self._df_full = pd.concat(
-                [fileset.df_full for fileset in self.filesets.values() if fileset.df_full is not None], ignore_index=True)
+            frames = [
+                fileset.df_full
+                for fileset in self.filesets.values()
+                if fileset.df_full is not None and not fileset.df_full.empty
+            ]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty full dataframes to concatenate")
+            self._df_full = pd.concat(frames, ignore_index=True)
             self._df_full = self._df_full.sort_values(by='timestamp').reset_index(drop=True)
         return self._df_full
 
@@ -150,10 +169,10 @@ class Calibration(BaseElement):
             'plots': self.plotter.plots
         }
 
-    def export_calib_data_summary(self, meta={}):
+    def export_calib_data_summary(self, meta=None):
         results_path = os.path.join(self.reports_path, config.summary_file_name)
         outdata = self.to_dict()
-        if meta:
+        if meta is not None:
             outdata.update(meta)
         with open(results_path, 'w', encoding='utf-8') as f:
             try:

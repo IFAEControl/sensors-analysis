@@ -109,7 +109,6 @@ class FileSetAnalysis(BaseAnal):
         linreg = linregress(self.df[x_col], self.df[y_col])
         self.lr_refpd_vs_pm = CalibLinReg(x_col, y_col, linreg)
         self.results['lr_refpd_vs_pm'] = self.lr_refpd_vs_pm.to_dict()
-        self.results['lr_refpd_vs_pm']['used_columns'] = {'x': x_col, 'y': y_col}
 
     def calc_means_of_lin_regs(self):
         """Analyze weighted mean of linear regressions of the calibration files"""

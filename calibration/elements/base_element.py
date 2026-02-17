@@ -78,6 +78,10 @@ class BaseElement(ABC):
         """Convert element data to dictionary."""
 
     def set_time_info(self):
+        if self.df is None or self.df.empty:
+            raise ValueError(f"[{self.level_header}] Cannot set time info from an empty dataframe")
+        if 'timestamp' not in self.df.columns:
+            raise ValueError(f"[{self.level_header}] Missing required 'timestamp' column for time info")
         min_time = self.df['timestamp'].min()
         max_time = self.df['timestamp'].max()
         t_res = {

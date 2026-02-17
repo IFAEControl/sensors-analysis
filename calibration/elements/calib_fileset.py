@@ -41,24 +41,34 @@ class FileSet(BaseElement):
     def df(self):
         """Concatenated DataFrame of all calibration files in the set."""
         if self._df is None:
-            self._df = pd.concat(
-                [calfile.df for calfile in self.files if calfile.df is not None], ignore_index=True)
+            frames = [calfile.df for calfile in self.files if calfile.df is not None and not calfile.df.empty]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty file dataframes to concatenate")
+            self._df = pd.concat(frames, ignore_index=True)
         return self._df
 
     @property
     def df_pedestals(self):
         """Concatenated DataFrame of all calibration files in the set."""
         if self._df_pedestals is None:
-            self._df_pedestals = pd.concat(
-                [calfile.df_pedestals for calfile in self.files if calfile.df_pedestals is not None], ignore_index=True)
+            frames = [
+                calfile.df_pedestals
+                for calfile in self.files
+                if calfile.df_pedestals is not None and not calfile.df_pedestals.empty
+            ]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty pedestal dataframes to concatenate")
+            self._df_pedestals = pd.concat(frames, ignore_index=True)
         return self._df_pedestals
 
     @property
     def df_full(self):
         """Concatenated DataFrame of all calibration files in the set."""
         if self._df_full is None:
-            self._df_full = pd.concat(
-                [calfile.df_full for calfile in self.files if calfile.df_full is not None], ignore_index=True)
+            frames = [calfile.df_full for calfile in self.files if calfile.df_full is not None and not calfile.df_full.empty]
+            if not frames:
+                raise ValueError(f"[{self.level_header}] No non-empty full dataframes to concatenate")
+            self._df_full = pd.concat(frames, ignore_index=True)
         return self._df_full
 
     def add_calib_file(self, calib_file: 'CalibFile'):

@@ -1,6 +1,7 @@
 """Module for setting up file paths for calibration data."""
 import os
 import sys
+import shutil
 import tempfile
 import zipfile
 from calibration.helpers import get_logger
@@ -8,6 +9,66 @@ logger = get_logger()
 
 
 singleton_output_path = None
+MAX_ZIP_MEMBERS = 5000
+MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES = 500 * 1024 * 1024  # 500 MiB
+MAX_ZIP_SINGLE_FILE_BYTES = 100 * 1024 * 1024  # 100 MiB
+
+
+def _safe_flatten_name(member_name: str) -> str:
+    norm = os.path.normpath(member_name)
+    if os.path.isabs(norm):
+        raise ValueError(f"absolute paths are not allowed: '{member_name}'")
+    parts = norm.split(os.sep)
+    if any(part == ".." for part in parts):
+        raise ValueError(f"path traversal detected: '{member_name}'")
+    base = os.path.basename(norm)
+    if not base:
+        raise ValueError(f"invalid zip entry name: '{member_name}'")
+    return base
+
+
+def _extract_zip_safely_flattened(zip_path: str, output_dir: str):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        infos = zip_ref.infolist()
+        if len(infos) > MAX_ZIP_MEMBERS:
+            raise ValueError(
+                f"zip file has too many entries ({len(infos)} > {MAX_ZIP_MEMBERS})"
+            )
+
+        total_uncompressed = 0
+        seen_names: set[str] = set()
+
+        for info in infos:
+            if info.is_dir():
+                continue
+
+            total_uncompressed += info.file_size
+            if total_uncompressed > MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES:
+                raise ValueError(
+                    "zip file uncompressed content exceeds allowed limit "
+                    f"({MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES} bytes)"
+                )
+            if info.file_size > MAX_ZIP_SINGLE_FILE_BYTES:
+                raise ValueError(
+                    f"zip entry '{info.filename}' exceeds allowed size "
+                    f"({MAX_ZIP_SINGLE_FILE_BYTES} bytes)"
+                )
+
+            flat_name = _safe_flatten_name(info.filename)
+            if flat_name in seen_names:
+                raise ValueError(
+                    f"zip contains colliding flattened filenames: '{flat_name}'"
+                )
+            seen_names.add(flat_name)
+
+            dest = os.path.abspath(os.path.join(output_dir, flat_name))
+            output_root = os.path.abspath(output_dir)
+            if not dest.startswith(output_root + os.sep):
+                raise ValueError(f"unsafe destination path for zip entry '{info.filename}'")
+
+            with zip_ref.open(info, 'r') as src, open(dest, 'wb') as dst:
+                shutil.copyfileobj(src, dst)
+
 
 def get_base_output_path():
     """Get the base output path for storing analysis results."""
@@ -45,15 +106,11 @@ def setup_paths(calib_files_path, output_path=None, overwrite=False):
             sys.exit(1)
         files_path = tempfile.mkdtemp()
         base_name = os.path.splitext(os.path.basename(calib_files_path))[0]
-        with zipfile.ZipFile(calib_files_path, 'r') as zip_ref:
-            for member in zip_ref.namelist():
-                zip_ref.extract(member, files_path)
-                # Move files from subdirectories to root
-                source = os.path.join(files_path, member)
-                if os.path.isfile(source):
-                    dest = os.path.join(files_path, os.path.basename(member))
-                    if source != dest:
-                        os.rename(source, dest)
+        try:
+            _extract_zip_safely_flattened(calib_files_path, files_path)
+        except (zipfile.BadZipFile, ValueError, OSError) as e:
+            logger.error("Failed to extract zip '%s': %s", calib_files_path, str(e))
+            sys.exit(1)
 
     if output_path is None:
         output_path = f'./output/{base_name}'
@@ -69,7 +126,6 @@ def setup_paths(calib_files_path, output_path=None, overwrite=False):
             logger.error("Output path '%s' exists and is not a directory.", output_path)
             sys.exit(1)
         # Remove existing directory
-        import shutil
         shutil.rmtree(output_path)
     global singleton_output_path
     singleton_output_path = output_path
@@ -79,4 +135,3 @@ def setup_paths(calib_files_path, output_path=None, overwrite=False):
     logger.info("Output path: %s", output_path)
 
     return files_path, output_path, base_name
-

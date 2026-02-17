@@ -109,6 +109,8 @@ class CalibFile(BaseElement):
             if resolution is None:
                 logger.error("Power meter resolution not found for wavelength %s and filter wheel %s. Cannot replace zero PM std values.", self.wavelength, self.filter_wheel)
                 raise ValueError(f"Power meter resolution not found for wavelength {self.wavelength} and filter wheel {self.filter_wheel}. Cannot replace zero PM std values.")
+            if config.use_uW_as_power_units:
+                resolution = resolution * 1e6
             self.data_prep_info['num_pm_std_replaced'] = int(zero_std_count)
             self.data_prep_info['pm_std_replacement_value'] = resolution
             if zero_std_count > 0:

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import os
-from venv import logger
 
 import pandas as pd
 from matplotlib import pyplot as plt

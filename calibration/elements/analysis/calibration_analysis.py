@@ -50,16 +50,20 @@ class CalibrationAnalysis:
         """Find the overall elapsed time range across all calibration files."""
         min_time = float('inf')
         max_time = float('-inf')
+        found_data = False
         for fileset in self.filesets.values():
             for calib_file in fileset.files:
                 df = calib_file.df
                 if not df.empty:
+                    found_data = True
                     start_time = df['timestamp'].min()
                     end_time = df['timestamp'].max()
                     if start_time < min_time:
                         min_time = start_time
                     if end_time > max_time:
                         max_time = end_time
+        if not found_data:
+            raise ValueError("No non-empty calibration data found across filesets")
         t_res = {
             'min_ts': int(min_time),
             'max_ts': int(max_time),
@@ -78,5 +82,4 @@ class CalibrationAnalysis:
 
         }
         return tmp
-
 

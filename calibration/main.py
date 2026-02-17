@@ -2,6 +2,7 @@ import os
 import shutil
 import zipfile
 import argparse
+import sys
 from datetime import datetime, timezone
 now = datetime.now(timezone.utc)
 
@@ -55,6 +56,9 @@ def main():
     logger.info("Starting calibration analysis at %s", now.isoformat())
 
     calibration.load_calibration_files()
+    if not calibration.filesets:
+        logger.error("No valid calibration files found in '%s'.", args.calib_files_path)
+        sys.exit(1)
     config.summary_file_name = f"{calibration.meta['calib_id']}_extended.json"
     calibration.analyze()
     if config.generate_plots:
