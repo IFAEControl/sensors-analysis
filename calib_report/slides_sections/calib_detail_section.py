@@ -24,6 +24,7 @@ class CalibDetailSection(BaseSection):
         # Further fileset section building logic goes here
         self._acquisition_conditions()
         self._timeseries()
+        self._add_pedestal_stats()
         self._calib_evolution_section()
 
     def _acquisition_conditions(self):
@@ -70,8 +71,36 @@ class CalibDetailSection(BaseSection):
             x= 490,
             y = self.lf.y - self.lf.height - 20,
             width=460,
-            height= self.lf.y - self.lf.height -10
+            height= self.lf.y - self.lf.height - 200
             )
+
+    def _add_pedestal_stats(self):
+        ped_stats = self.report_data.analysis.pedestals
+        pm_ped_stats = ped_stats.get('pm')
+        refpd_ped_stats = ped_stats.get('refpd')
+        tab = [
+            ['Parameter', 'PM', 'Ref PD'],
+            ['Mean', f"{pm_ped_stats.mean:.3e} {self.units}", f"{refpd_ped_stats.mean:.3e} V"],
+            ['Std Err', f"{pm_ped_stats.std:.3e} {self.units}", f"{refpd_ped_stats.std:.3e} V"],
+            ['Number of Samples', str(pm_ped_stats.samples), str(refpd_ped_stats.samples)],
+        ]
+        if pm_ped_stats.weighted and refpd_ped_stats.weighted:
+            tab.extend([
+                ['Weighted Mean', f"{pm_ped_stats.w_mean:.3e} {self.units}", f"{refpd_ped_stats.w_mean:.3e} V"],
+                ['Weighted Std Err', f"{pm_ped_stats.w_stderr:.3e} {self.units}", f"{refpd_ped_stats.w_stderr:.3e} V"],
+                ['Chi2', f"{pm_ped_stats.chi2:.3g}", f"{refpd_ped_stats.chi2:.3g}"],
+                ['Reduced Chi2', f"{pm_ped_stats.chi2_reduced:.3g}", f"{refpd_ped_stats.chi2_reduced:.3g}"],
+                ['Ndof', str(pm_ped_stats.ndof), str(refpd_ped_stats.ndof)],]
+            )
+
+        self.report.add_table(
+            tab,
+            x=490,
+            y=self.lf.y - self.lf.height - 10,
+            width=290,
+            zebra=True
+        )
+
 
     def _calib_evolution_section(self):
         evolutions = []

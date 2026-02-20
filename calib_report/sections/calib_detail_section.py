@@ -44,3 +44,29 @@ class CalibDetailSection(BaseSection):
             center=True,
             width_mm=125)
 
+        ped_stats = self.report_data.analysis.pedestals
+        pm = ped_stats.get('pm')
+        refpd = ped_stats.get('refpd')
+        if pm and refpd:
+            def _fmt(stat):
+                if stat.weighted and stat.w_mean is not None and stat.w_stderr is not None:
+                    return f'{stat.w_mean:.4e} +/- {stat.w_stderr:.2e} (weighted)'
+                if stat.mean is not None and stat.std is not None:
+                    return f'{stat.mean:.4e} +/- {stat.std:.2e}'
+                return 'N/A'
+            self.report.add_paragraph(
+                "Global pedestal statistics for the full calibration:"
+            )
+            ped_table = [
+                ['Measurement', 'Calibration pedestal'],
+                [f'PM ({self.units})', _fmt(pm)],
+                ['RefPD (V)', _fmt(refpd)],
+            ]
+            self.report.add_table(
+                ped_table,
+                keep_together=True,
+                center=True,
+                zebra=True,
+                headers='col'
+            )
+

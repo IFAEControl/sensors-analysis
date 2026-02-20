@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from calibration.config import config
 from calibration.helpers import get_logger
+from .analysis_base import BaseAnal
 
 
 if TYPE_CHECKING:
@@ -15,14 +15,16 @@ if TYPE_CHECKING:
 logger = get_logger()
 
 
-class CalibrationAnalysis:
+class CalibrationAnalysis(BaseAnal):
     """
     CalibrationAnalysis
 
     Launches file sets analysis and generates plots interrelating data from all sets of calibration files.
     """
     def __init__(self, calibration:Calibration):
+        super().__init__()
         self.cal = calibration
+        self._data_holder: Calibration = calibration
         self.outpath = calibration.plots_path
         self.filesets = calibration.filesets
         self.plots = {}
@@ -32,6 +34,8 @@ class CalibrationAnalysis:
         """Analyze all file sets and generate interrelated plots"""
         for _, fileset in self.filesets.items():
             fileset.analyze()
+        self.analyze_pedestals()
+        self.results['pedestals'] = self.pedestal_stats.to_dict()
         self._find_elapsed_time_range()
     #     self._find_sets()
 
@@ -78,8 +82,8 @@ class CalibrationAnalysis:
         """Convert analysis results to a dictionary."""
         tmp = {
             'time_info': self.results['time'],
+            'pedestals': self.results.get('pedestals', {}),
             'filesets': {f"{wl}_{fw}": fs.to_dict() for (wl, fw), fs in self.filesets.items()},
 
         }
         return tmp
-

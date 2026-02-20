@@ -99,7 +99,9 @@ class FileSetPlots(BasePlots):
             ax.errorbar(
                 x, self._anal.slopes, yerr=self._anal.slopes_std,
                 fmt='.', markersize=10, linewidth=1,
-                label='run linear regression slope'
+                label='run linear regression slope',
+                color=self.colors['linreg'],
+                ecolor=self.colors['linreg']
             )
             ax.grid(True, alpha=0.3)
             ax.set_xlim([-1, nfiles])
@@ -107,12 +109,12 @@ class FileSetPlots(BasePlots):
         # ─────────────────────────────
         # 1) Full dataset linreg
         # ─────────────────────────────
-        ax1.axhline(y=res.slope, color='red', linestyle='--', label='Full dataset linreg')
+        ax1.axhline(y=res.slope, color=self.colors['compare_full'], linestyle='--', label='Full dataset linreg')
         ax1.fill_between(
             range(-1, nfiles + 1),
             (res.slope - res.stderr),
             (res.slope + res.stderr),
-            color='red', alpha=0.3
+            color=self.alpha_color('compare_full', 0.3)
         )
         ax1.set_ylabel(f'Conv Factor Slope ({self.power_units}/V)')
         ax1.legend()
@@ -123,12 +125,12 @@ class FileSetPlots(BasePlots):
         mean_slope = self._anal.lr_slopes_mean.mean
         std_slope = self._anal.lr_slopes_mean.std
 
-        ax2.axhline(y=mean_slope, color='purple', linestyle='--', label='Mean of slopes')
+        ax2.axhline(y=mean_slope, color=self.colors['compare_mean'], linestyle='--', label='Mean of slopes')
         ax2.fill_between(
             range(-1, nfiles + 1),
             (mean_slope - std_slope),
             (mean_slope + std_slope),
-            color='purple', alpha=0.2
+            color=self.alpha_color('compare_mean', 0.2)
         )
         ax2.set_ylabel(f'Conv Factor Slope ({self.power_units}/V)')
         ax2.legend()
@@ -138,12 +140,12 @@ class FileSetPlots(BasePlots):
         # ─────────────────────────────
         w_mean = self._anal.lr_slopes_mean.w_mean
         w_stderr = self._anal.lr_slopes_mean.w_stderr
-        ax3.axhline(y=w_mean, color='cyan', linestyle='--', label='Weighted mean of slopes')
+        ax3.axhline(y=w_mean, color=self.colors['compare_weighted'], linestyle='--', label='Weighted mean of slopes')
         ax3.fill_between(
             range(-1, nfiles + 1),
             (w_mean - w_stderr),
             (w_mean + w_stderr),
-            color='cyan', alpha=0.2
+            color=self.alpha_color('compare_weighted', 0.2)
         )
         ax3.set_ylabel(f'Conv Factor Slope ({self.power_units}/V)')
         ax3.legend()
@@ -244,15 +246,15 @@ class FileSetPlots(BasePlots):
             nrows=2, ncols=1, figsize=(12, 8), sharex=True, constrained_layout=True
         )
 
-        slope_color = "tab:blue"
-        pm_color = "tab:orange"
-        refpd_color = "tab:green"
-        intercept_color = "tab:purple"
+        slope_color = self.colors['compare_full']
+        pm_color = self.colors['ped_pm']
+        refpd_color = self.colors['ped_refpd']
+        intercept_color = self.colors['linreg']
 
         # Top subplot: slope (left axis) and PM pedestal (right axis)
         ax1.errorbar(
             x, slopes, yerr=slopes_err,
-            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=slope_color
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=slope_color, ecolor=slope_color
         )
         ax1.set_ylabel(f"Slope ({self.power_units}/V)", color=slope_color)
         ax1.tick_params(axis="y", colors=slope_color)
@@ -262,7 +264,7 @@ class FileSetPlots(BasePlots):
         ax1r = ax1.twinx()
         ax1r.errorbar(
             x, intercepts, yerr=intercepts_err,
-            fmt='s', markersize=5, linewidth=1.2, capsize=4, color=intercept_color
+            fmt='s', markersize=5, linewidth=1.2, capsize=4, color=intercept_color, ecolor=intercept_color
         )
         ax1r.set_ylabel(f"Intercepts ({self.power_units})", color=intercept_color)
         ax1r.tick_params(axis="y", colors=intercept_color)
@@ -270,7 +272,7 @@ class FileSetPlots(BasePlots):
         # Lower subplot: pedestals info with PM (left) and RefPD (right)
         ax2.errorbar(
             x, pm_ped, yerr=pm_ped_err,
-            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=pm_color
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=pm_color, ecolor=pm_color
         )
         ax2.set_ylabel(f"PM pedestal ({self.power_units})", color=pm_color)
         ax2.tick_params(axis="y", colors=pm_color)
@@ -281,7 +283,7 @@ class FileSetPlots(BasePlots):
         ax2r = ax2.twinx()
         ax2r.errorbar(
             x, refpd_ped, yerr=refpd_ped_err,
-            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=refpd_color
+            fmt='o', markersize=6, linewidth=1.2, capsize=4, color=refpd_color, ecolor=refpd_color
         )
         ax2r.set_ylabel("RefPD pedestal (V)", color=refpd_color)
         ax2r.tick_params(axis="y", colors=refpd_color)
@@ -310,7 +312,9 @@ class FileSetPlots(BasePlots):
             ax.errorbar(
                 x, self._anal.intercepts, yerr=self._anal.intercepts_std,
                 fmt='.', markersize=10, linewidth=1,
-                label='run linear regression intercept'
+                label='run linear regression intercept',
+                color=self.colors['linreg'],
+                ecolor=self.colors['linreg']
             )
             ax.grid(True, alpha=0.3)
             ax.set_xlim([-1, nfiles])
@@ -319,12 +323,12 @@ class FileSetPlots(BasePlots):
         # 1) Full dataset linreg
         # ─────────────────────────────
         
-        ax1.axhline(y=res.intercept, color='red', linestyle='--', label='full dataset linreg')
+        ax1.axhline(y=res.intercept, color=self.colors['compare_full'], linestyle='--', label='full dataset linreg')
         ax1.fill_between(
             range(-1, nfiles + 1),
             (res.intercept - res.intercept_stderr),
             (res.intercept + res.intercept_stderr),
-            color='red', alpha=0.3
+            color=self.alpha_color('compare_full', 0.3)
         )
         ax1.set_ylabel(f'Conv Factor Intercept ({self.power_units})')
         ax1.legend()
@@ -336,12 +340,12 @@ class FileSetPlots(BasePlots):
         mean_intercepts = self._anal.lr_intercepts_mean.mean
         std_intercepts = self._anal.lr_intercepts_mean.std
 
-        ax2.axhline(y=mean_intercepts, color='purple', linestyle='--', label='Mean of intercepts')
+        ax2.axhline(y=mean_intercepts, color=self.colors['compare_mean'], linestyle='--', label='Mean of intercepts')
         ax2.fill_between(
             range(-1, nfiles + 1),
             (mean_intercepts - std_intercepts),
             (mean_intercepts + std_intercepts),
-            color='purple', alpha=0.2
+            color=self.alpha_color('compare_mean', 0.2)
         )
         ax2.set_ylabel(f'Conv Factor Intercept ({self.power_units})')
         ax2.legend()
@@ -351,12 +355,12 @@ class FileSetPlots(BasePlots):
         # ─────────────────────────────
         w_mean = self._anal.lr_intercepts_mean.w_mean
         w_stderr = self._anal.lr_intercepts_mean.w_stderr
-        ax3.axhline(y=w_mean, color='cyan', linestyle='--', label='Weighted mean of intercepts')
+        ax3.axhline(y=w_mean, color=self.colors['compare_weighted'], linestyle='--', label='Weighted mean of intercepts')
         ax3.fill_between(
             range(-1, nfiles + 1),
             (w_mean - w_stderr),
             (w_mean + w_stderr),
-            color='cyan', alpha=0.2
+            color=self.alpha_color('compare_weighted', 0.2)
         )
         ax3.set_ylabel(f'Conv Factor Intercept ({self.power_units})')
         ax3.legend()
@@ -378,8 +382,8 @@ class FileSetPlots(BasePlots):
         fig = plt.figure(figsize=(10, 6))
         plt.grid()
         plt.errorbar(self._anal.mean_temp, self._anal.slopes,yerr=self._anal.slopes_std,
-                     fmt='.', markersize=10, linewidth=1)
-        plt.axhline(y=self._anal.lr_slopes_mean.mean, color='r', linestyle='-',
+                     fmt='.', markersize=10, linewidth=1, color=self.colors['linreg'], ecolor=self.colors['linreg'])
+        plt.axhline(y=self._anal.lr_slopes_mean.mean, color=self.colors['compare_mean'], linestyle='-',
                     label=f'mean slope value={self._anal.lr_slopes_mean.mean:.3e}')
         plt.legend()
         plt.ylabel('ref PD vs pm slopes')
@@ -409,18 +413,16 @@ class FileSetPlots(BasePlots):
             self._anal.slopes,
             yerr=self._anal.slopes_std,
             fmt='.', markersize=10, linewidth=1,
-            label='Slopes'
+            label='Slopes',
+            color=self.colors['compare_full'],
+            ecolor=self.colors['compare_full']
         )
-        ax1.axhline(
-            y=intercept,
-            color='b', linestyle='-',
-            label=f'slope = {intercept:.3e}'
-        )
+        ax1.axhline(y=intercept, color=self.colors['compare_full'], linestyle='-', label=f'slope = {intercept:.3e}')
         ax1.fill_between(
             range(-1, len(self._anal.slopes)+1),
             (intercept - slope_std),
             (intercept + slope_std),
-            color='b', alpha=0.2
+            color=self.alpha_color('compare_full', 0.2)
         )
         ax1.set_xlabel('Run number in set')
         ax1.set_ylabel(f'Slope ({self.power_units}/V)')
@@ -434,20 +436,18 @@ class FileSetPlots(BasePlots):
             self._anal.intercepts,
             yerr=self._anal.intercepts_std,
             fmt='.', markersize=10, linewidth=1,
-            label='Intercepts'
+            label='Intercepts',
+            color=self.colors['linreg'],
+            ecolor=self.colors['linreg']
         )
         intercept = self._anal.lr_refpd_vs_pm.intercept
         intercept_std = self._anal.lr_refpd_vs_pm.intercept_stderr
-        ax2.axhline(
-            y=intercept,
-            color='m', linestyle='-',
-            label=f'intercept = {intercept:.3e}'
-        )
+        ax2.axhline(y=intercept, color=self.colors['linreg'], linestyle='-', label=f'intercept = {intercept:.3e}')
         ax2.fill_between(
             range(-1, len(self._anal.intercepts)+1),
             (intercept - intercept_std),
             (intercept + intercept_std),
-            color='m', alpha=0.2
+            color=self.alpha_color('linreg', 0.2)
         )
         ax2.set_xlabel('Run number in set')
         ax2.set_ylabel(f'Intercept ({self.power_units})')
@@ -507,6 +507,10 @@ class FileSetPlots(BasePlots):
             )
 
             color = eb[0].get_color()
+            for cap in eb[1]:
+                cap.set_color(color)
+            for barcol in eb[2]:
+                barcol.set_color(color)
             colors[calfile.file_label] = color
 
             ax_top.plot(
@@ -543,7 +547,7 @@ class FileSetPlots(BasePlots):
                 calfile.df[calfile.pm_col],
                 yerr=calfile.df[calfile.pm_std_col],
                 fmt='.', markersize=4, linewidth=0.8,
-                color=color
+                color=color, ecolor=color
             )
 
             ax.set_title(calfile.file_label, fontsize=8, pad=2)
@@ -607,6 +611,10 @@ class FileSetPlots(BasePlots):
             )
 
             color = eb[0].get_color()
+            for cap in eb[1]:
+                cap.set_color(color)
+            for barcol in eb[2]:
+                barcol.set_color(color)
             colors[calfile.file_label] = color
 
         intercept = self.dh.anal.lr_refpd_vs_pm.intercept
@@ -616,6 +624,7 @@ class FileSetPlots(BasePlots):
             x,
             intercept + slope * x,
             linewidth=1,
+            color=self.colors['linreg'],
             label=f'{self.dh.level_header}: '
                 f'int={intercept:.2e}, slope={slope:.2e}'
         )
@@ -645,7 +654,7 @@ class FileSetPlots(BasePlots):
                 calfile.df[calfile.pm_col],
                 yerr=calfile.df[calfile.pm_std_col],
                 fmt='.', markersize=4, linewidth=0.8,
-                color=color
+                color=color, ecolor=color
             )
 
             ax.set_title(calfile.file_label, fontsize=8, pad=2)
@@ -676,7 +685,7 @@ class FileSetPlots(BasePlots):
         plt.grid()
         for calfile in self._data_holder.files:
             plt.errorbar(calfile.df['laser_setpoint'], calfile.df[calfile.pm_col], yerr=calfile.df[calfile.pm_std_col],
-                         fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
+                         fmt='.', markersize=10, linewidth=1, label=calfile.file_label, color=self.colors['pm'], ecolor=self.colors['pm'])
         plt.ylabel(f'Power meter ({self.power_units})')
         plt.xlabel(self.laser_label)
         plt.title(f'{self.level_label} - pm vs Laser setting')
@@ -690,7 +699,7 @@ class FileSetPlots(BasePlots):
         plt.grid()
         for calfile in self._data_holder.files:
             plt.errorbar(calfile.df['laser_setpoint'], calfile.df[calfile.refpd_col], yerr=calfile.df[calfile.refpd_std_col],
-                         fmt='.', markersize=10, linewidth=1, label=calfile.file_label)
+                         fmt='.', markersize=10, linewidth=1, label=calfile.file_label, color=self.colors['refpd'], ecolor=self.colors['refpd'])
         plt.ylabel('ref PD (V)')
         plt.xlabel(self.laser_label)
         plt.title(f'{self.level_label} - RefPD vs Laser setting')
@@ -722,7 +731,7 @@ class FileSetPlots(BasePlots):
         ax1.grid(True, alpha=0.3)
         ax1.hist(
             df_pm_ped,
-            color='violet',
+            color=self.colors['ped_pm'],
             alpha=0.7,
             label='pm Pedestals'
         )
@@ -737,7 +746,7 @@ class FileSetPlots(BasePlots):
         ax2.grid(True, alpha=0.3)
         ax2.hist(
             df_refpd_ped,
-            color='orange',
+            color=self.colors['ped_refpd'],
             alpha=0.7,
             label='RefPD Pedestals'
         )
@@ -771,7 +780,9 @@ class FileSetPlots(BasePlots):
         ax1.errorbar(
             x, self.df_pedestals[self.ped_pm_col], yerr=self.df_pedestals[self.ped_pm_std_col],
             fmt='.', markersize=10, linewidth=1,
-            label='PM Pedestals'
+            label='PM Pedestals',
+            color=self.colors['ped_pm'],
+            ecolor=self.colors['ped_pm']
         )
         if self._anal.pedestal_stats.pm.weighted:
             label = 'PM Weighted mean of Pedestal'
@@ -790,8 +801,11 @@ class FileSetPlots(BasePlots):
         pm_formatter.set_useOffset(False)
         ax1.yaxis.set_major_formatter(pm_formatter)
 
-        ax1.axhline(y=mean, color='orange', linestyle='--', label=label)
-        ax1.fill_between(range(-1, points+1), mean-std, mean+std, color='orange', alpha=0.3, label=label_area)
+        ax1.axhline(y=mean, color=self.colors['ped_pm'], linestyle='--', label=label)
+        ax1.fill_between(
+            range(-1, points+1), mean-std, mean+std,
+            color=self.alpha_color('ped_pm', 0.3), label=label_area
+        )
         ax1.set_ylabel(f'Pedestals PM ({self.power_units})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
@@ -802,7 +816,9 @@ class FileSetPlots(BasePlots):
         ax2.errorbar(
             x, self.df_pedestals[self.ped_refpd_col], yerr=self.df_pedestals[self.ped_refpd_std_col],
             fmt='.', markersize=10, linewidth=1,
-            label='RefPD Pedestals'
+            label='RefPD Pedestals',
+            color=self.colors['ped_refpd'],
+            ecolor=self.colors['ped_refpd']
         )
         if self._anal.pedestal_stats.refpd.weighted:
             label = 'RefPD Weighted mean of Pedestal'
@@ -814,8 +830,11 @@ class FileSetPlots(BasePlots):
             label_area = 'RefPD mean +/- std'
             mean = self._anal.pedestal_stats.refpd.mean
             std = self._anal.pedestal_stats.refpd.std
-        ax2.axhline(y=mean, color='purple', linestyle='--', label=label)
-        ax2.fill_between(range(-1, points+1), mean-std, mean+std, color='red', alpha=0.3, label=label_area)
+        ax2.axhline(y=mean, color=self.colors['ped_refpd'], linestyle='--', label=label)
+        ax2.fill_between(
+            range(-1, points+1), mean-std, mean+std,
+            color=self.alpha_color('ped_refpd', 0.3), label=label_area
+        )
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.set_xlabel('Pedestal index')
         ax2.set_xticks(range(points))
@@ -865,7 +884,9 @@ class FileSetPlots(BasePlots):
         ax1.errorbar(
             x, pm_means, yerr=pm_errs,
             fmt='.', markersize=10, linewidth=1,
-            label='PM pedestal mean per file'
+            label='PM pedestal mean per file',
+            color=self.colors['ped_pm'],
+            ecolor=self.colors['ped_pm']
         )
         if self._anal.pedestal_stats.pm.weighted:
             label = 'Fileset PM weighted mean'
@@ -883,8 +904,11 @@ class FileSetPlots(BasePlots):
         pm_formatter.set_useOffset(False)
         ax1.yaxis.set_major_formatter(pm_formatter)
 
-        ax1.axhline(y=mean, color='orange', linestyle='--', label=label)
-        ax1.fill_between(range(-1, len(self._data_holder.files) + 1), mean - std, mean + std, color='orange', alpha=0.3, label=label_area)
+        ax1.axhline(y=mean, color=self.colors['ped_pm'], linestyle='--', label=label)
+        ax1.fill_between(
+            range(-1, len(self._data_holder.files) + 1), mean - std, mean + std,
+            color=self.alpha_color('ped_pm', 0.3), label=label_area
+        )
         ax1.set_ylabel(f'Pedestals PM ({self.power_units})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
@@ -893,7 +917,9 @@ class FileSetPlots(BasePlots):
         ax2.errorbar(
             x, refpd_means, yerr=refpd_errs,
             fmt='.', markersize=10, linewidth=1,
-            label='RefPD pedestal mean per file'
+            label='RefPD pedestal mean per file',
+            color=self.colors['ped_refpd'],
+            ecolor=self.colors['ped_refpd']
         )
         if self._anal.pedestal_stats.refpd.weighted:
             label = 'Fileset RefPD weighted mean'
@@ -906,8 +932,11 @@ class FileSetPlots(BasePlots):
             mean = self._anal.pedestal_stats.refpd.mean
             std = self._anal.pedestal_stats.refpd.std
 
-        ax2.axhline(y=mean, color='purple', linestyle='--', label=label)
-        ax2.fill_between(range(-1, len(self._data_holder.files) + 1), mean - std, mean + std, color='red', alpha=0.3, label=label_area)
+        ax2.axhline(y=mean, color=self.colors['ped_refpd'], linestyle='--', label=label)
+        ax2.fill_between(
+            range(-1, len(self._data_holder.files) + 1), mean - std, mean + std,
+            color=self.alpha_color('ped_refpd', 0.3), label=label_area
+        )
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.set_xlabel('Run index')
         ax2.set_xticks(range(len(self._data_holder.files)))

@@ -58,7 +58,7 @@ class FilePlots(BasePlots):
         fig_id = "pm_vs_L"
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df['laser_setpoint'], self.df[self.pm_col], yerr=self.df[self.pm_std_col], 
-                     fmt='.', markersize=10, linewidth=1, label='Power Meter')
+                     fmt='.', markersize=10, linewidth=1, label='Power Meter', color=self.colors['pm'], ecolor=self.colors['pm'])
         plt.ylabel(f'Power Meter ({self.power_units})')
         plt.xlabel(self.laser_label)
         plt.legend()
@@ -73,7 +73,7 @@ class FilePlots(BasePlots):
         fig_id = "refPD_vs_L"
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df['laser_setpoint'], self.df[self.refpd_col], yerr=self.df[self.refpd_std_col], 
-                     fmt='.', markersize=10, linewidth=1, label='Ref PD')
+                     fmt='.', markersize=10, linewidth=1, label='Ref PD', color=self.colors['refpd'], ecolor=self.colors['refpd'])
         plt.ylabel('Ref PD (V)')
         plt.xlabel(self.laser_label)
         plt.legend()
@@ -91,8 +91,8 @@ class FilePlots(BasePlots):
         fig_id = "pm_vs_refPD"
         fig = plt.figure(figsize=(10, 6))
         plt.errorbar(self.df[self.refpd_col], self.df[self.pm_col], yerr=self.df[self.pm_std_col], 
-                     fmt='.', markersize=10, linewidth=1, label='Power Meter')
-        plt.plot(self.df[self.refpd_col], intercept + slope*self.df[self.refpd_col], 'r', label='fitted line')
+                     fmt='.', markersize=10, linewidth=1, label='Power Meter', color=self.colors['pm'], ecolor=self.colors['pm'])
+        plt.plot(self.df[self.refpd_col], intercept + slope*self.df[self.refpd_col], color=self.colors['linreg'], label='fitted line')
         plt.ylabel(f'Power Meter ({self.power_units})')
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         plt.xlabel('Ref PD (V)')

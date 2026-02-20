@@ -390,10 +390,16 @@ class Fileset:
 class Analysis:
     """Top-level analysis containing all filesets."""
     time_info: TimeInfo
+    pedestals: Dict[str, PedestalStats] = field(default_factory=dict)
     filesets: Dict[str, Fileset] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Analysis":
+        pedestals_raw = data.get("pedestals", {}) or {}
+        pedestals = {
+            key: PedestalStats.from_dict(value)
+            for key, value in pedestals_raw.items()
+        }
         filesets_raw = data.get("filesets", {}) or {}
         filesets = {
             key: Fileset.from_dict(value)
@@ -401,6 +407,7 @@ class Analysis:
         }
         return cls(
             time_info=TimeInfo.from_dict(data.get("time_info", {})),
+            pedestals=pedestals,
             filesets=filesets,
         )
 

@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.colors import to_rgba
 from matplotlib.ticker import ScalarFormatter
 
 from calibration.config import config
@@ -16,6 +17,36 @@ class BasePlots(ABC):
     def __init__(self, *args, **kwargs) -> None:
         self.plots = {}
         self._data_holder = None
+
+    @property
+    def colors(self) -> dict[str, str]:
+        """Shared color palette for calibration plots."""
+        return {
+            'pm': '#1f77b4',
+            'refpd': '#ff7f0e',
+            'laser_1064': '#d62728',
+            'laser_532': '#2ca02c',
+            'ped_pm': '#6a4c93',
+            'ped_refpd': '#b56576',
+            # Aliases with explicit names used in reports/configs.
+            'laser_setpoint_1064': '#d62728',
+            'laser_setpoint_532': '#2ca02c',
+            'pedestals_pm': '#6a4c93',
+            'pedestals_refpd': '#b56576',
+            'temperature': '#17becf',
+            'humidity': '#8c564b',
+            'samples': '#4c78a8',
+            'samples_edge': '#2f4b7c',
+            'linreg': '#9467bd',
+            'compare_full': '#4c72b0',
+            'compare_mean': '#dd8452',
+            'compare_weighted': '#55a868',
+            'text_muted': '#6e6e6e',
+        }
+
+    def alpha_color(self, color_key: str, alpha: float):
+        """Return RGBA color from palette with custom transparency."""
+        return to_rgba(self.colors[color_key], alpha)
 
     @property
     def _anal(self):
@@ -132,7 +163,7 @@ class BasePlots(ABC):
         """
         plot_format = config.plot_output_format  # Get the plot format from the config module
         fig.text(0.99, 0.01, f'{self._data_holder.long_label}', 
-                 ha='right', va='bottom', fontsize=8, color='gray')
+                 ha='right', va='bottom', fontsize=8, color=self.colors['text_muted'])
         fig_path = os.path.join(self.output_path, f"{fig_filename or fig_id}.{plot_format}")
         plt.savefig(fig_path)
         self.add_plot_path(fig_id, fig_path)
@@ -141,7 +172,7 @@ class BasePlots(ABC):
         """Generate temperature and humidity plot for the calibration file data."""
         fig_id = "temperature_hist"
         fig = plt.figure(figsize=(10, 6))
-        plt.hist(self.df['temperature'], color='blue', alpha=0.7)
+        plt.hist(self.df['temperature'], color=self.colors['temperature'], alpha=0.7)
         plt.xlabel('Temperature (°C)')
         plt.ylabel('Frequency')
         plt.grid()
@@ -152,7 +183,7 @@ class BasePlots(ABC):
 
         fig_id = "humidity_hist"
         fig = plt.figure(figsize=(10, 6))
-        plt.hist(self.df['RH'], color='blue', alpha=0.7)
+        plt.hist(self.df['RH'], color=self.colors['humidity'], alpha=0.7)
         plt.xlabel('Humidity (%)')
         plt.ylabel('Frequency')
         plt.grid()
@@ -169,7 +200,7 @@ class BasePlots(ABC):
             constrained_layout=True
         )
 
-        ax1.scatter(df['datetime'], df['samples'], c='teal', marker='.', s=20, label='PM Samples')
+        ax1.scatter(df['datetime'], df['samples'], c=self.colors['samples'], marker='.', s=20, label='PM Samples')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('PM Samples')
         ax1.grid(True, alpha=0.3)
@@ -183,7 +214,7 @@ class BasePlots(ABC):
             bins = [x - 0.5 for x in range(min_s, max_s + 2)]
         else:
             bins = 1
-        ax2.hist(samples, bins=bins, color='teal', edgecolor='darkslategray', linewidth=0.7, alpha=0.7)
+        ax2.hist(samples, bins=bins, color=self.colors['samples'], edgecolor=self.colors['samples_edge'], linewidth=0.7, alpha=0.7)
         ax2.set_xlabel('PM Samples')
         ax2.set_ylabel('Frequency')
         ax2.grid(True, alpha=0.3)
@@ -215,14 +246,24 @@ class BasePlots(ABC):
         ax1 = plt.subplot2grid((5, 1), (0, 0), rowspan=2)
         ax1_twin = ax1.twinx()
         # ax1.plot(self.df['datetime'], self.df['ref_pd_mean'], 'b-', label='Mean Ref PD', linewidth=2)
-        ax1.errorbar(self.df['datetime'], self.df[self.refpd_col], yerr=self.df[self.refpd_std_col], c='b', fmt='.', markersize=5, linewidth=1, label='Mean Ref PD')
-        ax1.set_ylabel('Ref PD (V)', color='b')
-        ax1.tick_params(axis='y', labelcolor='b')
+        ax1.errorbar(
+            self.df_full['datetime'], self.df_full[self.refpd_col], yerr=self.df_full[self.refpd_std_col],
+            c=self.colors['refpd'], ecolor=self.colors['refpd'],
+            fmt='o', markersize=4, markerfacecolor='none', markeredgewidth=1.0,
+            linewidth=1, label='Mean Ref PD'
+        )
+        ax1.set_ylabel('Ref PD (V)', color=self.colors['refpd'])
+        ax1.tick_params(axis='y', labelcolor=self.colors['refpd'])
 
-        ax1_twin.errorbar(self.df['datetime'], self.df[self.pm_col], yerr=self.df[self.pm_std_col], c='r', fmt='.', markersize=5, linewidth=1, label='Mean pm')
-        ax1_twin.set_ylabel(f'Power Meter ({self.power_units})', color='r')
+        ax1_twin.errorbar(
+            self.df_full['datetime'], self.df_full[self.pm_col], yerr=self.df_full[self.pm_std_col],
+            c=self.colors['pm'], ecolor=self.colors['pm'],
+            fmt='x', markersize=4, markeredgewidth=1.0,
+            linewidth=1, label='Mean pm'
+        )
+        ax1_twin.set_ylabel(f'Power Meter ({self.power_units})', color=self.colors['pm'])
         ax1_twin.ticklabel_format(style='sci', axis='y', scilimits=(-2,3))
-        ax1_twin.tick_params(axis='y', labelcolor='r')
+        ax1_twin.tick_params(axis='y', labelcolor=self.colors['pm'])
 
         # single legend
         h1, l1 = ax1.get_legend_handles_labels()
@@ -236,24 +277,24 @@ class BasePlots(ABC):
 
         # Middle plot: laser setpoints vs time
         ax2 = plt.subplot2grid((5, 1), (2, 0), rowspan=2)
-        has_1064 = 'laser_sp_1064' in self.df.columns and self.df['laser_sp_1064'].notna().any()
-        has_532 = 'laser_sp_532' in self.df.columns and self.df['laser_sp_532'].notna().any()
+        has_1064 = 'laser_sp_1064' in self.df_full.columns and self.df_full['laser_sp_1064'].notna().any()
+        has_532 = 'laser_sp_532' in self.df_full.columns and self.df_full['laser_sp_532'].notna().any()
 
         if has_1064 and has_532:
             ax2.scatter(
-                self.df['datetime'], self.df['laser_sp_1064'],
-                c='m', label='1064nm laser setpoint (mW)', marker='.', s=10
+                self.df_full['datetime'], self.df_full['laser_sp_1064'],
+                c=self.colors['laser_1064'], label='1064nm laser setpoint (mW)', marker='.', s=10
             )
-            ax2.set_ylabel('1064nm laser setpoint (mW)', color='m')
-            ax2.tick_params(axis='y', labelcolor='m')
+            ax2.set_ylabel('1064nm laser setpoint (mW)', color=self.colors['laser_1064'])
+            ax2.tick_params(axis='y', labelcolor=self.colors['laser_1064'])
 
             ax2_twin = ax2.twinx()
             ax2_twin.scatter(
-                self.df['datetime'], self.df['laser_sp_532'],
-                c='c', label='532nm laser setpoint (mV)', marker='.', s=10
+                self.df_full['datetime'], self.df_full['laser_sp_532'],
+                c=self.colors['laser_532'], label='532nm laser setpoint (mV)', marker='.', s=10
             )
-            ax2_twin.set_ylabel('532nm laser setpoint (mV)', color='c')
-            ax2_twin.tick_params(axis='y', labelcolor='c')
+            ax2_twin.set_ylabel('532nm laser setpoint (mV)', color=self.colors['laser_532'])
+            ax2_twin.tick_params(axis='y', labelcolor=self.colors['laser_532'])
 
             h1, l1 = ax2.get_legend_handles_labels()
             h2, l2 = ax2_twin.get_legend_handles_labels()
@@ -261,18 +302,18 @@ class BasePlots(ABC):
         elif has_1064 or has_532:
             if has_1064:
                 ax2.scatter(
-                    self.df['datetime'], self.df['laser_sp_1064'],
-                    c='m', label='1064nm laser setpoint (mW)', marker='.', s=10
+                    self.df_full['datetime'], self.df_full['laser_sp_1064'],
+                    c=self.colors['laser_1064'], label='1064nm laser setpoint (mW)', marker='.', s=10
                 )
-                ax2.set_ylabel('1064nm laser setpoint (mW)', color='m')
-                ax2.tick_params(axis='y', labelcolor='m')
+                ax2.set_ylabel('1064nm laser setpoint (mW)', color=self.colors['laser_1064'])
+                ax2.tick_params(axis='y', labelcolor=self.colors['laser_1064'])
             else:
                 ax2.scatter(
-                    self.df['datetime'], self.df['laser_sp_532'],
-                    c='c', label='532nm laser setpoint (mV)', marker='.', s=10
+                    self.df_full['datetime'], self.df_full['laser_sp_532'],
+                    c=self.colors['laser_532'], label='532nm laser setpoint (mV)', marker='.', s=10
                 )
-                ax2.set_ylabel('532nm laser setpoint (mV)', color='c')
-                ax2.tick_params(axis='y', labelcolor='c')
+                ax2.set_ylabel('532nm laser setpoint (mV)', color=self.colors['laser_532'])
+                ax2.tick_params(axis='y', labelcolor=self.colors['laser_532'])
 
             ax2.legend(loc='lower right')
 
@@ -283,12 +324,12 @@ class BasePlots(ABC):
         ax3 = plt.subplot2grid((5, 1), (4, 0), rowspan=1)
         ax3_twin = ax3.twinx()
         
-        ax3.plot(self.df['datetime'], self.df['temperature'], c='g', label='Temperature', markersize=5, linewidth=1)
-        ax3.set_ylabel('Temperature (°C)', color='g')
-        ax3.tick_params(axis='y', labelcolor='g')
-        ax3_twin.plot(self.df['datetime'], self.df['RH'], c='orange', label='Humidity', markersize=5, linewidth=1)
-        ax3_twin.set_ylabel('Humidity (%)', color='orange')
-        ax3_twin.tick_params(axis='y', labelcolor='orange')
+        ax3.plot(self.df_full['datetime'], self.df_full['temperature'], c=self.colors['temperature'], label='Temperature', markersize=5, linewidth=1)
+        ax3.set_ylabel('Temperature (°C)', color=self.colors['temperature'])
+        ax3.tick_params(axis='y', labelcolor=self.colors['temperature'])
+        ax3_twin.plot(self.df_full['datetime'], self.df_full['RH'], c=self.colors['humidity'], label='Humidity', markersize=5, linewidth=1)
+        ax3_twin.set_ylabel('Humidity (%)', color=self.colors['humidity'])
+        ax3_twin.tick_params(axis='y', labelcolor=self.colors['humidity'])
         ax3.set_xlabel('Time')
         # single legend
         h1, l1 = ax3.get_legend_handles_labels()
@@ -313,7 +354,9 @@ class BasePlots(ABC):
         )
 
         x = range(len(self._data_holder.df_pedestals))
-
+        dt = self._data_holder.df_pedestals['datetime'].copy()
+        dt[0] = dt.iloc[0] - pd.Timedelta(minutes=100)
+        dt[-1] = dt.iloc[-1] + pd.Timedelta(minutes=100)
         # ─────────────────────────────
         # Top plot: pm pedestals
         # ─────────────────────────────
@@ -321,7 +364,28 @@ class BasePlots(ABC):
             self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals[self.ped_pm_col],
             yerr=self._data_holder.df_pedestals[self.ped_pm_std_col],
             fmt='.', markersize=10, linewidth=1,
-            label='pm Pedestals'
+            label='pm Pedestals',
+            color=self.colors['ped_pm'],
+            ecolor=self.colors['ped_pm']
+        )
+        pm_stats = self._anal.pedestal_stats.pm
+        if pm_stats.weighted:
+            pm_mean = pm_stats.w_mean
+            pm_std = pm_stats.w_stderr
+            pm_label = 'PM weighted mean'
+            pm_band_label = f'PM weighted {pm_mean:.2g} +/- {pm_std:.2g}'
+        else:
+            pm_mean = pm_stats.mean
+            pm_std = pm_stats.std
+            pm_label = 'PM mean'
+            pm_band_label = f'PM mean {pm_mean:.2g} +/- {pm_std:.2g}'
+        ax1.axhline(y=pm_mean, color=self.colors['ped_pm'], linestyle='--', label=pm_label)
+        ax1.fill_between(
+            dt,
+            pm_mean - pm_std,
+            pm_mean + pm_std,
+            color=self.alpha_color('ped_pm', 0.2),
+            label=pm_band_label
         )
         # Avoid combined exponent like "1e-8-1e-1" from mixed-scale data
         pm_formatter = ScalarFormatter(useMathText=True)
@@ -340,11 +404,38 @@ class BasePlots(ABC):
             self._data_holder.df_pedestals['datetime'], self._data_holder.df_pedestals[self.ped_refpd_col],
             yerr=self._data_holder.df_pedestals[self.ped_refpd_std_col],
             fmt='.', markersize=10, linewidth=1,
-            label='RefPD Pedestals'
+            label='RefPD Pedestals',
+            color=self.colors['ped_refpd'],
+            ecolor=self.colors['ped_refpd']
+        )
+        refpd_stats = self._anal.pedestal_stats.refpd
+        if refpd_stats.weighted:
+            refpd_label = 'RefPD weighted mean'
+            refpd_band_label = 'RefPD weighted mean +/- stderr'
+            refpd_mean = refpd_stats.w_mean
+            refpd_std = refpd_stats.w_stderr
+        else:
+            refpd_label = 'RefPD mean'
+            refpd_band_label = 'RefPD mean +/- std'
+            refpd_mean = refpd_stats.mean
+            refpd_std = refpd_stats.std
+        ax2.axhline(y=refpd_mean, color=self.colors['ped_refpd'], linestyle='--', label=refpd_label)
+
+        ax2.fill_between(
+            dt,
+            refpd_mean - refpd_std,
+            refpd_mean + refpd_std,
+            color=self.alpha_color('ped_refpd', 0.2),
+            label=refpd_band_label
         )
         ax2.set_ylabel('Pedestals RefPD (V)')
         ax2.grid(True, alpha=0.3)
         ax2.legend()
+        dt = self._data_holder.df_pedestals['datetime'].copy()
+        delta = (dt.iloc[-1] - dt.iloc[0]).total_seconds()/60  # delta in minutes
+        dt[0] = dt.iloc[0] - pd.Timedelta(minutes=delta * 0.05)
+        dt[-1] = dt.iloc[-1] + pd.Timedelta(minutes=delta * 0.05)
+        ax2.set_xlim(dt.iloc[0], dt.iloc[-1])
         self._format_datetime_axis(ax2)
 
         self.savefig(fig, fig_id)
