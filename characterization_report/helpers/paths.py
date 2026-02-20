@@ -35,7 +35,7 @@ def _looks_like_characterization_summary(path: str) -> bool:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
             data = ReportData.from_dict(data) # Validate structure with ReportData
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, ValueError):
         return False
     
     return data.meta.charact_id
@@ -75,7 +75,7 @@ def _extract_plots_path(input_file: str, fallback_root: str) -> str:
         plots_path = data.meta.plots_path
         if isinstance(plots_path, str) and plots_path.strip():
             return plots_path
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, ValueError):
         pass
     return os.path.join(fallback_root, "plots")
 

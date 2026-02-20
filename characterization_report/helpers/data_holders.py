@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional
 
+from characterization.helpers.output_contract import (
+    format_contract_violations,
+    validate_characterization_extended_contract,
+)
+
 
 @dataclass
 class CallingArguments:
@@ -793,6 +798,13 @@ class ReportData:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ReportData":
+        violations = validate_characterization_extended_contract(data)
+        if violations:
+            raise ValueError(
+                "Invalid characterization extended summary for report parsing:\n"
+                f"{format_contract_violations(violations)}"
+            )
+
         conv_raw = data.get("conversion_factors", {}) or {}
         conversion_factors: Dict[str, Dict[str, ConversionFactor]] = {}
         for sensor_id, configs in conv_raw.items():

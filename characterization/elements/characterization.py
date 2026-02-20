@@ -6,6 +6,11 @@ import pandas as pd
 import math
 
 from characterization.helpers import file_manage, get_logger, system_info
+from characterization.helpers.output_contract import (
+    format_contract_violations,
+    validate_characterization_extended_contract,
+    validate_characterization_reduced_contract,
+)
 from .sweep_file import SweepFile
 from .analysis.characterization_analysis import CharacterizationAnalysis
 from .plots.characterization_plots import CharacterizationPlots
@@ -27,6 +32,7 @@ class Characterization(BaseElement):
         self.char_files_path = cfpath
         self.reports_path = char_folder_path
         self.output_path = os.path.join(char_folder_path, 'plots')
+        self.strict_contract = bool(getattr(call_args, "strict_contract", False))
         self.photodiodes: dict[str, Photodiode] = {}
         self.calibration_info: dict = {}
         self.conversion_factors: dict = {}
@@ -164,7 +170,7 @@ class Characterization(BaseElement):
             'meta': self.meta,
             'analysis': self.anal.to_dict(),
             'time_info': self.time_info,
-            'plots': self.plotter.plots
+            'plots': self.plotter.plots,
         }
         if self.calibration_info:
             out['calibration'] = self.calibration_info
@@ -178,6 +184,17 @@ class Characterization(BaseElement):
         outdata = self.to_dict()
         if meta:
             outdata.update(meta)
+
+        violations = validate_characterization_extended_contract(outdata)
+        if violations:
+            msg = (
+                f"Extended summary output-contract validation failed with {len(violations)} issue(s):\n"
+                f"{format_contract_violations(violations)}"
+            )
+            if self.strict_contract:
+                raise ValueError(msg)
+            logger.warning(msg)
+
         with open(results_path, 'w', encoding='utf-8') as f:
             try:
                 json.dump(outdata, f, indent=2)
@@ -233,8 +250,19 @@ class Characterization(BaseElement):
             'characterization_id': self.meta['charact_id'],
             'acquisition_time': self.time_info,
             'calibration': reduced_calibration,
-            'photodiodes': out_photodiodes
+            'photodiodes': out_photodiodes,
         }
+
+        violations = validate_characterization_reduced_contract(outdata)
+        if violations:
+            msg = (
+                f"Reduced summary output-contract validation failed with {len(violations)} issue(s):\n"
+                f"{format_contract_violations(violations)}"
+            )
+            if self.strict_contract:
+                raise ValueError(msg)
+            logger.warning(msg)
+
         with open(results_path, 'w', encoding='utf-8') as f:
             try:
                 json.dump(outdata, f, indent=2)

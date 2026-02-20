@@ -30,6 +30,11 @@ def main():
     parser.add_argument("--no-sweepfile-plots", "-e", action="store_true", help="Do not generate sweepfile-level plots")
     parser.add_argument("--no-gen-report", action="store_true", help="Do not generate characterization report")
     parser.add_argument(
+        "--strict-contract",
+        action="store_true",
+        help="Fail when exported characterization summaries violate output contract checks",
+    )
+    parser.add_argument(
         "--profile",
         "--profile-report",
         dest="profile",

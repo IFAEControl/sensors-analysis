@@ -51,3 +51,30 @@ Output paths for plots and results are structured to reflect this hierarchy, ens
     - ***.png**: Plots and analysis results of the overall calibration (mostly environment of the whole data taking and some plot representing different filter wheels and/or wavelengths)
     - **results.json**: Analysis results of the overall calibration (contains aggregated results and all file sets results in the hierarchy)
 
+## Unit Tests
+
+Tests use Python's built-in `unittest` framework.
+
+Run all tests from repository root:
+
+```bash
+./venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+Run one test module:
+
+```bash
+./venv/bin/python -m unittest tests.test_characterization.test_output_contract -v
+```
+
+Run one test class:
+
+```bash
+./venv/bin/python -m unittest tests.test_characterization.test_output_contract.TestOutputContract -v
+```
+
+Run one test method:
+
+```bash
+./venv/bin/python -m unittest tests.test_characterization.test_output_contract.TestOutputContract.test_valid_extended_contract_passes -v
+```

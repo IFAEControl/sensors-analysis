@@ -1,0 +1,1 @@
+# Characterization report contract tests.
