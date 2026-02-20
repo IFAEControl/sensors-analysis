@@ -80,7 +80,7 @@ def _extract_plots_path(input_file: str, fallback_root: str) -> str:
     return os.path.join(fallback_root, "plots")
 
 
-def calc_paths(input_path: str, output_path: str | None) -> ReportPaths:
+def calc_paths(input_path: str, output_path: str | None, strict_plots: bool = False) -> ReportPaths:
     if input_path is None or input_path.strip() == "":
         raise ValueError("Input path must be provided and cannot be empty.")
 
@@ -111,9 +111,11 @@ def calc_paths(input_path: str, output_path: str | None) -> ReportPaths:
 
     plots_path = _extract_plots_path(input_file, root_path)
     if not os.path.exists(plots_path):
-        raise FileNotFoundError(
-            f"Plots path does not exist: {plots_path}"
-        )
+        if strict_plots:
+            raise FileNotFoundError(
+                f"Plots path does not exist: {plots_path}"
+            )
+        logger.warning("Plots path does not exist: %s. Report will use missing-plot placeholders.", plots_path)
 
     if output_path is None:
         output_path = root_path

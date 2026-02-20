@@ -56,10 +56,10 @@
 
 ## Phase 4: Report Robustness and Issue Rendering (fourth)
 
-- [ ] `CR-06` Make report generation resilient to missing plot tree.
-  - [ ] `CR-06.1` Add fallback behavior when `plots_path` does not exist.
-  - [ ] `CR-06.2` Render placeholders/warnings instead of hard failure.
-  - [ ] `CR-06.3` Keep strict mode available for CI validation.
+- [x] `CR-06` Make report generation resilient to missing plot tree.
+  - [x] `CR-06.1` Add fallback behavior when `plots_path` does not exist.
+  - [x] `CR-06.2` Render placeholders/warnings instead of hard failure.
+  - [x] `CR-06.3` Keep strict mode available for CI validation.
 
 - [ ] `CR-07` Render `issues` in report.
   - [ ] `CR-07.1` Add report section/subsection for issues, ordered by severity and scope.
