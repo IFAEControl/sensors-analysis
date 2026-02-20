@@ -29,8 +29,8 @@ class TestInvariantSanityChecks(unittest.TestCase):
             config,
             "sensor_config",
             {
-                "0.0": {"expected_runs": ["1064_FW5", "532_FW4"]},
-                "3.0": {"expected_runs": ["1064_FW5", "532_FW5"]},
+                "0.0": {"valid_setups": ["1064_FW5", "532_FW4"]},
+                "3.0": {"valid_setups": ["1064_FW5", "532_FW5"]},
             },
         ):
             checker = CharacterizationSanityChecker(char)
@@ -48,7 +48,7 @@ class TestInvariantSanityChecks(unittest.TestCase):
             config,
             "sensor_config",
             {
-                "0.0": {"expected_runs": ["1064_FW5", "532_FW4"]},
+                "0.0": {"valid_setups": ["1064_FW5", "532_FW4"]},
             },
         ):
             checker = CharacterizationSanityChecker(char)

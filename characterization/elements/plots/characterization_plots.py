@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from characterization.helpers import get_logger
+from characterization.helpers.fileset_selector import select_fileset_for_wavelength
 from characterization.config import config
 from .plot_base import BasePlots
 from matplotlib import pyplot as plt
@@ -34,12 +35,12 @@ class CharacterizationPlots(BasePlots):
         self._gen_refpd_pedestals_histogram()
 
     def _gen_saturation_points_by_filter(self):
-        expected_runs = sorted({
+        valid_setups = sorted({
             run
             for sensor_cfg in config.sensor_config.values()
-            for run in sensor_cfg.get('expected_runs', [])
+            for run in sensor_cfg.get('valid_setups', [])
         })
-        if not expected_runs:
+        if not valid_setups:
             logger.warning("No expected runs found in configuration; skipping saturation plots.")
             return
 
@@ -51,11 +52,11 @@ class CharacterizationPlots(BasePlots):
 
         sensors = sorted(config.sensor_config.keys(), key=sensor_sort_key)
 
-        run_labels = expected_runs[:3]
-        if len(expected_runs) > 3:
+        run_labels = valid_setups[:3]
+        if len(valid_setups) > 3:
             logger.warning(
                 "More than 3 wavelength/filter combinations found (%s). Plotting first 3: %s",
-                len(expected_runs),
+                len(valid_setups),
                 run_labels
             )
 
@@ -100,7 +101,7 @@ class CharacterizationPlots(BasePlots):
         run_labels = sorted({
             run
             for sensor_cfg in config.sensor_config.values()
-            for run in sensor_cfg.get('expected_runs', [])
+            for run in sensor_cfg.get('valid_setups', [])
         })
         if not run_labels:
             logger.warning("No wavelength/filter combinations found; skipping run linreg summary.")
@@ -128,22 +129,13 @@ class CharacterizationPlots(BasePlots):
             p_values = []
 
             for sensor_id, pdh in self._data_holder.photodiodes.items():
-                matching = [
-                    (cfg_key, fs)
-                    for cfg_key, fs in pdh.filesets.items()
-                    if cfg_key.split('_', 1)[0] == wavelength_label
-                ]
-                if not matching:
+                cfg_key, fs = self._select_fileset_for_wavelength(
+                    sensor_id=sensor_id,
+                    filesets=pdh.filesets,
+                    wavelength=wavelength_label,
+                )
+                if cfg_key is None or fs is None:
                     continue
-                matching.sort(key=lambda x: x[0])
-                if len(matching) > 1:
-                    logger.warning(
-                        "Multiple %s filesets found for photodiode %s; using %s",
-                        wavelength_label,
-                        sensor_id,
-                        matching[0][0]
-                    )
-                cfg_key, fs = matching[0]
                 if fs.anal.lr_refpd_vs_adc.linreg is None:
                     continue
 
@@ -214,7 +206,7 @@ class CharacterizationPlots(BasePlots):
         run_labels = sorted({
             run
             for sensor_cfg in config.sensor_config.values()
-            for run in sensor_cfg.get('expected_runs', [])
+            for run in sensor_cfg.get('valid_setups', [])
         })
         if not run_labels:
             logger.warning("No wavelength/filter combinations found; skipping power vs adc linreg summary.")
@@ -242,22 +234,13 @@ class CharacterizationPlots(BasePlots):
             intercept_errs = []
 
             for sensor_id, pdh in self._data_holder.photodiodes.items():
-                matching = [
-                    (cfg_key, fs)
-                    for cfg_key, fs in pdh.filesets.items()
-                    if cfg_key.split('_', 1)[0] == wavelength_label
-                ]
-                if not matching:
+                cfg_key, fs = self._select_fileset_for_wavelength(
+                    sensor_id=sensor_id,
+                    filesets=pdh.filesets,
+                    wavelength=wavelength_label,
+                )
+                if cfg_key is None or fs is None:
                     continue
-                matching.sort(key=lambda x: x[0])
-                if len(matching) > 1:
-                    logger.warning(
-                        "Multiple %s filesets found for photodiode %s; using %s",
-                        wavelength_label,
-                        sensor_id,
-                        matching[0][0]
-                    )
-                cfg_key, fs = matching[0]
                 conv = fs.anal.adc_to_power
                 if not isinstance(conv, dict):
                     continue
@@ -321,6 +304,25 @@ class CharacterizationPlots(BasePlots):
             suffix = "" if include_extra else "_simp"
             self.savefig(fig, f"power_vs_adc_linregs_{wavelength_label}{suffix}")
             plt.close(fig)
+
+    def _select_fileset_for_wavelength(self, sensor_id: str, filesets: dict, wavelength: str):
+        selection = select_fileset_for_wavelength(
+            fileset_keys=filesets.keys(),
+            wavelength=wavelength,
+            sensor_id=sensor_id,
+        )
+        if selection.selected_key is None:
+            return None, None
+        if len(selection.candidates) > 1 and selection.reason != "expected_match":
+            logger.warning(
+                "Ambiguous %s filesets for photodiode %s; candidates=%s; selected=%s (reason=%s)",
+                wavelength,
+                sensor_id,
+                list(selection.candidates),
+                selection.selected_key,
+                selection.reason,
+            )
+        return selection.selected_key, filesets.get(selection.selected_key)
 
     def _gen_refpd_pedestals_timeseries(self, include_temp: bool = False):
         df = self._data_holder.df_pedestals

@@ -90,7 +90,7 @@ class Photodiode(BaseElement):
                 'sensor_id': self.sensor_id,
                 'gain': gain_info.get('gain'),
                 'resistor': gain_info.get('resistor'),
-                'expected_runs': gain_info.get('expected_runs')
+                'valid_setups': gain_info.get('valid_setups')
             },
             'time_info': self.time_info,
             'analysis': self.anal.to_dict(),

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict
 
 from base_report.base_report_slides import BaseReportSlides, Frame
+from characterization.helpers.fileset_selector import select_fileset_for_wavelength
 from ..helpers.data_holders import Photodiode, ReportData
 from ..helpers.paths import calc_plot_path
 
@@ -12,50 +13,31 @@ COLUMNS = ["0", "1", "2", "3"]
 
 
 def _extract_refpd_for_sensor(photodiode_data: Photodiode, wavelength: str):
-    pd_linreg = None
-    if photodiode_data and photodiode_data.analysis:
-        pd_linreg = getattr(photodiode_data.analysis, "linreg_refpd_vs_adc", None)
-    # Prefer fileset-level linreg by wavelength for overview tables.
-
     filesets = photodiode_data.filesets if photodiode_data else {}
-    preferred_order = (f"{wavelength}_FW5", f"{wavelength}_FW4")
-    for key in preferred_order:
-        fs = filesets.get(key)
-        if fs is None:
-            continue
-        lr = fs.analysis.linreg_refpd_vs_adc if fs.analysis else None
-        if lr is not None:
-            return lr
-
-    for key, fs in filesets.items():
-        if not key.startswith(f"{wavelength}_"):
-            continue
-        lr = fs.analysis.linreg_refpd_vs_adc if fs.analysis else None
-        if lr is not None:
-            return lr
-    if pd_linreg is not None:
-        return pd_linreg
-    return None
+    sensor_id = photodiode_data.meta.sensor_id if photodiode_data and photodiode_data.meta else None
+    selection = select_fileset_for_wavelength(
+        fileset_keys=filesets.keys(),
+        wavelength=wavelength,
+        sensor_id=sensor_id,
+    )
+    if selection.selected_key is None:
+        return None
+    fs = filesets.get(selection.selected_key)
+    return fs.analysis.linreg_refpd_vs_adc if fs and fs.analysis else None
 
 
 def _extract_power_for_sensor(photodiode_data: Photodiode, wavelength: str):
     filesets = photodiode_data.filesets if photodiode_data else {}
-    preferred_order = (f"{wavelength}_FW5", f"{wavelength}_FW4")
-    for key in preferred_order:
-        fs = filesets.get(key)
-        if fs is None:
-            continue
-        cf = fs.analysis.adc_to_power if fs.analysis else None
-        if cf is not None:
-            return cf
-
-    for key, fs in filesets.items():
-        if not key.startswith(f"{wavelength}_"):
-            continue
-        cf = fs.analysis.adc_to_power if fs.analysis else None
-        if cf is not None:
-            return cf
-    return None
+    sensor_id = photodiode_data.meta.sensor_id if photodiode_data and photodiode_data.meta else None
+    selection = select_fileset_for_wavelength(
+        fileset_keys=filesets.keys(),
+        wavelength=wavelength,
+        sensor_id=sensor_id,
+    )
+    if selection.selected_key is None:
+        return None
+    fs = filesets.get(selection.selected_key)
+    return fs.analysis.adc_to_power if fs and fs.analysis else None
 
 
 def _fmt(value: object, precision: int = 3) -> str:

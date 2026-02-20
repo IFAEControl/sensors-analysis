@@ -83,10 +83,10 @@ class CharacterizationSanityChecker:
             'check_explanation': 'Verify if all sensors in the board are scanned.',
         }
 
-    def san_check_expected_runs_acquired(self, severity='warning') -> SanityCheckResult:
+    def san_check_setup_confs_acquired(self, severity='warning') -> SanityCheckResult:
         missing_by_sensor = {}
         for sensor_id, pdh in self.char.photodiodes.items():
-            expected = config.sensor_config.get(sensor_id, {}).get('expected_runs', [])
+            expected = config.sensor_config.get(sensor_id, {}).get('valid_setups', [])
             acquired = sorted(list(pdh.filesets.keys()))
             missing = [r for r in expected if r not in acquired]
             if missing:
@@ -94,16 +94,16 @@ class CharacterizationSanityChecker:
         passed = len(missing_by_sensor) == 0
         return SanityCheckResult(
             severity=severity,
-            check_name='expected_runs_acquired',
+            check_name='setup_confs_acquired',
             check_args=missing_by_sensor,
             passed=passed,
             info='' if passed else f"Missing runs for {len(missing_by_sensor)} sensors",
             check_explanation='Each sensor should have all expected runs acquired.'
         )
 
-    def san_info_expected_runs_acquired(self, severity='warning') -> dict:
+    def san_info_setup_confs_acquired(self, severity='warning') -> dict:
         return {
-            'check_name': 'expected_runs_acquired',
+            'check_name': 'setup_confs_acquired',
             'check_args': None,
             'severity': severity,
             'check_explanation': 'Each sensor should have all expected runs acquired.',
@@ -160,8 +160,8 @@ class CharacterizationSanityChecker:
     def san_check_pd_532_matches_expected_mapping(self, severity='error') -> SanityCheckResult:
         violations = {}
         for sensor_id, pdh in self.char.photodiodes.items():
-            expected_runs = config.sensor_config.get(sensor_id, {}).get('expected_runs', [])
-            expected_532 = [r for r in expected_runs if r.startswith('532_')]
+            valid_setups = config.sensor_config.get(sensor_id, {}).get('valid_setups', [])
+            expected_532 = [r for r in valid_setups if r.startswith('532_')]
             acquired_532 = sorted([k for k in pdh.filesets.keys() if k.startswith('532_')])
             if len(expected_532) != 1:
                 violations[sensor_id] = {

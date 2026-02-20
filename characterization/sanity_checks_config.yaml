@@ -9,7 +9,7 @@
     "warning": {
       "all_files_analyzed": null,
       "all_sensors_scanned": null,
-      "expected_runs_acquired": null
+      "setup_confs_acquired": null
     }
   },
   "fileset": {

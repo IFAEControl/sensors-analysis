@@ -34,12 +34,12 @@
   - [x] `CR-03.4` Surface violations as `issues` plus sanity-check failures.
   - [x] `CR-03.5` Decide strict-mode failure points (analysis/export/report).
 
-- [ ] `CR-04` Unify fileset selection logic across analysis and report.
-  - [ ] `CR-04.1` Create shared selector utility based on invariant-validated data.
-  - [ ] `CR-04.2` Replace current table selection logic in report overview.
-  - [ ] `CR-04.3` Replace current characterization plot selection logic.
-  - [ ] `CR-04.4` Remove first-match behavior in photodiode slide section.
-  - [ ] `CR-04.5` Add regression tests to ensure table values and plot values match source fileset.
+- [x] `CR-04` Unify fileset selection logic across analysis and report.
+  - [x] `CR-04.1` Create shared selector utility based on invariant-validated data.
+  - [x] `CR-04.2` Replace current table selection logic in report overview.
+  - [x] `CR-04.3` Replace current characterization plot selection logic.
+  - [x] `CR-04.4` Remove first-match behavior in photodiode slide section.
+  - [x] `CR-04.5` Add regression tests to ensure table values and plot values match source fileset.
 
 ## Phase 3: Calibration/Characterization Consistency (third)
 

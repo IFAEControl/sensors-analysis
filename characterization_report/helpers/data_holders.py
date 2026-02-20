@@ -459,7 +459,7 @@ class PhotodiodeMeta:
     sensor_id: Optional[str]
     gain: Optional[str]
     resistor: Optional[str]
-    expected_runs: list[str] = field(default_factory=list)
+    valid_setups: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PhotodiodeMeta":
@@ -467,7 +467,7 @@ class PhotodiodeMeta:
             sensor_id=data.get("sensor_id"),
             gain=data.get("gain"),
             resistor=data.get("resistor"),
-            expected_runs=list(data.get("expected_runs", []) or []),
+            valid_setups=list(data.get("valid_setups", []) or []),
         )
 
 

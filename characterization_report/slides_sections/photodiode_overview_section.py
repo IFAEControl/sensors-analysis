@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from base_report.base_report_slides import BaseReportSlides
+from characterization.helpers.fileset_selector import select_fileset_for_wavelength
 
 from ..helpers.data_holders import ReportData
 from ..report_elements import add_photodiode_fileset_overview
@@ -39,12 +40,19 @@ class PhotodiodeOverviewSection(BaseSection):
         for sensor_id in sorted(photodiodes.keys()):
             sensor_data = photodiodes[sensor_id]
             filesets_keys = sensor_data.filesets.keys() if sensor_data.filesets else []
-            fs_1064 = list(filter(lambda k: k.startswith("1064_"), filesets_keys))[0] if any(k.startswith("1064_") for k in filesets_keys) else None
-            fs_532 = list(filter(lambda k: k.startswith("532_"), filesets_keys))[0] if any(k.startswith("532_") for k in filesets_keys) else None
+            fs_1064 = select_fileset_for_wavelength(
+                fileset_keys=filesets_keys,
+                wavelength="1064",
+                sensor_id=sensor_id,
+            ).selected_key
+            fs_532 = select_fileset_for_wavelength(
+                fileset_keys=filesets_keys,
+                wavelength="532",
+                sensor_id=sensor_id,
+            ).selected_key
             first_slide = True
             if fs_1064:
                 fs = sensor_data.filesets.get(fs_1064)
-                
                 self.report.add_slide(f"Photodiode {sensor_id}", f"{fs.meta.wavelength}nm - {fs.meta.filter_wheel}")
                 add_photodiode_fileset_overview(
                     section=self,
