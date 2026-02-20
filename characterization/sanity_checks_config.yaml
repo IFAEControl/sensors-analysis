@@ -1,7 +1,10 @@
 {
   "characterization": {
     "error": {
-      "max_temperature_change": 3
+      "max_temperature_change": 3,
+      "pd_single_1064_fw5": null,
+      "pd_single_532_fileset": null,
+      "pd_532_matches_expected_mapping": null
     },
     "warning": {
       "all_files_analyzed": null,

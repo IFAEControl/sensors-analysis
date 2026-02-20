@@ -27,12 +27,12 @@
 
 ## Phase 2: Domain Invariants and Selection (second)
 
-- [ ] `CR-03` Enforce board-specific photodiode/fileset invariants.
-  - [ ] `CR-03.1` Validate each PD has exactly one `1064_FW5`.
-  - [ ] `CR-03.2` Validate each PD has exactly one `532_*`.
-  - [ ] `CR-03.3` Validate 532 filter (`FW4`/`FW5`) matches PD gain mapping.
-  - [ ] `CR-03.4` Surface violations as `issues` plus sanity-check failures.
-  - [ ] `CR-03.5` Decide strict-mode failure points (analysis/export/report).
+- [x] `CR-03` Enforce board-specific photodiode/fileset invariants.
+  - [x] `CR-03.1` Validate each PD has exactly one `1064_FW5`.
+  - [x] `CR-03.2` Validate each PD has exactly one `532_*`.
+  - [x] `CR-03.3` Validate 532 filter (`FW4`/`FW5`) matches PD gain mapping.
+  - [x] `CR-03.4` Surface violations as `issues` plus sanity-check failures.
+  - [x] `CR-03.5` Decide strict-mode failure points (analysis/export/report).
 
 - [ ] `CR-04` Unify fileset selection logic across analysis and report.
   - [ ] `CR-04.1` Create shared selector utility based on invariant-validated data.

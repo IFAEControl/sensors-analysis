@@ -183,6 +183,29 @@ class SanityChecks:
                 },
             )
 
+    def _raise_if_strict_invariant_failures(self):
+        if not bool(getattr(self.char, "strict_contract", False)):
+            return
+        run_key = self.char.level_header
+        checks = self.results.get(run_key, {}).get('checks', {})
+        invariant_check_names = {
+            "pd_single_1064_fw5",
+            "pd_single_532_fileset",
+            "pd_532_matches_expected_mapping",
+        }
+        failed = []
+        for key, payload in checks.items():
+            if not isinstance(payload, dict):
+                continue
+            check_name = payload.get("check_name")
+            if check_name in invariant_check_names and payload.get("passed") is False:
+                failed.append(key)
+        if failed:
+            raise ValueError(
+                "Strict mode invariant failure in characterization sanity checks: "
+                + ", ".join(sorted(failed))
+            )
+
     def run_checks(self):
         logger.info("Running sanity checks...")
         self.results = {}
@@ -230,6 +253,7 @@ class SanityChecks:
         self.results['summary'] = self._c.to_dict()
         self.results['defined_checks'] = defined_checks
         self._add_summary_issues(self.results['summary'])
+        self._raise_if_strict_invariant_failures()
         c_d = self._c.to_dict()
         if c_d['total_failed'] > 0:
             logger.warning("Sanity checks completed. %s passed, %s failed out of %s checks.", c_d['total_passed'], c_d['total_failed'], c_d['total_checks'])
