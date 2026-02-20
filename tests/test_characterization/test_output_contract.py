@@ -38,6 +38,18 @@ class TestOutputContract(unittest.TestCase):
         violations = validate_characterization_reduced_contract(payload)
         self.assertEqual(violations, [])
 
+    def test_contract_reports_invalid_issue_scope_key(self):
+        payload = make_valid_extended_payload(generate_plots=False)
+        payload["issues"]["bad_scope"] = [{"description": "x", "level": "warning", "meta": {}}]
+        violations = validate_characterization_extended_contract(payload)
+        self.assertTrue(any("Invalid issue scope key" in v for v in violations))
+
+    def test_contract_reports_invalid_issue_level(self):
+        payload = make_valid_extended_payload(generate_plots=False)
+        payload["issues"]["charact"][0]["level"] = "info"
+        violations = validate_characterization_extended_contract(payload)
+        self.assertTrue(any("Invalid issue level" in v for v in violations))
+
     def test_reduced_contract_reports_missing_required_key(self):
         payload = make_valid_reduced_payload()
         del payload["photodiodes"]

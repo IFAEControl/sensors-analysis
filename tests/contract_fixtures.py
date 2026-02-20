@@ -35,6 +35,15 @@ def make_valid_extended_payload(generate_plots: bool = True) -> dict:
         },
         "time_info": {},
         "plots": plots_node,
+        "issues": {
+            "charact": [
+                {
+                    "description": "example issue",
+                    "level": "warning",
+                    "meta": {},
+                }
+            ]
+        },
         "sanity_checks": {
             "run_1": {
                 "checks": {},
@@ -60,4 +69,5 @@ def make_valid_reduced_payload() -> dict:
         "acquisition_time": {},
         "calibration": {},
         "photodiodes": {"0.0": {}},
+        "issues": {"charact": [{"description": "example issue", "level": "warning", "meta": {}}]},
     }

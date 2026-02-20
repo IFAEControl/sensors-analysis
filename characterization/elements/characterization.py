@@ -171,6 +171,7 @@ class Characterization(BaseElement):
             'analysis': self.anal.to_dict(),
             'time_info': self.time_info,
             'plots': self.plotter.plots,
+            'issues': self._collect_issues(),
         }
         if self.calibration_info:
             out['calibration'] = self.calibration_info
@@ -251,6 +252,7 @@ class Characterization(BaseElement):
             'acquisition_time': self.time_info,
             'calibration': reduced_calibration,
             'photodiodes': out_photodiodes,
+            'issues': self._collect_issues(),
         }
 
         violations = validate_characterization_reduced_contract(outdata)
@@ -352,6 +354,21 @@ class Characterization(BaseElement):
             'summary_path': self.calibration_info['summary_path'],
             'linreg_by_configuration': self.calibration_info['linreg_by_configuration'],
         }
+
+    def _collect_issues(self) -> dict[str, list[dict]]:
+        issues: dict[str, list[dict]] = {"charact": [dict(item) for item in self.issues]}
+        for pdh in self.photodiodes.values():
+            if pdh.issues:
+                issues[f"PD_{pdh.sensor_id}"] = [dict(item) for item in pdh.issues]
+            for fs in pdh.filesets.values():
+                fs_key = f"PD_{pdh.sensor_id}_{fs.label}"
+                if fs.issues:
+                    issues[fs_key] = [dict(item) for item in fs.issues]
+                for sweep in fs.files:
+                    run_key = f"PD_{pdh.sensor_id}_{fs.label}_{sweep.run}"
+                    if sweep.issues:
+                        issues[run_key] = [dict(item) for item in sweep.issues]
+        return issues
 
     @staticmethod
     def _extract_calibration_filesets(cal_data: dict) -> dict:

@@ -10,20 +10,20 @@
   - [x] `CR-01.3` Add non-strict vs strict behavior (warn vs fail).
   - [x] `CR-01.4` Add unit tests with missing-level and malformed-level fixtures.
 
-- [ ] `CR-02` Add canonical `issues` schema to outputs.
-  - [ ] `CR-02.1` Add top-level `issues` key to extended summary (`*_extended.json`).
-  - [ ] `CR-02.2` Add top-level `issues` key to reduced summary (`*.json`).
-  - [ ] `CR-02.3` Implement issue key formats. Each key maps to a list of issue items:
+- [x] `CR-02` Add canonical `issues` schema to outputs.
+  - [x] `CR-02.1` Add top-level `issues` key to extended summary (`*_extended.json`).
+  - [x] `CR-02.2` Add top-level `issues` key to reduced summary (`*.json`).
+  - [x] `CR-02.3` Implement issue key formats. Each key maps to a list of issue items:
     - `charact`
     - `PD_<PD_id>`
     - `PD_<PD_id>_<wavelength_fw>`
     - `PD_<PD_id>_<wavelength_fw>_<run_id>`
-  - [ ] `CR-02.4` Enforce issue item schema:
+  - [x] `CR-02.4` Enforce issue item schema:
     - `description`: string
-    - `level` in [`warning`, `error`, `debug`, `info`]
+    - `level` in [`warning`, `error`]
     - `meta`: dict
-  - [ ] `CR-02.5` Add helper methods to append issues from each level.
-  - [ ] `CR-02.6` Parse issues in report data holders.
+  - [x] `CR-02.5` Add helper methods to append issues from each level.
+  - [x] `CR-02.6` Parse issues in report data holders.
 
 ## Phase 2: Domain Invariants and Selection (second)
 
@@ -62,6 +62,13 @@
   - [ ] `CR-07.3` Include structured `meta` rendering for debugging context.
   - [ ] `CR-07.4` Add at least one concrete rule-backed example:
     - characterization run without zeroing + calibration using zeroed fits.
+
+- [ ] `CR-09` Implement plot style guide and enforce it across characterization plots.
+  - [ ] `CR-09.1` Define a centralized visual style spec (color palette, line styles, marker rules, transparency defaults).
+  - [ ] `CR-09.2` Define fixed color mapping by plotted property so the same property always uses the same color in all plots.
+  - [ ] `CR-09.3` Implement shared helper utilities for applying style rules in plot modules.
+  - [ ] `CR-09.4` Enforce mean ± std area rendering with the same base shade and transparency policy across plots.
+  - [ ] `CR-09.5` Add regression tests/checks to detect style drift for key plot families.
 
 ## Phase 5: Cleanup and Diagnostics (last)
 

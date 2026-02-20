@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping
+
+
+VALID_ISSUE_LEVELS = {"warning", "error"}
+_PD_KEY_RE = re.compile(r"^PD_[^_]+$")
+_FILESET_KEY_RE = re.compile(r"^PD_[^_]+_\d+_FW\d+$")
+_RUN_KEY_RE = re.compile(r"^PD_[^_]+_\d+_FW\d+_[^_]+$")
 
 
 def _is_mapping(value: Any) -> bool:
@@ -32,10 +39,11 @@ def validate_characterization_extended_contract(data: Mapping[str, Any]) -> list
     if root is None:
         return violations
 
-    _append_missing(violations, "", ["meta", "analysis", "time_info", "plots"], root)
+    _append_missing(violations, "", ["meta", "analysis", "time_info", "plots", "issues"], root)
 
     analysis = _require_mapping(violations, "analysis", root.get("analysis"))
     plots = _require_mapping(violations, "plots", root.get("plots"))
+    issues = _require_mapping(violations, "issues", root.get("issues"))
     sanity = root.get("sanity_checks")
     generate_plots = bool(
         root.get("meta", {})
@@ -126,6 +134,9 @@ def validate_characterization_extended_contract(data: Mapping[str, Any]) -> list
                             if not _is_mapping(sweep_checks):
                                 violations.append(f"Expected mapping at '{sweep_path}'")
 
+    if issues is not None:
+        _validate_issues(issues, "issues", violations)
+
     return violations
 
 
@@ -138,11 +149,15 @@ def validate_characterization_reduced_contract(data: Mapping[str, Any]) -> list[
     _append_missing(
         violations,
         "",
-        ["characterization_id", "acquisition_time", "calibration", "photodiodes"],
+        ["characterization_id", "acquisition_time", "calibration", "photodiodes", "issues"],
         root,
     )
     if "photodiodes" in root and not _is_mapping(root.get("photodiodes")):
         violations.append("Expected mapping at 'photodiodes'")
+    if "issues" in root:
+        issues = _require_mapping(violations, "issues", root.get("issues"))
+        if issues is not None:
+            _validate_issues(issues, "issues", violations)
     return violations
 
 
@@ -152,3 +167,39 @@ def format_contract_violations(violations: list[str], max_items: int = 20) -> st
     visible = violations[:max_items]
     suffix = "" if len(violations) <= max_items else f"\n... and {len(violations) - max_items} more"
     return "\n".join(f"- {item}" for item in visible) + suffix
+
+
+def _is_valid_issue_scope_key(key: str) -> bool:
+    if key == "charact":
+        return True
+    if _PD_KEY_RE.match(key):
+        return True
+    if _FILESET_KEY_RE.match(key):
+        return True
+    if _RUN_KEY_RE.match(key):
+        return True
+    return False
+
+
+def _validate_issues(issues: Mapping[str, Any], base_path: str, violations: list[str]) -> None:
+    for scope_key, issue_list in issues.items():
+        scope_path = f"{base_path}.{scope_key}"
+        if not isinstance(scope_key, str) or not _is_valid_issue_scope_key(scope_key):
+            violations.append(f"Invalid issue scope key '{scope_key}' at '{scope_path}'")
+        if not isinstance(issue_list, list):
+            violations.append(f"Expected list at '{scope_path}'")
+            continue
+        for idx, issue in enumerate(issue_list):
+            issue_path = f"{scope_path}[{idx}]"
+            issue_map = _require_mapping(violations, issue_path, issue)
+            if issue_map is None:
+                continue
+            _append_missing(violations, issue_path, ["description", "level", "meta"], issue_map)
+            if "description" in issue_map and not isinstance(issue_map.get("description"), str):
+                violations.append(f"Expected string at '{issue_path}.description'")
+            if "level" in issue_map:
+                level = issue_map.get("level")
+                if not isinstance(level, str) or level not in VALID_ISSUE_LEVELS:
+                    violations.append(f"Invalid issue level at '{issue_path}.level'")
+            if "meta" in issue_map and not _is_mapping(issue_map.get("meta")):
+                violations.append(f"Expected mapping at '{issue_path}.meta'")

@@ -75,12 +75,12 @@ Issue reporting should follow the same four-level structure through canonical `i
   - Top-level `issues` dictionary for reportable issues.
   - Supported child keys under `issues`:
     - `charact`
-    - `PD<PD_id>`
+    - `PD_<PD_id>`
     - `PD_<PD_id>_<wavelength_fw>`
     - `PD_<PD_id>_<wavelength_fw>_<run_id>`
   - Issue object schema:
     - `description`: string
-    - `level`: one of `warning`, `error`, `debug`, `info`
+    - `level`: one of `warning`, `error`
     - `meta`: object/dict with contextual payload
 
 ## Domain Invariants (Board Characterization)

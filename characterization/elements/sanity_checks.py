@@ -152,6 +152,37 @@ class SanityChecks:
                 logger.warning("Failed to execute info check: %s, %s", check_name, str(e))
         return results
 
+    def _add_summary_issues(self, summary: dict):
+        """Add a compact characterization-level issue summary from sanity failures."""
+        details = summary.get('details', {}) if isinstance(summary, dict) else {}
+        error_failed = int(details.get('error_failed', 0) or 0)
+        warning_failed = int(details.get('warning_failed', 0) or 0)
+        total_failed = int(summary.get('total_failed', 0) or 0) if isinstance(summary, dict) else 0
+        total_checks = int(summary.get('total_checks', 0) or 0) if isinstance(summary, dict) else 0
+
+        if error_failed > 0:
+            self.char.add_issue_error(
+                "Sanity checks reported failed error-level checks.",
+                {
+                    "source": "sanity_checks",
+                    "error_failed": error_failed,
+                    "warning_failed": warning_failed,
+                    "total_failed": total_failed,
+                    "total_checks": total_checks,
+                },
+            )
+        if warning_failed > 0:
+            self.char.add_issue_warning(
+                "Sanity checks reported failed warning-level checks.",
+                {
+                    "source": "sanity_checks",
+                    "error_failed": error_failed,
+                    "warning_failed": warning_failed,
+                    "total_failed": total_failed,
+                    "total_checks": total_checks,
+                },
+            )
+
     def run_checks(self):
         logger.info("Running sanity checks...")
         self.results = {}
@@ -198,6 +229,7 @@ class SanityChecks:
 
         self.results['summary'] = self._c.to_dict()
         self.results['defined_checks'] = defined_checks
+        self._add_summary_issues(self.results['summary'])
         c_d = self._c.to_dict()
         if c_d['total_failed'] > 0:
             logger.warning("Sanity checks completed. %s passed, %s failed out of %s checks.", c_d['total_passed'], c_d['total_failed'], c_d['total_checks'])

@@ -787,6 +787,21 @@ class SanityChecks:
 
 
 @dataclass
+class IssueEntry:
+    description: str
+    level: str
+    meta: Dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "IssueEntry":
+        return cls(
+            description=str(data.get("description", "")),
+            level=str(data.get("level", "")),
+            meta=data.get("meta", {}) if isinstance(data.get("meta", {}), dict) else {},
+        )
+
+
+@dataclass
 class ReportData:
     meta: Meta
     analysis: Analysis
@@ -795,6 +810,7 @@ class ReportData:
     calibration: Optional[CalibrationReference] = None
     conversion_factors: Dict[str, Dict[str, ConversionFactor]] = field(default_factory=dict)
     sanity_checks: SanityChecks = field(default_factory=SanityChecks)
+    issues: Dict[str, list[IssueEntry]] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ReportData":
@@ -817,6 +833,16 @@ class ReportData:
             }
 
         calibration = data.get("calibration")
+        issues_raw = data.get("issues", {}) or {}
+        issues: Dict[str, list[IssueEntry]] = {}
+        for key, entries in issues_raw.items():
+            if not isinstance(entries, list):
+                continue
+            issues[key] = [
+                IssueEntry.from_dict(item)
+                for item in entries
+                if isinstance(item, dict)
+            ]
 
         return cls(
             meta=Meta.from_dict(data.get("meta", {})),
@@ -826,4 +852,5 @@ class ReportData:
             calibration=CalibrationReference.from_dict(calibration) if isinstance(calibration, dict) else None,
             conversion_factors=conversion_factors,
             sanity_checks=SanityChecks.from_dict(data.get("sanity_checks", {})),
+            issues=issues,
         )

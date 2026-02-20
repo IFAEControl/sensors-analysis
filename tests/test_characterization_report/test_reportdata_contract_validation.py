@@ -15,9 +15,12 @@ class TestReportDataContractValidation(unittest.TestCase):
 
     def test_report_data_accepts_valid_contract(self):
         payload = make_valid_extended_payload(generate_plots=True)
+        payload["issues"]["PD_0.0"] = [{"description": "pd issue", "level": "warning", "meta": {"k": "v"}}]
         report_data = ReportData.from_dict(payload)
         self.assertEqual(report_data.meta.charact_id, "test_char")
         self.assertIn("0.0", report_data.analysis.photodiodes)
+        self.assertIn("PD_0.0", report_data.issues)
+        self.assertEqual(report_data.issues["PD_0.0"][0].level, "warning")
 
 
 if __name__ == "__main__":
