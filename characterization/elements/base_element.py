@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import pandas as pd
 
+from characterization.config import config
+
 class DataHolderLevel(Enum):
     CHARACTERIZATION = 'characterization'
     PHOTODIODE = 'photodiode'
@@ -21,6 +23,14 @@ class BaseElement(ABC):
         self.data_prep_info = {}
         self.time_info = {}
         self.issues: list[dict] = []
+
+    @property
+    def ref_pd_col(self) -> str:
+        return "ref_pd_zeroed" if config.subtract_pedestals else "ref_pd_mean"
+
+    @property
+    def adc_col(self) -> str:
+        return "mean_adc_zeroed" if config.subtract_pedestals else "mean_adc"
 
     @property
     @abstractmethod

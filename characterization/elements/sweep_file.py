@@ -162,10 +162,21 @@ class SweepFile(BaseElement):
         self._df_full = self._df.copy()
         self._df_sat = self._df[is_saturated].copy().reset_index(drop=True)
         self._df = self._df[~is_pedestal & ~is_saturated].reset_index(drop=True)
+        ped_mean_adc = 0.0
+        ped_ref_pd = 0.0
+        if self._df_pedestals is not None and not self._df_pedestals.empty:
+            ped_mean_adc = float(self._df_pedestals['mean_adc'].mean())
+            ped_ref_pd = float(self._df_pedestals['ref_pd_mean'].mean())
+        for df_obj in (self._df, self._df_full, self._df_sat, self._df_pedestals):
+            if df_obj is None:
+                continue
+            df_obj['mean_adc_zeroed'] = df_obj['mean_adc'] - ped_mean_adc
+            df_obj['ref_pd_zeroed'] = df_obj['ref_pd_mean'] - ped_ref_pd
         if self._df.empty:
             logger.error("After removing pedestals and saturated points, no data remains for file: %s", self.file_info['filename'])
         self.data_prep_info['original_num_pedestals'] = int(is_pedestal.sum())
         self.data_prep_info['original_num_saturated'] = int(is_saturated.sum())
+        self.data_prep_info['subtract_pedestals'] = bool(config.subtract_pedestals)
         logger.info("Loaded data for sweep file: %s \t shape: %s", self.file_info['filename'], self._df.shape)
 
     def analyze(self):

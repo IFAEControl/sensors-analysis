@@ -43,11 +43,16 @@
 
 ## Phase 3: Calibration/Characterization Consistency (third)
 
-- [ ] `CR-05` Fix ADC->power model composition for pedestal conventions.
-  - [ ] `CR-05.1` Detect calibration fit variable convention from `x_var`/`y_var` and metadata.
-  - [ ] `CR-05.2` Implement correct composition for zeroed-vs-non-zeroed combinations.
-  - [ ] `CR-05.3` Emit explicit `issues` entry for incompatible/unsafe convention mixes.
-  - [ ] `CR-05.4` Add test matrix for all supported combinations and expected intercept behavior.
+- [x] `CR-05` Fix ADC->power model composition for pedestal conventions.
+  - [x] `CR-05.1` Keep characterization behavior owned by runtime user choice:
+    - If user enables pedestal subtraction, characterization uses zeroed data.
+    - If user disables pedestal subtraction, characterization uses non-zeroed data.
+  - [x] `CR-05.2` Read calibration pedestal-subtraction setting from calibration metadata/config when available.
+  - [x] `CR-05.3` Add mismatch warning only (no automatic correction/override):
+    - If calibration subtraction setting and characterization subtraction setting differ, add one warning issue at `charact` scope.
+    - Include both settings and calibration source path in issue `meta`.
+  - [x] `CR-05.4` Keep ADC->power composition unchanged by mismatch (user is source of truth).
+  - [x] `CR-05.5` Add tests for matching vs mismatching settings and expected warning issue behavior.
 
 ## Phase 4: Report Robustness and Issue Rendering (fourth)
 

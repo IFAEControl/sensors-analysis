@@ -311,10 +311,15 @@ class Characterization(BaseElement):
             'calibration_id': calibration_meta.get('calib_id', os.path.basename(calibration_json_path)),
             'calibration_execution_date': calibration_execution_date,
             'power_unit': calibration_power_unit,
+            'subtract_pedestals': self._extract_calibration_subtract_pedestals(cal_data),
             'used_configurations': used_configs,
             'available_configurations': available_configs,
             'linreg_by_configuration': cal_linreg_by_config,
         }
+        self._add_pedestal_setting_mismatch_issue(
+            calibration_subtract_pedestals=self.calibration_info.get('subtract_pedestals'),
+            calibration_summary_path=calibration_json_path,
+        )
 
         out_conversion = {}
         for sensor_id, pdh in self.photodiodes.items():
@@ -352,6 +357,7 @@ class Characterization(BaseElement):
             'execution_date': self.calibration_info['calibration_execution_date'],
             'power_unit': self.calibration_info['power_unit'],
             'summary_path': self.calibration_info['summary_path'],
+            'subtract_pedestals': self.calibration_info['subtract_pedestals'],
             'linreg_by_configuration': self.calibration_info['linreg_by_configuration'],
         }
 
@@ -402,6 +408,39 @@ class Characterization(BaseElement):
         if isinstance(use_uW, bool):
             return 'uW' if use_uW else 'W'
         return None
+
+    @staticmethod
+    def _extract_calibration_subtract_pedestals(cal_data: dict) -> bool | None:
+        meta = cal_data.get('meta', {}) if isinstance(cal_data, dict) else {}
+        cfg = meta.get('config', {}) if isinstance(meta, dict) else {}
+        call_args = meta.get('calling_arguments', {}) if isinstance(meta, dict) else {}
+        subtract = cfg.get('subtract_pedestals')
+        if isinstance(subtract, bool):
+            return subtract
+        do_not_sub = call_args.get('do_not_sub_pedestals')
+        if isinstance(do_not_sub, bool):
+            return not do_not_sub
+        return None
+
+    def _add_pedestal_setting_mismatch_issue(
+        self,
+        calibration_subtract_pedestals: bool | None,
+        calibration_summary_path: str,
+    ) -> None:
+        char_subtract_pedestals = bool(config.subtract_pedestals)
+        if calibration_subtract_pedestals is None:
+            return
+        if calibration_subtract_pedestals == char_subtract_pedestals:
+            return
+        self.add_issue_warning(
+            "Calibration and characterization pedestal-subtraction settings do not match.",
+            {
+                "source": "calibration_match",
+                "calibration_subtract_pedestals": calibration_subtract_pedestals,
+                "characterization_subtract_pedestals": char_subtract_pedestals,
+                "calibration_summary_path": calibration_summary_path,
+            },
+        )
 
     @staticmethod
     def _combine_refpd_adc_with_pm_refpd(char_lr: dict, cal_lr: dict) -> dict:

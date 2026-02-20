@@ -32,8 +32,20 @@ class SweepFileAnalysis(BaseAnal):
         # Saturation derivative method disabled for now
         # df_filtered, sat_adc = self._find_saturation_from_derivative(self.df)
         # self.saturation_adc = sat_adc
+        x_col = self._data_holder.adc_col
+        y_col = self._data_holder.ref_pd_col
+        self.lr_refpd_vs_adc.x_var = x_col
+        self.lr_refpd_vs_adc.y_var = y_col
+        if x_col not in self.df.columns or y_col not in self.df.columns:
+            logger.error(
+                "Missing required regression columns (%s, %s) in file: %s",
+                x_col,
+                y_col,
+                self._data_holder.file_info['filename'],
+            )
+            return
         if len(self.df) >= 2:
-            self.lr_refpd_vs_adc.linreg = linregress(self.df['mean_adc'], self.df['ref_pd_mean'])
+            self.lr_refpd_vs_adc.linreg = linregress(self.df[x_col], self.df[y_col])
         else:
             logger.warning("Not enough points for linreg in file: %s", self._data_holder.file_info['filename'])
         self._analyzed = True

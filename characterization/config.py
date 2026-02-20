@@ -27,6 +27,7 @@ class Configuration:
     plot_output_format = "pdf"
     generate_plots = True
     generate_file_plots = True
+    subtract_pedestals = True
     saturation_derivative_threshold = 10.0
     summary_file_name = "characterization_summary.json"
     sensor_config = DEFAULT_SENSOR_CONFIG
@@ -36,6 +37,7 @@ class Configuration:
             'plot_output_format': self.plot_output_format,
             'generate_plots': self.generate_plots,
             'generate_file_plots': self.generate_file_plots,
+            'subtract_pedestals': self.subtract_pedestals,
             'saturation_derivative_threshold': self.saturation_derivative_threshold,
             'summary_file_name': self.summary_file_name,
             'sensor_config': dict(self.sensor_config)

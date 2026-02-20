@@ -26,8 +26,20 @@ class FilesetAnalysis(BaseAnal):
         self._calc_pedestal_stats()
         self._calc_saturation_stats(threshold=4095)
         
+        x_col = self._data_holder.adc_col
+        y_col = self._data_holder.ref_pd_col
+        self.lr_refpd_vs_adc.x_var = x_col
+        self.lr_refpd_vs_adc.y_var = y_col
+        if x_col not in self.df.columns or y_col not in self.df.columns:
+            logger.error(
+                "Missing required regression columns (%s, %s) in fileset: %s",
+                x_col,
+                y_col,
+                self._data_holder.label,
+            )
+            return
         if len(self.df) >= 2:
-            self.lr_refpd_vs_adc.linreg = linregress(self.df['mean_adc'], self.df['ref_pd_mean'])
+            self.lr_refpd_vs_adc.linreg = linregress(self.df[x_col], self.df[y_col])
         else:
             logger.warning("Not enough points for linreg in fileset: %s", self._data_holder.label)
         self._analyzed = True

@@ -29,6 +29,8 @@
    - File-level and fileset-level linear regressions (`ref_pd_mean` vs `mean_adc`), pedestal/saturation stats.
 6. Calibration merge:
    - `Characterization.apply_calibration(...)` composes characterization and calibration linear models to derive ADC->power conversion factors.
+   - Characterization pedestal subtraction is controlled only by runtime user setting.
+   - If calibration and characterization subtraction settings differ, emit a warning issue; do not override user-selected characterization behavior.
 7. Outputs:
    - Extended summary (`*_extended.json`)
    - Reduced summary (`*.json`)
@@ -68,8 +70,12 @@ Issue reporting should follow the same four-level structure through canonical `i
 - Calibration reduced JSON (e.g., `out-calibs/calibration_16022026.json`)
   - `filesets.<cfg>.full_dataset_linreg`
   - `power_unit`
+- Calibration extended JSON (source of convention metadata for CR-05)
+  - `meta.config.subtract_pedestals` (primary)
+  - `meta.calling_arguments.do_not_sub_pedestals` (fallback, inverted)
 - Characterization extended JSON
   - `meta` + `analysis` + `plots` + `sanity_checks`
+  - Must include characterization subtraction setting in `meta` for mismatch warning checks.
   - Optional calibration metadata and conversion factors.
 - Characterization extended and reduced JSON
   - Top-level `issues` dictionary for reportable issues.
@@ -97,6 +103,7 @@ Issue reporting should follow the same four-level structure through canonical `i
 
 - Calibration-to-characterization model composition:
   - `characterization/elements/characterization.py`
+  - Mismatch between calibration and characterization subtraction settings should produce a warning issue only.
 - Fileset selection/validation logic:
   - Report overview tables: `characterization_report/report_elements/characterization_overview.py`
   - Summary plots: `characterization/elements/plots/characterization_plots.py`
