@@ -135,6 +135,10 @@ class SweepFile(BaseElement):
         # var_adc = var_adc.clip(lower=0)
         std_adc = np.sqrt(var_adc)
         std_adc[counts <= 1] = np.nan
+        invalid_std_count = (counts <= 1).sum()
+        if invalid_std_count > 0:
+            logger.warning("Found %d rows with counts <= 1, setting std_adc to NaN for these rows.", invalid_std_count)
+            self.add_issue_warning(f"{invalid_std_count} rows with counts <= 1 have invalid std_adc set to NaN in sweepfile {self.file_info['filename']}.")
 
         self._df['mean_adc'] = mean_adc
         self._df['std_adc'] = std_adc
@@ -144,8 +148,8 @@ class SweepFile(BaseElement):
             self._df['laser_sp_1064'] = self._df['laser_setpoint']
         elif self.wavelength == '532':
             self._df['laser_sp_532'] = self._df['laser_setpoint']
-        self._df['run'] = pd.Series([self.run] * len(self._df), dtype='string')
-        self._df['sweep_id'] = pd.Series([f"{self.wavelength}_{self.filter_wheel}_run{self.run}"] * len(self._df), dtype='string')
+        # self._df['run'] = pd.Series([self.run] * len(self._df), dtype='string')
+        # self._df['sweep_id'] = pd.Series([f"{self.wavelength}_{self.filter_wheel}_run{self.run}"] * len(self._df), dtype='string')
 
         self._df['datetime'] = pd.to_datetime(
             self._df['datetime'],
@@ -162,6 +166,7 @@ class SweepFile(BaseElement):
         self._df_full = self._df.copy()
         self._df_sat = self._df[is_saturated].copy().reset_index(drop=True)
         self._df = self._df[~is_pedestal & ~is_saturated].reset_index(drop=True)
+        
         ped_mean_adc = 0.0
         ped_ref_pd = 0.0
         if self._df_pedestals is not None and not self._df_pedestals.empty:
@@ -174,6 +179,9 @@ class SweepFile(BaseElement):
             df_obj['ref_pd_zeroed'] = df_obj['ref_pd_mean'] - ped_ref_pd
         if self._df.empty:
             logger.error("After removing pedestals and saturated points, no data remains for file: %s", self.file_info['filename'])
+            self.add_issue_error("No valid data points remain after removing pedestals and saturated points in sweepfile %s.", self.file_info['filename'])
+            self.valid = False
+            
         self.data_prep_info['original_num_pedestals'] = int(is_pedestal.sum())
         self.data_prep_info['original_num_saturated'] = int(is_saturated.sum())
         self.data_prep_info['subtract_pedestals'] = bool(config.subtract_pedestals)
