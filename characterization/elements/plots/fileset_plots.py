@@ -48,15 +48,20 @@ class FilesetPlots(BasePlots):
     def _gen_dut_vs_laser_setpoint(self):
         fig_id = "dut_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20.colors
         for idx, sweep in enumerate(self.fs.files):
             df_full = sweep.df_full
-            color = colors[idx % len(colors)]
             label = f"run{sweep.run}"
             plt.errorbar(df_full['laser_setpoint'], df_full['mean_adc'], yerr=df_full['std_adc'],
-                         fmt='.', markersize=6, linewidth=1, color=color, label=label)
-        plt.ylabel(f'{self._pd_label()} (ADC counts)')
+                         fmt=self._series_marker(idx, base_marker=self._m("mean_adc")), markersize=6, linewidth=1, color=self._c("mean_adc"), label=label)
+        plt.ylabel(f'{self._pd_label()} (ADC counts)', color=self._c("mean_adc"))
         plt.xlabel(self.laser_label)
+        if self.fs.wavelength == '1064':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_1064"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_1064"))
+        elif self.fs.wavelength == '532':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_532"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_532"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("mean_adc"))
         plt.grid()
         plt.title(f'{self.level_label} - DUT vs {self.laser_label}')
         plt.legend(loc='best', ncol=2, fontsize=8)
@@ -82,12 +87,13 @@ class FilesetPlots(BasePlots):
         sat_counts = [sat_counts[i] for i in order]
 
         fig = plt.figure(figsize=(8, 4))
-        plt.bar(runs, sat_counts, color="#0E6157", label='saturated points')
+        plt.bar(runs, sat_counts, color=self._c("saturation_points"), label='saturated points')
         plt.xlabel('Run number in set')
-        plt.ylabel('Saturated points')
+        plt.ylabel('Saturated points', color=self._c("saturation_points"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("saturation_points"))
         plt.xticks(runs)
         plt.xlim([0.5, max(runs) + 0.5])
-        plt.grid(True, alpha=0.3)
+        plt.grid(True)
         plt.legend(loc='best')
         plt.tight_layout()
         self.savefig(fig, fig_id)
@@ -96,15 +102,20 @@ class FilesetPlots(BasePlots):
     def _gen_refpd_vs_laser_setpoint(self):
         fig_id = "refpd_vs_laser_setpoint"
         fig = plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20.colors
         for idx, sweep in enumerate(self.fs.files):
             df_full = sweep.df_full
-            color = colors[idx % len(colors)]
             label = f"run{sweep.run}"
             plt.errorbar(df_full['laser_setpoint'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
-                         fmt='.', markersize=6, linewidth=1, color=color, label=label)
-        plt.ylabel('RefPD (V)')
+                         fmt=self._series_marker(idx, base_marker=self._m("ref_pd_mean")), markersize=6, linewidth=1, color=self._c("ref_pd_mean"), label=label)
+        plt.ylabel('RefPD (V)', color=self._c("ref_pd_mean"))
         plt.xlabel(self.laser_label)
+        if self.fs.wavelength == '1064':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_1064"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_1064"))
+        elif self.fs.wavelength == '532':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_532"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_532"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
         plt.grid()
         plt.title(f'{self.level_label} - RefPD vs {self.laser_label}')
         plt.legend(loc='best', ncol=2, fontsize=8)
@@ -115,23 +126,23 @@ class FilesetPlots(BasePlots):
     def _gen_refpd_vs_dut(self):
         fig_id = "refpd_vs_dut"
         fig = plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20.colors
         for idx, sweep in enumerate(self.fs.files):
             df_full = sweep.df_full
-            color = colors[idx % len(colors)]
             label = f"run{sweep.run}"
             plt.errorbar(df_full['mean_adc'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
-                         fmt='.', markersize=6, linewidth=1, color=color, label=label)
-        plt.axvspan(0, 4095, color='green', alpha=0.08, label='linear region')
-        plt.axvspan(4095, 4300, color='magenta', alpha=0.08, label='saturation')
+                         fmt=self._series_marker(idx, base_marker=self._m("ref_pd_mean")), markersize=6, linewidth=1, color=self._c("ref_pd_mean"), label=label)
+        plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
+        plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
         if self.fs.anal.lr_refpd_vs_adc.linreg is not None:
             intercept = self.fs.anal.lr_refpd_vs_adc.intercept
             slope = self.fs.anal.lr_refpd_vs_adc.slope
             xline = np.linspace(0, 4095, 200)
             fit_label = f"fit: y={slope:.2e}x+{intercept:.2e}"
-            plt.plot(xline, intercept + slope * xline, color='black', linewidth=2, label=fit_label)
-        plt.ylabel('RefPD (V)')
-        plt.xlabel(f'{self._pd_label()} (ADC counts)')
+            plt.plot(xline, intercept + slope * xline, color=self._c("fit_line"), linestyle=self._ls("fit_line"), linewidth=2, label=fit_label)
+        plt.ylabel('RefPD (V)', color=self._c("ref_pd_mean"))
+        plt.xlabel(f'{self._pd_label()} (ADC counts)', color=self._c("mean_adc"))
+        plt.gca().tick_params(axis='x', labelcolor=self._c("mean_adc"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
         plt.grid()
         plt.xlim(-50, 4200)
         plt.title(f'{self.level_label} - Ref PD vs DUT')
@@ -180,27 +191,45 @@ class FilesetPlots(BasePlots):
             fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6), sharex=True)
 
         # Slopes
-        ax1.errorbar(runs, slopes, yerr=slopes_stderr, fmt='.', markersize=8, linewidth=1, label='Slopes')
+        ax1.errorbar(
+            runs,
+            slopes,
+            yerr=slopes_stderr,
+            fmt=self._m("linreg_slope"),
+            color=self._c("linreg_slope"),
+            markersize=8,
+            linewidth=1,
+            label='Slopes',
+        )
         if self.fs.anal.lr_refpd_vs_adc.linreg is not None:
             m = self.fs.anal.lr_refpd_vs_adc.slope
             m_err = self.fs.anal.lr_refpd_vs_adc.stderr
-            ax1.axhline(y=m, color='b', linestyle='--', label=f'slope = {m:.3e}')
-            ax1.fill_between([min(runs) - 1, max(runs) + 1], m - m_err, m + m_err, color='b', alpha=0.2, label='slope ± std')
+            self._draw_confidence_band(ax1, m, m_err, metric="linreg_slope", orientation="h")
         ax1.set_xlabel('Run number in set')
-        ax1.set_ylabel('Slope (V/adc count)')
-        ax1.grid(True, alpha=0.3)
+        ax1.set_ylabel('Slope (V/adc count)', color=self._c("linreg_slope"))
+        ax1.tick_params(axis='y', labelcolor=self._c("linreg_slope"))
+        ax1.grid(True)
         ax1.legend(loc='best')
 
         # Intercepts
-        ax2.errorbar(runs, intercepts, yerr=intercepts_stderr, fmt='.', markersize=8, linewidth=1, label='Intercepts')
+        ax2.errorbar(
+            runs,
+            intercepts,
+            yerr=intercepts_stderr,
+            fmt=self._m("linreg_intercept"),
+            color=self._c("linreg_intercept"),
+            markersize=8,
+            linewidth=1,
+            label='Intercepts',
+        )
         if self.fs.anal.lr_refpd_vs_adc.linreg is not None:
             b = self.fs.anal.lr_refpd_vs_adc.intercept
             b_err = self.fs.anal.lr_refpd_vs_adc.intercept_stderr
-            ax2.axhline(y=b, color='m', linestyle='--', label=f'intercept = {b:.3e}')
-            ax2.fill_between([min(runs) - 1, max(runs) + 1], b - b_err, b + b_err, color='m', alpha=0.2, label='intercept ± std')
+            self._draw_confidence_band(ax2, b, b_err, metric="linreg_intercept", orientation="h")
         ax2.set_xlabel('Run number in set')
-        ax2.set_ylabel('Intercept (V)')
-        ax2.grid(True, alpha=0.3)
+        ax2.set_ylabel('Intercept (V)', color=self._c("linreg_intercept"))
+        ax2.tick_params(axis='y', labelcolor=self._c("linreg_intercept"))
+        ax2.grid(True)
         ax2.legend(loc='best')
 
         ax1.set_xticks(runs)

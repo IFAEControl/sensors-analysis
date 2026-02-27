@@ -43,9 +43,16 @@ class FilePlots(BasePlots):
         df_full = self.cf.df_full
         run_label = f"{self._pd_label()} run{self.cf.run}"
         plt.errorbar(df_full['laser_setpoint'], df_full['mean_adc'], yerr=df_full['std_adc'],
-                     fmt='.', markersize=8, linewidth=1, label=run_label)
-        plt.ylabel(f'{self._pd_label()} (ADC counts)')
+                     fmt=self._m("mean_adc"), color=self._c("mean_adc"), markersize=8, linewidth=1, label=run_label)
+        plt.ylabel(f'{self._pd_label()} (ADC counts)', color=self._c("mean_adc"))
         plt.xlabel(self.laser_label)
+        if self.cf.wavelength == '1064':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_1064"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_1064"))
+        elif self.cf.wavelength == '532':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_532"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_532"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("mean_adc"))
         plt.grid()
         plt.title(f'{self.level_label} - DUT vs {self.laser_label}')
         plt.legend(loc='best')
@@ -57,9 +64,16 @@ class FilePlots(BasePlots):
         fig = plt.figure(figsize=(10, 6))
         run_label = f"{self._pd_label()} run{self.cf.run}"
         plt.errorbar(df_full['laser_setpoint'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
-                     fmt='.', markersize=8, linewidth=1, label=run_label)
-        plt.ylabel('RefPD (V)')
+                     fmt=self._m("ref_pd_mean"), color=self._c("ref_pd_mean"), markersize=8, linewidth=1, label=run_label)
+        plt.ylabel('RefPD (V)', color=self._c("ref_pd_mean"))
         plt.xlabel(self.laser_label)
+        if self.cf.wavelength == '1064':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_1064"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_1064"))
+        elif self.cf.wavelength == '532':
+            plt.gca().xaxis.label.set_color(self._c("laser_sp_532"))
+            plt.gca().tick_params(axis='x', labelcolor=self._c("laser_sp_532"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
         plt.grid()
         plt.title(f'{self.level_label} - RefPD vs {self.laser_label}')
         plt.legend(loc='best')
@@ -71,17 +85,19 @@ class FilePlots(BasePlots):
         fig = plt.figure(figsize=(10, 6))
         df_full = self.cf.df_full
         plt.errorbar(df_full['mean_adc'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
-                     fmt='.', markersize=8, linewidth=1, label='data')
-        plt.axvspan(0, 4095, color='green', alpha=0.08, label='linear region')
-        plt.axvspan(4095, 4300, color='magenta', alpha=0.08, label='saturation')
+                     fmt=self._m("ref_pd_mean"), color=self._c("ref_pd_mean"), markersize=8, linewidth=1, label='data')
+        plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
+        plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
         if self.cf.anal.lr_refpd_vs_adc.linreg is not None:
             intercept = self.cf.anal.lr_refpd_vs_adc.intercept
             slope = self.cf.anal.lr_refpd_vs_adc.slope
             xline = np.linspace(0, 4095, 200)
             fit_label = f"fit: y={slope:.2e}x+{intercept:.2e}"
-            plt.plot(xline, intercept + slope * xline, color='black', linewidth=2, label=fit_label)
-        plt.ylabel('RefPD (V)')
-        plt.xlabel(f'{self._pd_label()} (ADC counts)')
+            plt.plot(xline, intercept + slope * xline, color=self._c("fit_line"), linestyle=self._ls("fit_line"), linewidth=2, label=fit_label)
+        plt.ylabel('RefPD (V)', color=self._c("ref_pd_mean"))
+        plt.xlabel(f'{self._pd_label()} (ADC counts)', color=self._c("mean_adc"))
+        plt.gca().tick_params(axis='x', labelcolor=self._c("mean_adc"))
+        plt.gca().tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
         plt.grid()
         plt.xlim(-50, 4200)
         plt.title(f'{self.level_label} - Ref PD vs DUT')

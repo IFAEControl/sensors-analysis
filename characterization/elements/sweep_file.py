@@ -137,7 +137,15 @@ class SweepFile(BaseElement):
         std_adc[counts <= 1] = np.nan
         invalid_std_count = (counts <= 1).sum()
         if invalid_std_count > 0:
-            logger.warning("Found %d rows with counts <= 1, setting std_adc to NaN for these rows.", invalid_std_count)
+            logger.warning(
+                "sweepfile_prep reason=%s sensor_id=%s fileset=%s run=%s file=%s invalid_std_rows=%s",
+                "invalid_total_counts",
+                self.file_info.get("sensor_id"),
+                f"{self.file_info.get('wavelength')}_{self.file_info.get('filterwheel')}",
+                self.file_info.get("run"),
+                self.file_info.get("filename"),
+                int(invalid_std_count),
+            )
             self.add_issue_warning(f"{invalid_std_count} rows with counts <= 1 have invalid std_adc set to NaN in sweepfile {self.file_info['filename']}.")
 
         self._df['mean_adc'] = mean_adc
@@ -178,8 +186,42 @@ class SweepFile(BaseElement):
             df_obj['mean_adc_zeroed'] = df_obj['mean_adc'] - ped_mean_adc
             df_obj['ref_pd_zeroed'] = df_obj['ref_pd_mean'] - ped_ref_pd
         if self._df.empty:
-            logger.error("After removing pedestals and saturated points, no data remains for file: %s", self.file_info['filename'])
-            self.add_issue_error("No valid data points remain after removing pedestals and saturated points in sweepfile %s.", self.file_info['filename'])
+            total_points = int(self._df_full.shape[0]) if self._df_full is not None else 0
+            num_pedestals = int(is_pedestal.sum())
+            num_saturated = int(is_saturated.sum())
+            if total_points == 0:
+                reason_code = "no_rows_loaded"
+            elif num_pedestals == total_points and num_saturated == 0:
+                reason_code = "all_points_pedestal"
+            elif num_saturated == total_points and num_pedestals == 0:
+                reason_code = "all_points_saturated"
+            elif (num_pedestals + num_saturated) >= total_points:
+                reason_code = "all_points_pedestal_or_saturated"
+            else:
+                reason_code = "empty_filtered_dataframe"
+
+            logger.error(
+                "sweepfile_prep reason=%s sensor_id=%s fileset=%s run=%s file=%s total_points=%s pedestals=%s saturated=%s",
+                reason_code,
+                self.file_info.get("sensor_id"),
+                f"{self.file_info.get('wavelength')}_{self.file_info.get('filterwheel')}",
+                self.file_info.get("run"),
+                self.file_info.get("filename"),
+                total_points,
+                num_pedestals,
+                num_saturated,
+            )
+            self.add_issue_error(
+                "No valid data points remain after removing pedestals and saturated points.",
+                {
+                    "reason_code": reason_code,
+                    "total_points": total_points,
+                    "pedestals": num_pedestals,
+                    "saturated": num_saturated,
+                    "source": "sweepfile_prep",
+                },
+            )
+            self.data_prep_info['empty_filtered_reason'] = reason_code
             self.valid = False
             
         self.data_prep_info['original_num_pedestals'] = int(is_pedestal.sum())

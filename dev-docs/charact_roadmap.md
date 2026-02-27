@@ -68,19 +68,27 @@
   - [ ] `CR-07.4` Add at least one concrete rule-backed example:
     - characterization run without zeroing + calibration using zeroed fits.
 
-- [ ] `CR-09` Implement plot style guide and enforce it across characterization plots.
-  - [ ] `CR-09.1` Define a centralized visual style spec (color palette, line styles, marker rules, transparency defaults).
-  - [ ] `CR-09.2` Define fixed color mapping by plotted property so the same property always uses the same color in all plots.
-  - [ ] `CR-09.3` Implement shared helper utilities for applying style rules in plot modules.
-  - [ ] `CR-09.4` Enforce mean ± std area rendering with the same base shade and transparency policy across plots.
-  - [ ] `CR-09.5` Add regression tests/checks to detect style drift for key plot families.
+- [ ] `CR-09` Standardize metric visual identity across all characterization plots.
+  - [x] `CR-09.1` Define a single centralized style spec with per-metric visual tokens:
+    - fixed color for each metric (same metric always same color)
+    - default marker for all metrics: `.`
+    - explicit line-style defaults per metric family
+  - [x] `CR-09.2` Apply metric-to-axis consistency rules:
+    - if an axis is dedicated to one metric, axis label and tick color must match that metric color
+    - disallow ad-hoc axis coloring not tied to plotted metrics
+  - [x] `CR-09.3` Constrain transparency usage to confidence bands only:
+    - `mean ± std` band uses the same metric color with configured alpha
+    - mean line is always dashed (`--`) and fully opaque
+    - all other plotted items remain fully opaque by default
+  - [x] `CR-09.4` Implement shared plot-style helpers and migrate plot modules to use them (remove hardcoded styling in plot bodies).
+  - [x] `CR-09.5` Add visual-regression/style checks to detect metric color/marker drift and non-compliant transparency usage.
 
 ## Phase 5: Cleanup and Diagnostics (last)
 
-- [ ] `CR-08` Replace raw stdout dumps with structured diagnostics.
-  - [ ] `CR-08.1` Remove `print(self._data_holder._df)` from sweepfile analysis.
-  - [ ] `CR-08.2` Emit structured log fields (PD, fileset, run, reason code).
-  - [ ] `CR-08.3` Add reason classification (`all_points_saturated`, `all_points_pedestal`, etc.).
+- [x] `CR-08` Replace raw stdout dumps with structured diagnostics.
+  - [x] `CR-08.1` Remove `print(self._data_holder._df)` from sweepfile analysis.
+  - [x] `CR-08.2` Emit structured log fields (PD, fileset, run, reason code).
+  - [x] `CR-08.3` Add reason classification (`all_points_saturated`, `all_points_pedestal`, etc.).
 
 ## Implementation Notes
 

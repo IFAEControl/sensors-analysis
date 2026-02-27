@@ -64,7 +64,6 @@ class CharacterizationPlots(BasePlots):
         if len(run_labels) == 1:
             axes = [axes]
 
-        bar_color = "#2A9D8F"
         for ax, run_label in zip(axes, run_labels):
             counts = []
             for sensor_id in sensors:
@@ -84,10 +83,11 @@ class CharacterizationPlots(BasePlots):
                 else:
                     counts.append(0)
 
-            ax.bar(sensors, counts, color=bar_color, label="Saturated points")
-            ax.set_ylabel("Saturated points")
+            ax.bar(sensors, counts, color=self._c("saturation_points"), label="Saturated points")
+            ax.set_ylabel("Saturated points", color=self._c("saturation_points"))
+            ax.tick_params(axis='y', labelcolor=self._c("saturation_points"))
             ax.set_title(f"Saturation points - {run_label}")
-            ax.grid(True, axis='y', alpha=0.3)
+            ax.grid(True, axis='y')
             ax.legend(loc='upper right')
 
         axes[-1].set_xlabel("Sensor")
@@ -114,10 +114,6 @@ class CharacterizationPlots(BasePlots):
             except ValueError:
                 return sensor_id
 
-        slope_color = "#6A4C93"
-        intercept_color = "#F4A261"
-        r_color = "#2A9D8F"
-        p_color = "#8E9AAF"
         for wavelength_label in wavelength_labels:
             sensors = []
             sensor_labels = []
@@ -164,30 +160,30 @@ class CharacterizationPlots(BasePlots):
             fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(12, 4 * nrows), sharex=True)
             x = list(range(len(sensor_labels)))
 
-            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt='o', color=slope_color, label='Slope')
-            axes[0].set_ylabel("Slope (V/#adc)", color=slope_color)
-            axes[0].tick_params(axis='y', labelcolor=slope_color)
-            axes[0].grid(True, axis='y', alpha=0.3)
+            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt=self._m("linreg_slope"), color=self._c("linreg_slope"), label='Slope')
+            axes[0].set_ylabel("Slope (V/#adc)", color=self._c("linreg_slope"))
+            axes[0].tick_params(axis='y', labelcolor=self._c("linreg_slope"))
+            axes[0].grid(True, axis='y')
             axes[0].legend(loc='upper right')
             axes[0].set_title(f"V RefPD vs Adc counts for {wavelength_label}")
 
-            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt='s', color=intercept_color, label='Intercept')
-            axes[1].set_ylabel("Intercept (V)", color=intercept_color)
-            axes[1].tick_params(axis='y', labelcolor=intercept_color)
-            axes[1].grid(True, axis='y', alpha=0.3)
+            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt=self._m("linreg_intercept"), color=self._c("linreg_intercept"), label='Intercept')
+            axes[1].set_ylabel("Intercept (V)", color=self._c("linreg_intercept"))
+            axes[1].tick_params(axis='y', labelcolor=self._c("linreg_intercept"))
+            axes[1].grid(True, axis='y')
             axes[1].legend(loc='upper right')
 
             if include_rp:
                 ax_r = axes[2]
                 ax_p = ax_r.twinx()
-                ax_r.scatter(x, r_values, marker='o', color=r_color, label='r-value')
-                ax_r.set_ylabel("r", color=r_color)
-                ax_r.tick_params(axis='y', labelcolor=r_color)
-                ax_r.grid(True, axis='y', alpha=0.3)
+                ax_r.scatter(x, r_values, marker=self._m("linreg_r_value"), color=self._c("linreg_r_value"), label='r-value')
+                ax_r.set_ylabel("r", color=self._c("linreg_r_value"))
+                ax_r.tick_params(axis='y', labelcolor=self._c("linreg_r_value"))
+                ax_r.grid(True, axis='y')
 
-                ax_p.scatter(x, p_values, marker='s', color=p_color, label='p-value')
-                ax_p.set_ylabel("p", color=p_color)
-                ax_p.tick_params(axis='y', labelcolor=p_color)
+                ax_p.scatter(x, p_values, marker=self._m("linreg_p_value"), color=self._c("linreg_p_value"), label='p-value')
+                ax_p.set_ylabel("p", color=self._c("linreg_p_value"))
+                ax_p.tick_params(axis='y', labelcolor=self._c("linreg_p_value"))
 
                 h1, l1 = ax_r.get_legend_handles_labels()
                 h2, l2 = ax_p.get_legend_handles_labels()
@@ -220,11 +216,6 @@ class CharacterizationPlots(BasePlots):
                 return sensor_id
 
         power_unit = self._data_holder.calibration_info.get('power_unit') or 'power'
-        slope_color = "#1D3557"
-        intercept_color = "#E76F51"
-        slope_err_color = "#2A9D8F"
-        intercept_err_color = "#7B2CBF"
-
         for wavelength_label in wavelength_labels:
             sensors = []
             sensor_labels = []
@@ -267,30 +258,30 @@ class CharacterizationPlots(BasePlots):
             fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(12, 4 * nrows), sharex=True)
             x = list(range(len(sensor_labels)))
 
-            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt='o', color=slope_color, label='Slope')
-            axes[0].set_ylabel(f"Slope ({power_unit}/#adc)", color=slope_color)
-            axes[0].tick_params(axis='y', labelcolor=slope_color)
-            axes[0].grid(True, axis='y', alpha=0.3)
+            axes[0].errorbar(x, slopes, yerr=slope_errs, fmt=self._m("power_slope"), color=self._c("power_slope"), label='Slope')
+            axes[0].set_ylabel(f"Slope ({power_unit}/#adc)", color=self._c("power_slope"))
+            axes[0].tick_params(axis='y', labelcolor=self._c("power_slope"))
+            axes[0].grid(True, axis='y')
             axes[0].legend(loc='upper right')
             axes[0].set_title(f"Power vs Adc counts for {wavelength_label}")
 
-            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt='s', color=intercept_color, label='Intercept')
-            axes[1].set_ylabel(f"Intercept ({power_unit})", color=intercept_color)
-            axes[1].tick_params(axis='y', labelcolor=intercept_color)
-            axes[1].grid(True, axis='y', alpha=0.3)
+            axes[1].errorbar(x, intercepts, yerr=intercept_errs, fmt=self._m("power_intercept"), color=self._c("power_intercept"), label='Intercept')
+            axes[1].set_ylabel(f"Intercept ({power_unit})", color=self._c("power_intercept"))
+            axes[1].tick_params(axis='y', labelcolor=self._c("power_intercept"))
+            axes[1].grid(True, axis='y')
             axes[1].legend(loc='upper right')
 
             if include_extra:
                 ax_err = axes[2]
                 ax_err2 = ax_err.twinx()
-                ax_err.scatter(x, slope_errs, marker='o', color=slope_err_color, label='slope_err')
-                ax_err.set_ylabel(f"slope_err ({power_unit}/#adc)", color=slope_err_color)
-                ax_err.tick_params(axis='y', labelcolor=slope_err_color)
-                ax_err.grid(True, axis='y', alpha=0.3)
+                ax_err.scatter(x, slope_errs, marker=self._m("power_slope_err"), color=self._c("power_slope_err"), label='slope_err')
+                ax_err.set_ylabel(f"slope_err ({power_unit}/#adc)", color=self._c("power_slope_err"))
+                ax_err.tick_params(axis='y', labelcolor=self._c("power_slope_err"))
+                ax_err.grid(True, axis='y')
 
-                ax_err2.scatter(x, intercept_errs, marker='s', color=intercept_err_color, label='intercept_err')
-                ax_err2.set_ylabel(f"intercept_err ({power_unit})", color=intercept_err_color)
-                ax_err2.tick_params(axis='y', labelcolor=intercept_err_color)
+                ax_err2.scatter(x, intercept_errs, marker=self._m("power_intercept_err"), color=self._c("power_intercept_err"), label='intercept_err')
+                ax_err2.set_ylabel(f"intercept_err ({power_unit})", color=self._c("power_intercept_err"))
+                ax_err2.tick_params(axis='y', labelcolor=self._c("power_intercept_err"))
 
                 h1, l1 = ax_err.get_legend_handles_labels()
                 h2, l2 = ax_err2.get_legend_handles_labels()
@@ -341,20 +332,20 @@ class CharacterizationPlots(BasePlots):
         y = df['ref_pd_mean']
         mean = float(y.mean())
         std = float(y.std())
-        ax.axhspan(mean - std, mean + std, color='#2A9D8F', alpha=0.15, label='mean ± std', zorder=0)
-        ax.axhline(mean, color='#2A9D8F', linestyle='--', linewidth=1.5, label='mean', zorder=1)
-        ax.errorbar(x, y, yerr=df['ref_pd_std'], color="#036358", fmt='.', markersize=5, linewidth=1, label='RefPD pedestals', zorder=20)
+        self._draw_confidence_band(ax, mean, std, metric="ref_pd_mean", orientation="h")
+        ax.errorbar(x, y, yerr=df['ref_pd_std'], color=self._c("ref_pd_mean"), fmt=self._m("ref_pd_mean"), markersize=5, linewidth=1, label='RefPD pedestals', zorder=20)
 
         ax.set_title("characterization ref PD pedestals")
-        ax.set_ylabel("RefPD (V)")
+        ax.set_ylabel("RefPD (V)", color=self._c("ref_pd_mean"))
         ax.set_xlabel("Time" if 'datetime' in df.columns else "Index")
-        ax.grid(True, alpha=0.3)
+        ax.tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
+        ax.grid(True)
 
         if include_temp and 'temperature' in df.columns:
             ax_temp = ax.twinx()
-            ax_temp.plot(x, df['temperature'], color="#256AB9", linewidth=1.2, label='Temperature')
-            ax_temp.set_ylabel("Temperature (°C)", color="#256AB9")
-            ax_temp.tick_params(axis='y', labelcolor="#256AB9")
+            ax_temp.plot(x, df['temperature'], color=self._c("temperature"), marker=self._m("temperature"), linestyle=self._ls("temperature"), linewidth=1.2, label='Temperature')
+            ax_temp.set_ylabel("Temperature (°C)", color=self._c("temperature"))
+            ax_temp.tick_params(axis='y', labelcolor=self._c("temperature"))
             h1, l1 = ax.get_legend_handles_labels()
             h2, l2 = ax_temp.get_legend_handles_labels()
             ax.legend(h1 + h2, l1 + l2, loc='best')
@@ -377,14 +368,14 @@ class CharacterizationPlots(BasePlots):
         y = df['ref_pd_mean']
         mean = float(y.mean())
         std = float(y.std())
-        ax.axvspan(mean - std, mean + std, color="#2A9D8F", alpha=0.15, label="mean ± std", zorder=0)
-        ax.axvline(mean, color="#2A9D8F", linestyle="--", linewidth=1.5, label="mean", zorder=0.5)
-        ax.hist(y, bins=40, color="#6A4C93", alpha=0.7, label="RefPD pedestals", zorder=2)
+        self._draw_confidence_band(ax, mean, std, metric="ref_pd_mean", orientation="v")
+        ax.hist(y, bins=40, color=self._c("ref_pd_mean"), label="RefPD pedestals", zorder=2)
 
         ax.set_title("characterization ref PD pedestals histogram")
         ax.set_xlabel("RefPD (V)")
         ax.set_ylabel("Count")
-        ax.grid(True, alpha=0.3)
+        ax.tick_params(axis='x', labelcolor=self._c("ref_pd_mean"))
+        ax.grid(True)
         ax.legend(loc='best')
 
         plt.tight_layout()

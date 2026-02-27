@@ -55,20 +55,20 @@ class PhotodiodePlots(BasePlots):
         mean = float(y.mean())
         std = float(y.std())
 
-        ax.axhspan(mean - std, mean + std, color='#2A9D8F', alpha=0.15, label='mean ± std', zorder=0)
-        ax.axhline(mean, color='#2A9D8F', linestyle='--', linewidth=1.5, label='mean', zorder=1)
-        ax.errorbar(x, y, yerr=df['ref_pd_std'], color="#036358", fmt='.', markersize=5, linewidth=1, label='RefPD pedestals', zorder=20)
+        self._draw_confidence_band(ax, mean, std, metric="ref_pd_mean", orientation="h")
+        ax.errorbar(x, y, yerr=df['ref_pd_std'], color=self._c("ref_pd_mean"), fmt=self._m("ref_pd_mean"), markersize=5, linewidth=1, label='RefPD pedestals', zorder=20)
 
         ax.set_title("photodiode ref PD pedestals")
-        ax.set_ylabel("RefPD (V)")
+        ax.set_ylabel("RefPD (V)", color=self._c("ref_pd_mean"))
         ax.set_xlabel("Time" if 'datetime' in df.columns else "Index")
-        ax.grid(True, alpha=0.3)
+        ax.tick_params(axis='y', labelcolor=self._c("ref_pd_mean"))
+        ax.grid(True)
 
         if include_temp and 'temperature' in df.columns:
             ax_temp = ax.twinx()
-            ax_temp.plot(x, df['temperature'], color="#256AB9", linewidth=1.2, label='Temperature')
-            ax_temp.set_ylabel("Temperature (°C)", color="#256AB9")
-            ax_temp.tick_params(axis='y', labelcolor="#256AB9")
+            ax_temp.plot(x, df['temperature'], color=self._c("temperature"), marker=self._m("temperature"), linestyle=self._ls("temperature"), linewidth=1.2, label='Temperature')
+            ax_temp.set_ylabel("Temperature (°C)", color=self._c("temperature"))
+            ax_temp.tick_params(axis='y', labelcolor=self._c("temperature"))
             h1, l1 = ax.get_legend_handles_labels()
             h2, l2 = ax_temp.get_legend_handles_labels()
             ax.legend(h1 + h2, l1 + l2, loc='best')
@@ -91,14 +91,14 @@ class PhotodiodePlots(BasePlots):
         y = df['ref_pd_mean']
         mean = float(y.mean())
         std = float(y.std())
-        ax.axvspan(mean - std, mean + std, color="#2A9D8F", alpha=0.15, label="mean ± std", zorder=0)
-        ax.axvline(mean, color="#2A9D8F", linestyle="--", linewidth=1.5, label="mean", zorder=0.5)
-        ax.hist(y, bins=40, color="#6A4C93", alpha=0.7, label="RefPD pedestals", zorder=2)
+        self._draw_confidence_band(ax, mean, std, metric="ref_pd_mean", orientation="v")
+        ax.hist(y, bins=40, color=self._c("ref_pd_mean"), label="RefPD pedestals", zorder=2)
 
         ax.set_title("photodiode ref PD pedestals histogram")
-        ax.set_xlabel("RefPD (V)")
+        ax.set_xlabel("RefPD (V)", color=self._c("ref_pd_mean"))
         ax.set_ylabel("Count")
-        ax.grid(True, alpha=0.3)
+        ax.tick_params(axis='x', labelcolor=self._c("ref_pd_mean"))
+        ax.grid(True)
         ax.legend(loc='best')
 
         plt.tight_layout()
