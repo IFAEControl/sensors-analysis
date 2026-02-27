@@ -19,8 +19,8 @@ METRIC_STYLES: dict[str, dict[str, str]] = {
     "laser_sp_532": {"color": "#008B19", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "linreg_slope": {"color": "#6A4C93", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "linreg_intercept": {"color": "#F4A261", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
-    "linreg_r_value": {"color": "#2A9D8F", "marker": 's', "linestyle": DEFAULT_LINESTYLE},
-    "linreg_p_value": {"color": "#8E9AAF", "marker": 'o', "linestyle": DEFAULT_LINESTYLE},
+    "linreg_r_value": {"color": "#2A9D8F", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
+    "linreg_p_value": {"color": "#8E9AAF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "power_slope": {"color": "#1D3557", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "power_intercept": {"color": "#3A86FF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "power_slope_err": {"color": "#2A9D8F", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
@@ -29,6 +29,8 @@ METRIC_STYLES: dict[str, dict[str, str]] = {
     "fit_line": {"color": "#864B77", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "linreg_region": {"color": "#2F4858", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "saturation_region": {"color": "#5E548E", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
+    "filter_fw4": {"color": "#1F7A8C", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
+    "filter_fw5": {"color": "#3A86FF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
 }
 
 

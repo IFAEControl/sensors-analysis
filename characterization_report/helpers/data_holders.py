@@ -515,11 +515,13 @@ class Photodiode:
 class Analysis:
     photodiodes: Dict[str, Photodiode] = field(default_factory=dict)
     pedestal_stats: Dict[str, MeanStats] = field(default_factory=dict)
+    linreg_by_wavelength_filter: Dict[str, "LinregByWavelengthFilter"] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Analysis":
         pds_raw = data.get("photodiodes", {}) or {}
         ped_stats_raw = data.get("pedestal_stats", {}) or {}
+        linreg_group_raw = data.get("linreg_by_wavelength_filter", {}) or {}
         ped_stats = {
             key: MeanStats.from_dict(value)
             for key, value in ped_stats_raw.items()
@@ -532,6 +534,69 @@ class Analysis:
                 if isinstance(value, dict)
             },
             pedestal_stats=ped_stats,
+            linreg_by_wavelength_filter={
+                key: LinregByWavelengthFilter.from_dict(value)
+                for key, value in linreg_group_raw.items()
+                if isinstance(value, dict)
+            },
+        )
+
+
+@dataclass
+class LinregGroupSummary:
+    num_photodiodes: Optional[int]
+    slope_mean: Optional[float]
+    slope_median: Optional[float]
+    slope_std: Optional[float]
+    intercept_mean: Optional[float]
+    intercept_median: Optional[float]
+    intercept_std: Optional[float]
+    r_value_median: Optional[float]
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "LinregGroupSummary":
+        return cls(
+            num_photodiodes=data.get("num_photodiodes"),
+            slope_mean=data.get("slope_mean"),
+            slope_median=data.get("slope_median"),
+            slope_std=data.get("slope_std"),
+            intercept_mean=data.get("intercept_mean"),
+            intercept_median=data.get("intercept_median"),
+            intercept_std=data.get("intercept_std"),
+            r_value_median=data.get("r_value_median"),
+        )
+
+
+@dataclass
+class RelativeDeviationByPd:
+    sensor_id: Optional[str]
+    slope_rel_dev_pct: Optional[float]
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "RelativeDeviationByPd":
+        return cls(
+            sensor_id=data.get("sensor_id"),
+            slope_rel_dev_pct=data.get("slope_rel_dev_pct"),
+        )
+
+
+@dataclass
+class LinregByWavelengthFilter:
+    summary: Optional[LinregGroupSummary] = None
+    relative_deviation_by_pd: list[RelativeDeviationByPd] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "LinregByWavelengthFilter":
+        rel_raw = data.get("relative_deviation_by_pd", []) or []
+        return cls(
+            summary=LinregGroupSummary.from_dict(data.get("summary", {}))
+            if isinstance(data.get("summary"), dict)
+            else None,
+            relative_deviation_by_pd=[
+                RelativeDeviationByPd.from_dict(item)
+                for item in rel_raw
+                if isinstance(item, dict)
+            ],
         )
 
 
@@ -543,6 +608,12 @@ class Plots:
     refpd_vs_adc_linregs_532: Optional[str] = None
     refpd_vs_adc_linregs_1064_simp: Optional[str] = None
     refpd_vs_adc_linregs_532_simp: Optional[str] = None
+    relative_slope_deviation_by_gain_1064: Optional[str] = None
+    relative_slope_deviation_by_gain_532: Optional[str] = None
+    linreg_voltage_slope_vs_intercept_1064: Optional[str] = None
+    linreg_voltage_slope_vs_intercept_532: Optional[str] = None
+    linreg_power_slope_vs_intercept_1064: Optional[str] = None
+    linreg_power_slope_vs_intercept_532: Optional[str] = None
     power_vs_adc_linregs_1064_simp: Optional[str] = None
     power_vs_adc_linregs_532_simp: Optional[str] = None
     refpd_pedestals_timeseries: Optional[str] = None
@@ -563,6 +634,12 @@ class Plots:
             refpd_vs_adc_linregs_532=data.get("refpd_vs_adc_linregs_532"),
             refpd_vs_adc_linregs_1064_simp=data.get("refpd_vs_adc_linregs_1064_simp"),
             refpd_vs_adc_linregs_532_simp=data.get("refpd_vs_adc_linregs_532_simp"),
+            relative_slope_deviation_by_gain_1064=data.get("relative_slope_deviation_by_gain_1064"),
+            relative_slope_deviation_by_gain_532=data.get("relative_slope_deviation_by_gain_532"),
+            linreg_voltage_slope_vs_intercept_1064=data.get("linreg_voltage_slope_vs_intercept_1064"),
+            linreg_voltage_slope_vs_intercept_532=data.get("linreg_voltage_slope_vs_intercept_532"),
+            linreg_power_slope_vs_intercept_1064=data.get("linreg_power_slope_vs_intercept_1064"),
+            linreg_power_slope_vs_intercept_532=data.get("linreg_power_slope_vs_intercept_532"),
             power_vs_adc_linregs_1064_simp=data.get("power_vs_adc_linregs_1064_simp"),
             power_vs_adc_linregs_532_simp=data.get("power_vs_adc_linregs_532_simp"),
             refpd_pedestals_timeseries=data.get("refpd_pedestals_timeseries"),

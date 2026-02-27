@@ -160,11 +160,18 @@ def _add_ring_tables(
     return Frame(plot_x, plot_y, plot_width, plot_height)
 
 
-def _resolve_plot_path(report_data: ReportData, wavelength: str, mode: str) -> str:
-    if mode == "power":
-        key = f"power_vs_adc_linregs_{wavelength}_simp"
+def _resolve_plot_path(report_data: ReportData, wavelength: str, mode: str, name='main') -> str:
+    if name == 'main':
+        if mode == "power":
+            key = f"power_vs_adc_linregs_{wavelength}_simp"
+        else:
+            key = f"refpd_vs_adc_linregs_{wavelength}"
+    elif name == 'second':
+        key = f"linreg_power_slope_vs_intercept_{wavelength}"
+    elif name == 'third':
+        key = f"relative_slope_deviation_by_gain_{wavelength}"
     else:
-        key = f"refpd_vs_adc_linregs_{wavelength}"
+        raise ValueError(f"Invalid plot name '{name}'. Expected 'main', 'second', or 'third'.")
 
     plot_rel_path = getattr(report_data.plots, key, None)
     if not plot_rel_path:
@@ -200,11 +207,47 @@ def add_characterization_overview(
         mode=mode,
         power_unit=power_unit,
     )
-    plot_path = _resolve_plot_path(report_data, wavelength=wavelength, mode=mode)
-    report.add_plot(
-        path=plot_path,
+    ratio_main_col = 3 / 5
+    ratio_second_col = 2 / 5
+    main_plot_path = _resolve_plot_path(report_data, wavelength=wavelength, mode=mode)
+    main_plot_frame = Frame(
         x=plot_frame.x,
         y=plot_frame.y,
-        width=plot_frame.width,
-        height=plot_frame.height,
+        width=plot_frame.width * ratio_main_col - 5,
+        height=plot_frame.height
+        )
+    second_plot_path = _resolve_plot_path(report_data, wavelength=wavelength, mode=mode, name='second')
+    second_plot_frame = Frame(
+        x=plot_frame.x + main_plot_frame.width + 10,
+        y=plot_frame.y,
+        width=plot_frame.width * ratio_second_col - 5,
+        height=plot_frame.height /2 - 5,
+    )
+    third_plot_path = _resolve_plot_path(report_data, wavelength=wavelength, mode=mode, name='third')
+    third_plot_frame = Frame(
+        x=main_plot_frame.x + main_plot_frame.width + 10,
+        y=second_plot_frame.y - second_plot_frame.height - 10,
+        width=plot_frame.width * ratio_second_col - 5,
+        height=plot_frame.height /2 - 5,
+    )
+    report.add_plot(
+        path=main_plot_path,
+        x=main_plot_frame.x,
+        y=main_plot_frame.y,
+        width=main_plot_frame.width,
+        height=main_plot_frame.height,
+    )
+    report.add_plot(
+        path=second_plot_path,
+        x=second_plot_frame.x,
+        y=second_plot_frame.y,
+        width=second_plot_frame.width,
+        height=second_plot_frame.height,
+    )
+    report.add_plot(
+        path=third_plot_path,
+        x=third_plot_frame.x,
+        y=third_plot_frame.y,
+        width=third_plot_frame.width,
+        height=third_plot_frame.height,
     )

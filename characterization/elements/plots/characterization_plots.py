@@ -1,6 +1,7 @@
 """Characterization plots across photodiodes"""
 
 from typing import TYPE_CHECKING
+import numpy as np
 
 from characterization.helpers import get_logger
 from characterization.helpers.fileset_selector import select_fileset_for_wavelength
@@ -29,6 +30,9 @@ class CharacterizationPlots(BasePlots):
         self._gen_saturation_points_by_filter()
         self._gen_refpd_vs_adc_linregs(include_rp=True)
         self._gen_refpd_vs_adc_linregs(include_rp=False)
+        self._gen_relative_slope_deviation_by_gain_and_wavelength()
+        self._gen_voltage_slope_vs_intercept_by_wavelength()
+        self._gen_power_slope_vs_intercept_by_wavelength()
         self._gen_power_vs_adc_linregs(include_extra=False)
         self._gen_refpd_pedestals_timeseries(include_temp=False)
         self._gen_refpd_pedestals_timeseries(include_temp=True)
@@ -381,3 +385,183 @@ class CharacterizationPlots(BasePlots):
         plt.tight_layout()
         self.savefig(fig, fig_id)
         plt.close(fig)
+
+    def _collect_linreg_rows_by_group(self) -> dict[str, list[dict]]:
+        grouped: dict[str, list[dict]] = {}
+        for sensor_id, pdh in self._data_holder.photodiodes.items():
+            gain = str(config.sensor_config.get(sensor_id, {}).get("gain", "UNK"))
+            for cfg_key, fs in pdh.filesets.items():
+                lr = fs.anal.lr_refpd_vs_adc
+                if lr is None or lr.linreg is None:
+                    continue
+                grouped.setdefault(cfg_key, [])
+                parts = cfg_key.split("_", 1)
+                wavelength = parts[0] if parts else cfg_key
+                filter_group = parts[1] if len(parts) > 1 else "UNK"
+                grouped[cfg_key].append(
+                    {
+                        "sensor_id": sensor_id,
+                        "gain": gain,
+                        "wavelength": wavelength,
+                        "filter_group": filter_group,
+                        "slope": float(lr.slope),
+                        "intercept": float(lr.intercept),
+                    }
+                )
+        return grouped
+
+    def _gen_relative_slope_deviation_by_gain_and_wavelength(self):
+        grouped = self._collect_linreg_rows_by_group()
+        if not grouped:
+            logger.warning("No linreg data available for relative slope deviation plot.")
+            return
+
+        def sensor_sort_key(sensor_id: str):
+            try:
+                return float(sensor_id)
+            except ValueError:
+                return sensor_id
+
+        by_wavelength_gain: dict[str, dict[str, list[dict]]] = {}
+        for rows in grouped.values():
+            for row in rows:
+                wl = row["wavelength"]
+                gain = row["gain"]
+                by_wavelength_gain.setdefault(wl, {})
+                by_wavelength_gain[wl].setdefault(gain, [])
+                by_wavelength_gain[wl][gain].append(row)
+
+        for wavelength, gain_rows in sorted(by_wavelength_gain.items()):
+            gain_keys = sorted(gain_rows.keys())
+            fig, axes = plt.subplots(nrows=len(gain_keys), ncols=1, figsize=(12, 4 * len(gain_keys)), sharex=False)
+            if len(gain_keys) == 1:
+                axes = [axes]
+
+            for ax, gain in zip(axes, gain_keys):
+                rows = sorted(gain_rows[gain], key=lambda r: sensor_sort_key(r["sensor_id"]))
+                slopes = [r["slope"] for r in rows]
+                slope_median = float(np.median(slopes))
+                x_labels = [r["sensor_id"] for r in rows]
+                x = list(range(len(rows)))
+                y = [
+                    0.0 if slope_median == 0.0 else ((r["slope"] - slope_median) / slope_median) * 100.0
+                    for r in rows
+                ]
+
+                ax.bar(x, y, color=self._c("linreg_slope"), label=f"{gain} slope relative deviation")
+                ax.axhline(0.0, color=self._c("fit_line"), linestyle=self._ls("fit_line"), linewidth=1.2)
+                ax.set_title(f"{wavelength} - {gain}")
+                ax.set_ylabel("Slope dev (%)", color=self._c("linreg_slope"))
+                ax.tick_params(axis='y', labelcolor=self._c("linreg_slope"))
+                ax.set_xticks(x)
+                ax.set_xticklabels(x_labels)
+                ax.grid(True, axis='y')
+                ax.legend(loc='upper right')
+                plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+
+            axes[-1].set_xlabel("Sensor")
+            plt.tight_layout()
+            self.savefig(fig, f"relative_slope_deviation_by_gain_{wavelength}")
+            plt.close(fig)
+
+    def _collect_linreg_scatter_points(self) -> dict[str, dict[str, list[dict]]]:
+        grouped = self._collect_linreg_rows_by_group()
+        out: dict[str, dict[str, list[dict]]] = {}
+        for cfg_key, rows in grouped.items():
+            parts = cfg_key.split("_", 1)
+            wavelength = parts[0] if parts else cfg_key
+            filter_group = parts[1] if len(parts) > 1 else "UNK"
+            out.setdefault(wavelength, {})
+            out[wavelength].setdefault(filter_group, [])
+            for row in rows:
+                sensor_id = row["sensor_id"]
+                pdh = self._data_holder.photodiodes.get(sensor_id)
+                fs = pdh.filesets.get(cfg_key) if pdh is not None else None
+                if fs is None:
+                    continue
+                conv = fs.anal.adc_to_power if isinstance(fs.anal.adc_to_power, dict) else {}
+                out[wavelength][filter_group].append(
+                    {
+                        "sensor_id": sensor_id,
+                        "slope_v": float(row["slope"]),
+                        "intercept_v": float(row["intercept"]),
+                        "slope_power": float(conv.get("slope")) if conv.get("slope") is not None else None,
+                        "intercept_power": float(conv.get("intercept")) if conv.get("intercept") is not None else None,
+                    }
+                )
+        return out
+
+    def _gen_voltage_slope_vs_intercept_by_wavelength(self):
+        by_wavelength_filter = self._collect_linreg_scatter_points()
+        if not by_wavelength_filter:
+            logger.warning("No linreg data available for voltage slope-vs-intercept plots.")
+            return
+
+        for wavelength, filter_rows in sorted(by_wavelength_filter.items()):
+            fig, ax = plt.subplots(figsize=(10, 6))
+            plotted_any = False
+            for idx, (filter_group, rows) in enumerate(sorted(filter_rows.items())):
+                if not rows:
+                    continue
+                x_intercept = [r["intercept_v"] for r in rows]
+                y_slope = [r["slope_v"] for r in rows]
+                color = self._c("filter_fw4") if filter_group == "FW4" else self._c("filter_fw5")
+                marker = self._series_marker(idx, base_marker=self._m("linreg_slope"))
+                ax.scatter(x_intercept, y_slope, color=color, marker=marker, label=filter_group)
+                plotted_any = True
+
+            if not plotted_any:
+                plt.close(fig)
+                continue
+
+            ax.set_title(f"Slope vs intercept (voltage) - {wavelength}")
+            ax.set_xlabel("Intercept (V)", color=self._c("linreg_intercept"))
+            ax.set_ylabel("Slope (V/#adc)", color=self._c("linreg_slope"))
+            ax.tick_params(axis='x', labelcolor=self._c("linreg_intercept"))
+            ax.tick_params(axis='y', labelcolor=self._c("linreg_slope"))
+            ax.grid(True)
+            ax.legend(loc='best', title="Filter group")
+
+            plt.tight_layout()
+            self.savefig(fig, f"linreg_voltage_slope_vs_intercept_{wavelength}")
+            plt.close(fig)
+
+    def _gen_power_slope_vs_intercept_by_wavelength(self):
+        by_wavelength_filter = self._collect_linreg_scatter_points()
+        if not by_wavelength_filter:
+            logger.warning("No linreg data available for power slope-vs-intercept plots.")
+            return
+        power_unit = self._data_holder.calibration_info.get("power_unit") or "power"
+
+        for wavelength, filter_rows in sorted(by_wavelength_filter.items()):
+            fig, ax = plt.subplots(figsize=(10, 6))
+            plotted_any = False
+            for idx, (filter_group, rows) in enumerate(sorted(filter_rows.items())):
+                rows_with_power = [
+                    r for r in rows
+                    if r["slope_power"] is not None and r["intercept_power"] is not None
+                ]
+                if not rows_with_power:
+                    continue
+                x_intercept = [r["intercept_power"] for r in rows_with_power]
+                y_slope = [r["slope_power"] for r in rows_with_power]
+                color = self._c("filter_fw4") if filter_group == "FW4" else self._c("filter_fw5")
+                marker = self._series_marker(idx, base_marker=self._m("power_slope"))
+                ax.scatter(x_intercept, y_slope, color=color, marker=marker, label=filter_group)
+                plotted_any = True
+
+            if not plotted_any:
+                plt.close(fig)
+                continue
+
+            ax.set_title(f"Slope vs intercept (power) - {wavelength}")
+            ax.set_xlabel(f"Intercept ({power_unit})", color=self._c("power_intercept"))
+            ax.set_ylabel(f"Slope ({power_unit}/#adc)", color=self._c("power_slope"))
+            ax.tick_params(axis='x', labelcolor=self._c("power_intercept"))
+            ax.tick_params(axis='y', labelcolor=self._c("power_slope"))
+            ax.grid(True)
+            ax.legend(loc='best', title="Filter group")
+
+            plt.tight_layout()
+            self.savefig(fig, f"linreg_power_slope_vs_intercept_{wavelength}")
+            plt.close(fig)

@@ -41,6 +41,15 @@
   - [x] `CR-04.4` Remove first-match behavior in photodiode slide section.
   - [x] `CR-04.5` Add regression tests to ensure table values and plot values match source fileset.
 
+- [x] `CR-10` Add simple characterization-level cross-PD analysis by wavelength/filter group.
+  - [x] `CR-10.1` Compute per-group summary stats using fileset key (`<wavelength>_<filter>`) from fileset linreg outputs.
+  - [x] `CR-10.2` Compute per-PD relative slope deviation within each group (relative to group median slope).
+  - [x] `CR-10.3` Export grouped results under characterization-level analysis output (no new hierarchy level).
+  - [x] `CR-10.4` Add characterization-level plot: relative slope deviation bar chart per wavelength, with vertically stacked subplots by gain.
+  - [x] `CR-10.5` Add characterization-level pedestal comparison plots per wavelength, with different colors for filter groups:
+    - voltage version: single scatter `x=intercept (V)`, `y=slope (V/#adc)` per wavelength
+    - power version: single scatter `x=intercept (power)`, `y=slope (power/#adc)` per wavelength
+
 ## Phase 3: Calibration/Characterization Consistency (third)
 
 - [x] `CR-05` Fix ADC->power model composition for pedestal conventions.
