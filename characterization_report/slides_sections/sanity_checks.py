@@ -8,7 +8,12 @@ from reportlab.lib import colors
 from base_report.base_report_slides import BaseReportSlides, Frame
 
 from ..helpers.data_holders import ReportData, SanityCheckEntry
-from ..report_elements.sanity_checks_slides import add_sanity_check_box, get_sanity_check_box_frame
+from ..report_elements.sanity_checks_slides import (
+    add_defined_check_box,
+    add_sanity_check_box,
+    get_defined_check_box_frame,
+    get_sanity_check_box_frame,
+)
 from .base_section import BaseSection
 
 
@@ -49,6 +54,20 @@ class SanityChecksSection(BaseSection):
                 anchor="sanity_checks",
             )
             self._update_height()
+            intro_paragraphs = [
+                "In the next section, you can find all the sanity checks that have been run for this analysis. In this section, only the failed sanity checks are listed.",
+                "There are sanity checks at different levels: characterization, fileset, and file level. When a sanity check is defined at fileset or file level, that check is run against each fileset or file in the characterization.",
+                "Each sanity check has an associated severity. There are two levels: 'warning' and 'error', each plotted in a different color.",
+            ]
+            for text in intro_paragraphs:
+                frame = self.report.add_paragraph(
+                    text,
+                    x=self.frames[self.curr_frame_idx].x,
+                    y=self.curr_height,
+                    width=self.frames[self.curr_frame_idx].width,
+                    font_size=9.5,
+                )
+                self.curr_height = frame.y - frame.height - 6
             self.add_sanity_checks(depth)
         if has_defined:
             self.checks_defined()
@@ -318,13 +337,31 @@ class SanityChecksSection(BaseSection):
             )
             curr_y = f.y - f.height - 6
 
+        def add_defined_box(check_key: str, check_data) -> None:
+            nonlocal curr_y, col_idx
+            frame = get_defined_check_box_frame(
+                self.report,
+                check_key,
+                check_data,
+                x=self.frames[col_idx].x + 4,
+                y=curr_y,
+                width=self.frames[col_idx].width - 4,
+            )
+            ensure_space(frame.height + 8)
+            rendered = add_defined_check_box(
+                self.report,
+                check_key,
+                check_data,
+                x=self.frames[col_idx].x + 4,
+                y=curr_y,
+                width=self.frames[col_idx].width - 4,
+            )
+            curr_y = rendered.y - rendered.height - 8
+
         for group_title, checks in groups:
             add_subsub(group_title)
             if not checks:
                 add_text("No defined checks.")
                 continue
             for check_key, check_data in checks.items():
-                sev = check_data.severity or "n/a"
-                add_text(f"{check_key} [{sev}]", bold=True)
-                if check_data.check_explanation:
-                    add_text(check_data.check_explanation)
+                add_defined_box(check_key, check_data)

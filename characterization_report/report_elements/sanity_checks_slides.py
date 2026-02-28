@@ -1,7 +1,7 @@
 from reportlab.lib import colors
 
 from base_report.base_report_slides import BaseReportSlides, Frame
-from ..helpers.data_holders import SanityCheckEntry
+from ..helpers.data_holders import SanityCheckDefinition, SanityCheckEntry
 
 
 def _build_sanity_check_box_layout(
@@ -187,3 +187,111 @@ def add_sanity_check_box(
             font_color=colors.HexColor("#333333"),
         )
     return badge_frame
+
+
+def _severity_title_color(severity: str | None) -> colors.Color:
+    sev = (severity or "").strip().lower()
+    if sev in {"error", "errors"}:
+        return colors.HexColor("#B02A37")
+    if sev in {"warning", "warnings"}:
+        return colors.HexColor("#C65A00")
+    return colors.HexColor("#2F6FCC")
+
+
+def get_defined_check_box_frame(
+    report: BaseReportSlides,
+    check_key: str,
+    check: SanityCheckDefinition,
+    x: float,
+    y: float,
+    width: float,
+) -> Frame:
+    severity = (check.severity or "n/a").strip().lower()
+    title = f"{check_key} [{severity}]"
+    description = check.check_explanation or "No description provided."
+    pad_x = 8
+    pad_y = 6
+    content_w = width - 2 * pad_x
+    title_frame = report.get_paragraph_frame(
+        title,
+        x=x + pad_x,
+        y=y - pad_y,
+        width=content_w,
+        font_size=11,
+        font_color=_severity_title_color(check.severity),
+        bold=True,
+    )
+    desc_frame = report.get_paragraph_frame(
+        description,
+        x=x + pad_x,
+        y=title_frame.y - title_frame.height - 2,
+        width=content_w,
+        font_size=9.5,
+        font_color=colors.HexColor("#333333"),
+    )
+    total_h = pad_y + title_frame.height + 2 + desc_frame.height + pad_y
+    return Frame(x, y, width, total_h)
+
+
+def add_defined_check_box(
+    report: BaseReportSlides,
+    check_key: str,
+    check: SanityCheckDefinition,
+    x: float,
+    y: float,
+    width: float,
+) -> Frame:
+    severity = (check.severity or "n/a").strip().lower()
+    title = f"{check_key} [{severity}]"
+    description = check.check_explanation or "No description provided."
+    pad_x = 8
+    pad_y = 6
+    content_w = width - 2 * pad_x
+
+    title_frame = report.get_paragraph_frame(
+        title,
+        x=x + pad_x,
+        y=y - pad_y,
+        width=content_w,
+        font_size=11,
+        font_color=_severity_title_color(check.severity),
+        bold=True,
+    )
+    desc_frame = report.get_paragraph_frame(
+        description,
+        x=x + pad_x,
+        y=title_frame.y - title_frame.height - 2,
+        width=content_w,
+        font_size=9.5,
+        font_color=colors.HexColor("#333333"),
+    )
+
+    total_h = pad_y + title_frame.height + 2 + desc_frame.height + pad_y
+    frame = Frame(x, y, width, total_h)
+    report.add_rectangle(
+        x=frame.x,
+        y=frame.y,
+        width=frame.width,
+        height=frame.height,
+        fill_color=colors.HexColor("#E6E6E6"),
+        stroke_color=colors.HexColor("#5A5A5A"),
+        stroke_width=1.0,
+    )
+    report.add_paragraph(
+        title,
+        x=title_frame.x,
+        y=title_frame.y,
+        width=title_frame.width,
+        font_size=11,
+        font_color=_severity_title_color(check.severity),
+        bold=True,
+    )
+    report.add_paragraph(
+        description,
+        x=desc_frame.x,
+        y=desc_frame.y,
+        width=desc_frame.width,
+        font_size=9.5,
+        font_color=colors.HexColor("#333333"),
+    )
+    return frame

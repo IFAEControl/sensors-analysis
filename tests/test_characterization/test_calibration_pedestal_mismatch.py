@@ -39,6 +39,28 @@ class TestCalibrationPedestalMismatch(unittest.TestCase):
             )
         self.assertEqual(c.issues, [])
 
+    def test_adds_warning_issue_when_calibration_too_old(self):
+        c = Characterization.__new__(Characterization)
+        c.issues = []
+        c.meta = {"execution_date": "2026-02-28T00:00:00+00:00"}
+        c._add_calibration_age_gap_issue(
+            calibration_execution_date="2025-12-01T00:00:00+00:00",
+            calibration_summary_path="/tmp/calib.json",
+        )
+        self.assertEqual(len(c.issues), 1)
+        self.assertEqual(c.issues[0]["level"], "warning")
+        self.assertEqual(c.issues[0]["meta"]["source"], "calibration_age_gap")
+
+    def test_no_warning_issue_when_calibration_within_30_days(self):
+        c = Characterization.__new__(Characterization)
+        c.issues = []
+        c.meta = {"execution_date": "2026-02-28T00:00:00+00:00"}
+        c._add_calibration_age_gap_issue(
+            calibration_execution_date="2026-02-10T00:00:00+00:00",
+            calibration_summary_path="/tmp/calib.json",
+        )
+        self.assertEqual(c.issues, [])
+
 
 if __name__ == "__main__":
     unittest.main()

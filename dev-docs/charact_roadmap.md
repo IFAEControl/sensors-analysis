@@ -70,11 +70,11 @@
   - [x] `CR-06.2` Render placeholders/warnings instead of hard failure.
   - [x] `CR-06.3` Keep strict mode available for CI validation.
 
-- [ ] `CR-07` Render `issues` in report.
-  - [ ] `CR-07.1` Add report section/subsection for issues, ordered by severity and scope.
-  - [ ] `CR-07.2` Group entries by key pattern (`charact`, `PD...`, fileset, run).
-  - [ ] `CR-07.3` Include structured `meta` rendering for debugging context.
-  - [ ] `CR-07.4` Add at least one concrete rule-backed example:
+- [x] `CR-07` Render `issues` in report.
+  - [x] `CR-07.1` Add report section/subsection for issues, ordered by severity and scope.
+  - [x] `CR-07.2` Group entries by key pattern (`charact`, `PD...`, fileset, run).
+  - [x] `CR-07.3` Include structured `meta` rendering for debugging context.
+  - [x] `CR-07.4` Add at least one concrete rule-backed example:
     - characterization run without zeroing + calibration using zeroed fits.
 
 - [ ] `CR-09` Standardize metric visual identity across all characterization plots.

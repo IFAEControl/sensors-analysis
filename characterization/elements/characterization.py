@@ -320,6 +320,10 @@ class Characterization(BaseElement):
             calibration_subtract_pedestals=self.calibration_info.get('subtract_pedestals'),
             calibration_summary_path=calibration_json_path,
         )
+        self._add_calibration_age_gap_issue(
+            calibration_execution_date=self.calibration_info.get('calibration_execution_date'),
+            calibration_summary_path=calibration_json_path,
+        )
 
         out_conversion = {}
         for sensor_id, pdh in self.photodiodes.items():
@@ -438,6 +442,51 @@ class Characterization(BaseElement):
                 "source": "calibration_match",
                 "calibration_subtract_pedestals": calibration_subtract_pedestals,
                 "characterization_subtract_pedestals": char_subtract_pedestals,
+                "calibration_summary_path": calibration_summary_path,
+            },
+        )
+
+    @staticmethod
+    def _parse_any_datetime(value: str | None) -> datetime | None:
+        if not isinstance(value, str) or not value.strip():
+            return None
+        raw = value.strip()
+        try:
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except ValueError:
+            pass
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+        return None
+
+    def _add_calibration_age_gap_issue(
+        self,
+        calibration_execution_date: str | None,
+        calibration_summary_path: str,
+        max_gap_days: int = 30,
+    ) -> None:
+        char_execution_date = self.meta.get("execution_date")
+        char_dt = self._parse_any_datetime(char_execution_date)
+        cal_dt = self._parse_any_datetime(calibration_execution_date)
+        if char_dt is None or cal_dt is None:
+            return
+        gap_days = abs((char_dt - cal_dt).total_seconds()) / 86400.0
+        if gap_days <= float(max_gap_days):
+            return
+        self.add_issue_warning(
+            "Calibration and characterization execution dates differ by more than 30 days.",
+            {
+                "source": "calibration_age_gap",
+                "days_apart": round(gap_days, 3),
+                "max_gap_days": int(max_gap_days),
+                "characterization_execution_date": char_execution_date,
+                "calibration_execution_date": calibration_execution_date,
                 "calibration_summary_path": calibration_summary_path,
             },
         )
