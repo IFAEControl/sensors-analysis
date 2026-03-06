@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 import numpy as np
 from characterization.helpers import get_logger
+from characterization.config import config
 from .analysis_base import BaseAnal
 
 if TYPE_CHECKING:
@@ -25,8 +26,17 @@ class CharacterizationAnalysis(BaseAnal):
         self._calc_linreg_group_stats()
 
     def to_dict(self) -> dict:
+        def _sensor_sort_key(sensor_id: str):
+            try:
+                return float(sensor_id)
+            except (ValueError, TypeError):
+                return str(sensor_id)
+
         return {
-            'photodiodes': {pid: pdh.to_dict() for pid, pdh in self.photodiodes.items()},
+            'photodiodes': {
+                pid: pdh.to_dict()
+                for pid, pdh in sorted(self.photodiodes.items(), key=lambda item: _sensor_sort_key(item[0]))
+            },
             **self.results,
         }
 
@@ -43,30 +53,46 @@ class CharacterizationAnalysis(BaseAnal):
         }
 
     def _calc_linreg_group_stats(self):
-        rows = []
+        lr_rows = []
+        adc_to_power_rows = []
         for sensor_id, pdh in self.photodiodes.items():
+            sensor_gain = str(config.sensor_config.get(sensor_id, {}).get("gain", "UNK"))
             for cfg_key, fs in pdh.filesets.items():
+                wavelength = cfg_key.split("_", 1)[0] if cfg_key else "UNK"
+                group_key = f"{wavelength}_{sensor_gain}"
+
                 lr = fs.anal.lr_refpd_vs_adc
-                if lr is None or lr.linreg is None:
-                    continue
-                rows.append(
-                    {
-                        "sensor_id": sensor_id,
-                        "group": cfg_key,  # wavelength_filter, e.g. 1064_FW5
-                        "slope": float(lr.slope),
-                        "intercept": float(lr.intercept),
-                        "r_value": float(lr.r_value),
-                    }
-                )
+                if lr is not None and lr.linreg is not None:
+                    lr_rows.append(
+                        {
+                            "sensor_id": sensor_id,
+                            "group": group_key,
+                            "slope": float(lr.slope),
+                            "intercept": float(lr.intercept),
+                            "r_value": float(lr.r_value),
+                        }
+                    )
 
-        grouped: dict[str, dict] = {}
-        for row in rows:
-            grouped.setdefault(row["group"], {"rows": []})
-            grouped[row["group"]]["rows"].append(row)
+                adc_to_power = fs.anal.adc_to_power if isinstance(fs.anal.adc_to_power, dict) else {}
+                conv_slope = adc_to_power.get("slope")
+                conv_intercept = adc_to_power.get("intercept")
+                if conv_slope is not None and conv_intercept is not None:
+                    adc_to_power_rows.append(
+                        {
+                            "sensor_id": sensor_id,
+                            "group": group_key,
+                            "slope": float(conv_slope),
+                            "intercept": float(conv_intercept),
+                        }
+                    )
 
-        out = {}
-        for group_key, payload in grouped.items():
-            group_rows = payload["rows"]
+        lr_grouped: dict[str, list[dict]] = {}
+        for row in lr_rows:
+            lr_grouped.setdefault(row["group"], [])
+            lr_grouped[row["group"]].append(row)
+
+        lr_out = {}
+        for group_key, group_rows in lr_grouped.items():
             slopes = np.array([r["slope"] for r in group_rows], dtype=float)
             intercepts = np.array([r["intercept"] for r in group_rows], dtype=float)
             r_values = np.array([r["r_value"] for r in group_rows], dtype=float)
@@ -85,8 +111,8 @@ class CharacterizationAnalysis(BaseAnal):
                     }
                 )
 
-            out[group_key] = {
-                "summary": {
+            lr_out[group_key] = {
+                "lr_refpd_vs_adc_summary": {
                     "num_photodiodes": int(len(group_rows)),
                     "slope_mean": float(np.mean(slopes)),
                     "slope_median": slope_median,
@@ -96,7 +122,29 @@ class CharacterizationAnalysis(BaseAnal):
                     "intercept_std": float(np.std(intercepts)),
                     "r_value_median": float(np.median(r_values)),
                 },
-                "relative_deviation_by_pd": deviations,
+                "lr_refpd_vs_adc_relative_deviation_by_pd": deviations,
             }
 
-        self.results["linreg_by_wavelength_filter"] = out
+        adc_to_power_grouped: dict[str, list[dict]] = {}
+        for row in adc_to_power_rows:
+            adc_to_power_grouped.setdefault(row["group"], [])
+            adc_to_power_grouped[row["group"]].append(row)
+
+        adc_to_power_out = {}
+        for group_key, group_rows in adc_to_power_grouped.items():
+            slopes = np.array([r["slope"] for r in group_rows], dtype=float)
+            intercepts = np.array([r["intercept"] for r in group_rows], dtype=float)
+            adc_to_power_out[group_key] = {
+                "adc_to_power_summary": {
+                    "num_photodiodes": int(len(group_rows)),
+                    "slope_mean": float(np.mean(slopes)),
+                    "slope_median": float(np.median(slopes)),
+                    "slope_std": float(np.std(slopes)),
+                    "intercept_mean": float(np.mean(intercepts)),
+                    "intercept_median": float(np.median(intercepts)),
+                    "intercept_std": float(np.std(intercepts)),
+                }
+            }
+
+        self.results["lr_refpd_vs_adc_by_wavelength_gain"] = lr_out
+        self.results["adc_to_power_by_wavelength_gain"] = adc_to_power_out

@@ -112,6 +112,67 @@ class TestSubtractionModeColumns(unittest.TestCase):
         self.assertIn("exec_error", stats)
         self.assertTrue(stats["weighted"])
 
+    def test_characterization_linreg_group_stats_are_grouped_by_wavelength_and_gain(self):
+        lr_g1_a = SimpleNamespace(linreg=object(), slope=1.0, intercept=0.1, r_value=0.95)
+        lr_g1_b = SimpleNamespace(linreg=object(), slope=3.0, intercept=0.3, r_value=0.97)
+        lr_g2 = SimpleNamespace(linreg=object(), slope=10.0, intercept=1.0, r_value=0.99)
+
+        char = SimpleNamespace(
+            df_pedestals=None,
+            photodiodes={
+                "0.0": SimpleNamespace(
+                    filesets={
+                        "1064_FW5": SimpleNamespace(anal=SimpleNamespace(lr_refpd_vs_adc=lr_g1_a)),
+                    }
+                ),
+                "1.0": SimpleNamespace(
+                    filesets={
+                        "1064_FW5": SimpleNamespace(
+                            anal=SimpleNamespace(
+                                lr_refpd_vs_adc=lr_g1_b,
+                                adc_to_power={"slope": 2.0, "intercept": 0.2},
+                            )
+                        ),
+                    }
+                ),
+                "3.0": SimpleNamespace(
+                    filesets={
+                        "1064_FW5": SimpleNamespace(
+                            anal=SimpleNamespace(
+                                lr_refpd_vs_adc=lr_g2,
+                                adc_to_power={"slope": 20.0, "intercept": 2.0},
+                            )
+                        ),
+                    }
+                ),
+            },
+        )
+        char.photodiodes["0.0"].filesets["1064_FW5"].anal.adc_to_power = {"slope": 1.0, "intercept": 0.1}
+
+        with patch.object(
+            config,
+            "sensor_config",
+            {
+                "0.0": {"gain": "G1"},
+                "1.0": {"gain": "G1"},
+                "3.0": {"gain": "G2"},
+            },
+        ):
+            anal = CharacterizationAnalysis(char)
+            anal._calc_linreg_group_stats()
+
+        grouped = anal.results["lr_refpd_vs_adc_by_wavelength_gain"]
+        self.assertIn("1064_G1", grouped)
+        self.assertIn("1064_G2", grouped)
+        self.assertEqual(grouped["1064_G1"]["lr_refpd_vs_adc_summary"]["num_photodiodes"], 2)
+        self.assertEqual(grouped["1064_G1"]["lr_refpd_vs_adc_summary"]["slope_mean"], 2.0)
+        self.assertEqual(grouped["1064_G2"]["lr_refpd_vs_adc_summary"]["num_photodiodes"], 1)
+        self.assertEqual(grouped["1064_G2"]["lr_refpd_vs_adc_summary"]["slope_mean"], 10.0)
+
+        power_grouped = anal.results["adc_to_power_by_wavelength_gain"]
+        self.assertEqual(power_grouped["1064_G1"]["adc_to_power_summary"]["slope_mean"], 1.5)
+        self.assertEqual(power_grouped["1064_G2"]["adc_to_power_summary"]["slope_mean"], 20.0)
+
 
 if __name__ == "__main__":
     unittest.main()

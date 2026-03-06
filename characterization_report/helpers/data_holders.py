@@ -515,13 +515,22 @@ class Photodiode:
 class Analysis:
     photodiodes: Dict[str, Photodiode] = field(default_factory=dict)
     pedestal_stats: Dict[str, MeanStats] = field(default_factory=dict)
-    linreg_by_wavelength_filter: Dict[str, "LinregByWavelengthFilter"] = field(default_factory=dict)
+    lr_refpd_vs_adc_by_wavelength_gain: Dict[str, "LrRefpdVsAdcByWavelengthGain"] = field(default_factory=dict)
+    adc_to_power_by_wavelength_gain: Dict[str, "AdcToPowerByWavelengthGain"] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Analysis":
         pds_raw = data.get("photodiodes", {}) or {}
         ped_stats_raw = data.get("pedestal_stats", {}) or {}
-        linreg_group_raw = data.get("linreg_by_wavelength_filter", {}) or {}
+        lr_group_raw = data.get("lr_refpd_vs_adc_by_wavelength_gain")
+        if lr_group_raw is None:
+            # Backward compatibility for payloads generated before explicit lr_refpd_vs_adc naming.
+            lr_group_raw = data.get("linreg_by_wavelength_gain")
+        if lr_group_raw is None:
+            # Older fallback.
+            lr_group_raw = data.get("linreg_by_wavelength_filter", {})
+        lr_group_raw = lr_group_raw or {}
+        adc_to_power_group_raw = data.get("adc_to_power_by_wavelength_gain", {}) or {}
         ped_stats = {
             key: MeanStats.from_dict(value)
             for key, value in ped_stats_raw.items()
@@ -534,9 +543,14 @@ class Analysis:
                 if isinstance(value, dict)
             },
             pedestal_stats=ped_stats,
-            linreg_by_wavelength_filter={
-                key: LinregByWavelengthFilter.from_dict(value)
-                for key, value in linreg_group_raw.items()
+            lr_refpd_vs_adc_by_wavelength_gain={
+                key: LrRefpdVsAdcByWavelengthGain.from_dict(value)
+                for key, value in lr_group_raw.items()
+                if isinstance(value, dict)
+            },
+            adc_to_power_by_wavelength_gain={
+                key: AdcToPowerByWavelengthGain.from_dict(value)
+                for key, value in adc_to_power_group_raw.items()
                 if isinstance(value, dict)
             },
         )
@@ -581,22 +595,43 @@ class RelativeDeviationByPd:
 
 
 @dataclass
-class LinregByWavelengthFilter:
-    summary: Optional[LinregGroupSummary] = None
-    relative_deviation_by_pd: list[RelativeDeviationByPd] = field(default_factory=list)
+class LrRefpdVsAdcByWavelengthGain:
+    lr_refpd_vs_adc_summary: Optional[LinregGroupSummary] = None
+    lr_refpd_vs_adc_relative_deviation_by_pd: list[RelativeDeviationByPd] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "LinregByWavelengthFilter":
-        rel_raw = data.get("relative_deviation_by_pd", []) or []
+    def from_dict(cls, data: Mapping[str, Any]) -> "LrRefpdVsAdcByWavelengthGain":
+        # Backward compatibility for older payload keys.
+        summary_raw = data.get("lr_refpd_vs_adc_summary")
+        if summary_raw is None:
+            summary_raw = data.get("summary", {})
+        rel_raw = data.get("lr_refpd_vs_adc_relative_deviation_by_pd")
+        if rel_raw is None:
+            rel_raw = data.get("relative_deviation_by_pd", [])
+        rel_raw = rel_raw or []
         return cls(
-            summary=LinregGroupSummary.from_dict(data.get("summary", {}))
-            if isinstance(data.get("summary"), dict)
+            lr_refpd_vs_adc_summary=LinregGroupSummary.from_dict(summary_raw)
+            if isinstance(summary_raw, dict)
             else None,
-            relative_deviation_by_pd=[
+            lr_refpd_vs_adc_relative_deviation_by_pd=[
                 RelativeDeviationByPd.from_dict(item)
                 for item in rel_raw
                 if isinstance(item, dict)
             ],
+        )
+
+
+@dataclass
+class AdcToPowerByWavelengthGain:
+    adc_to_power_summary: Optional[LinregGroupSummary] = None
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "AdcToPowerByWavelengthGain":
+        summary_raw = data.get("adc_to_power_summary", {})
+        return cls(
+            adc_to_power_summary=LinregGroupSummary.from_dict(summary_raw)
+            if isinstance(summary_raw, dict)
+            else None
         )
 
 

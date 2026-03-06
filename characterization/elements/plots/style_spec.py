@@ -27,8 +27,8 @@ METRIC_STYLES: dict[str, dict[str, str]] = {
     "power_intercept_err": {"color": "#7B2CBF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "saturation_points": {"color": "#0E6157", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "fit_line": {"color": "#864B77", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
-    "linreg_region": {"color": "#2F4858", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
-    "saturation_region": {"color": "#5E548E", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
+    "linreg_region": {"color": "#CFF5DEFF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
+    "saturation_region": {"color": "#F1C1C1FF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "filter_fw4": {"color": "#1F7A8C", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
     "filter_fw5": {"color": "#3A86FF", "marker": DEFAULT_MARKER, "linestyle": DEFAULT_LINESTYLE},
 }

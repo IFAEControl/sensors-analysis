@@ -86,8 +86,10 @@ class FilePlots(BasePlots):
         df_full = self.cf.df_full
         plt.errorbar(df_full['mean_adc'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
                      fmt=self._m("ref_pd_mean"), color=self._c("ref_pd_mean"), markersize=8, linewidth=1, label='data')
-        plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
-        plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
+        # plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
+        # plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
+        plt.axvspan(0, 4095, color=self._c("linreg_region"), alpha=0.3, label='linear region')
+        plt.axvspan(4095, 4300, color=self._c("saturation_region"), alpha=0.3, label='saturation')        
         if self.cf.anal.lr_refpd_vs_adc.linreg is not None:
             intercept = self.cf.anal.lr_refpd_vs_adc.intercept
             slope = self.cf.anal.lr_refpd_vs_adc.slope

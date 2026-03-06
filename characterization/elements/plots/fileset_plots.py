@@ -131,8 +131,11 @@ class FilesetPlots(BasePlots):
             label = f"run{sweep.run}"
             plt.errorbar(df_full['mean_adc'], df_full['ref_pd_mean'], yerr=df_full['ref_pd_std'],
                          fmt=self._series_marker(idx, base_marker=self._m("ref_pd_mean")), markersize=6, linewidth=1, color=self._c("ref_pd_mean"), label=label)
-        plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
-        plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
+
+        # plt.axvline(4095, color=self._c("linreg_region"), linestyle=self._ls("linreg_region"), linewidth=1.2, label='linear/saturation boundary')
+        # plt.axvline(4300, color=self._c("saturation_region"), linestyle=self._ls("saturation_region"), linewidth=1.2, label='saturation max')
+        plt.axvspan(0, 4095, color=self._c("linreg_region"), label='linear region')
+        plt.axvspan(4095, 4300, color=self._c("saturation_region"), label='saturation')
         if self.fs.anal.lr_refpd_vs_adc.linreg is not None:
             intercept = self.fs.anal.lr_refpd_vs_adc.intercept
             slope = self.fs.anal.lr_refpd_vs_adc.slope

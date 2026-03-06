@@ -136,6 +136,13 @@ class Characterization(BaseElement):
                         "Skipping invalid characterization file: %s", file_name)
                     continue
 
+    @staticmethod
+    def _sensor_sort_key(sensor_id: str):
+        try:
+            return float(sensor_id)
+        except (ValueError, TypeError):
+            return str(sensor_id)
+
     def get_output_base_name(self) -> str:
         board_ids = sorted({
             pdh.board_id
@@ -159,7 +166,7 @@ class Characterization(BaseElement):
     def generate_plots(self):
         os.makedirs(self.output_path, exist_ok=True)
         pd_plots = self.plotter.plots.setdefault('photodiodes', {})
-        for pdh in self.photodiodes.values():
+        for _, pdh in sorted(self.photodiodes.items(), key=lambda item: self._sensor_sort_key(item[0])):
             pdh.generate_plots()
             pd_plots[pdh.level_header] = pdh.plotter.plots
             logger.debug("Generated plots for photodiode %s", pdh.sensor_id)
@@ -209,7 +216,7 @@ class Characterization(BaseElement):
         results_path = os.path.join(
             self.reports_path, f"{self.get_output_base_name()}.json")
         out_photodiodes = {}
-        for sensor_id, pdh in self.photodiodes.items():
+        for sensor_id, pdh in sorted(self.photodiodes.items(), key=lambda item: self._sensor_sort_key(item[0])):
             out_configs = {}
             for cfg_label, fs in pdh.filesets.items():
                 linreg = fs.anal.to_dict().get('linreg_refpd_vs_adc')
