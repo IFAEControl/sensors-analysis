@@ -72,10 +72,12 @@ def main():
         help="Root output folder for characterization reports (default: charact-reports)",
     )
     args = parser.parse_args()
+    execution_dt = datetime.now()
 
     char_folder = Path(args.characterization_zip_folder)
     calib_folder = Path(args.calibration_reports_folder)
     output_root = Path(args.output_folder)
+    output_root.mkdir(parents=True, exist_ok=True)
 
     if not char_folder.is_dir():
         parser.error(f"Characterization folder does not exist or is not a directory: {char_folder}")
@@ -114,6 +116,35 @@ def main():
             "  ->  no previous calibration found"
         )
 
+    log_path = output_root / f"batch_charact_analysis_log_{execution_dt.strftime('%Y%m%d_%H%M%S')}.md"
+    with log_path.open("w", encoding="utf-8") as f:
+        f.write("# Batch Characterization Analysis Log\n\n")
+        f.write(f"- Execution date: {execution_dt.isoformat()}\n")
+        f.write(f"- Characterization folder: `{char_folder}`\n")
+        f.write(f"- Calibration folder: `{calib_folder}`\n")
+        f.write(f"- Output folder: `{output_root}`\n\n")
+        f.write("## Characterization to Calibration Relations\n\n")
+        if relations:
+            f.write("| Characterization | Char Date | Calibration | Cal Date | Board ID |\n")
+            f.write("|---|---:|---|---:|---|\n")
+            for char_file, calib_file, board_id in relations:
+                f.write(
+                    f"| {char_file.path.name} | {char_file.date.strftime('%Y-%m-%d')} | "
+                    f"{calib_file.path.name} | {calib_file.date.strftime('%Y-%m-%d')} | {board_id} |\n"
+                )
+        else:
+            f.write("No valid characterization-to-calibration relations were found.\n")
+
+        if skipped:
+            f.write("\n## Skipped Characterizations\n\n")
+            for char_file in skipped:
+                f.write(
+                    f"- {char_file.path.name} ({char_file.date.strftime('%Y-%m-%d')}): "
+                    "no previous calibration found\n"
+                )
+
+        f.write("\n## Execution Results\n\n")
+
     for char_file, calib_file, board_id in relations:
         run_output = output_root / board_id
         run_output.mkdir(parents=True, exist_ok=True)
@@ -129,8 +160,15 @@ def main():
         ]
         print("\nRunning:", " ".join(cmd))
         result = subprocess.run(cmd, check=False)
+        with log_path.open("a", encoding="utf-8") as f:
+            f.write(
+                f"- `{char_file.path.name}` with `{calib_file.path.name}`: "
+                f"exit code `{result.returncode}`\n"
+            )
         if result.returncode != 0:
             print(f"[error] characterization failed for {char_file.path.name} (exit={result.returncode})")
+
+    print(f"\nSaved batch log: {log_path}")
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ now = datetime.now(timezone.utc)
 from .helpers import get_logger
 from .elements.characterization import Characterization
 from .elements.sanity_checks import SanityChecks
+from .json_2_csv import convert_json_to_csv
 from .config import config
 now_libs = datetime.now(timezone.utc)
 logger = get_logger()
@@ -29,6 +30,7 @@ def main():
     parser.add_argument("--no-plots", "-n", action="store_true", help="Do not generate plots")
     parser.add_argument("--no-sweepfile-plots", "-e", action="store_true", help="Do not generate sweepfile-level plots")
     parser.add_argument("--no-gen-report", action="store_true", help="Do not generate characterization report")
+    parser.add_argument("--no-json-to-csv", action="store_true", help="Do not generate CSV from reduced characterization JSON")
     parser.add_argument(
         "--do-not-sub-pedestals",
         action="store_true",
@@ -88,6 +90,13 @@ def main():
         san.run_checks()
         characterization.export_data_summary({'sanity_checks': san.results})
         characterization.export_reduced_summary()
+        if not args.no_json_to_csv:
+            reduced_json_path = os.path.join(
+                characterization.reports_path,
+                f"{characterization.get_output_base_name()}.json",
+            )
+            csv_path = convert_json_to_csv(reduced_json_path)
+            logger.info("Generated CSV from reduced summary: %s", csv_path)
         if not args.no_gen_report:
             from characterization_report.main import build_report
             build_report(characterization.reports_path)
@@ -123,7 +132,7 @@ def main():
 
             # Keep key deliverables at output root before removing folder.
             kept_files = []
-            for pattern in ("*.json", "*.pdf"):
+            for pattern in ("*.json", "*.pdf", "*.csv"):
                 for src in glob.glob(os.path.join(char_folder, pattern)):
                     dst = os.path.join(output_root, os.path.basename(src))
                     if os.path.exists(dst):

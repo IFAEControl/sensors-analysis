@@ -61,6 +61,26 @@ def _build_rows(payload: dict) -> list[dict]:
     return rows
 
 
+def convert_json_to_csv(json_path: str | Path, output_path: str | Path | None = None) -> Path:
+    input_path = Path(json_path)
+    if not input_path.is_file():
+        raise FileNotFoundError(f"Input JSON file does not exist: {input_path}")
+
+    csv_path = Path(output_path) if output_path else input_path.with_suffix(".csv")
+
+    with input_path.open("r", encoding="utf-8") as f:
+        payload = json.load(f)
+
+    rows = _build_rows(payload)
+
+    with csv_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return csv_path
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Convert simplified characterization JSON to CSV."
@@ -73,23 +93,11 @@ def main():
     )
     args = parser.parse_args()
 
-    input_path = Path(args.json_path)
-    if not input_path.is_file():
-        parser.error(f"Input JSON file does not exist: {input_path}")
-
-    output_path = Path(args.output) if args.output else input_path.with_suffix(".csv")
-
-    with input_path.open("r", encoding="utf-8") as f:
-        payload = json.load(f)
-
-    rows = _build_rows(payload)
-
-    with output_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"CSV written to: {output_path}")
+    try:
+        out = convert_json_to_csv(args.json_path, args.output)
+    except FileNotFoundError as exc:
+        parser.error(str(exc))
+    print(f"CSV written to: {out}")
 
 
 if __name__ == "__main__":
