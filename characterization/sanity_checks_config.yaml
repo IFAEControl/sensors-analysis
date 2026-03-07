@@ -2,14 +2,17 @@
   "characterization": {
     "error": {
       "max_temperature_change": 3,
+      "all_sensors_scanned": null,
       "pd_single_1064_fw5": null,
       "pd_single_532_fileset": null,
-      "pd_532_matches_expected_mapping": null
+      "pd_532_matches_expected_mapping": null,
+      "pd_has_slope_intercept_for_all_wavelengths": null,
+      "pd_slope_deviation_from_group_median_pct": 5
     },
     "warning": {
       "all_files_analyzed": null,
-      "all_sensors_scanned": null,
-      "setup_confs_acquired": null
+      "setup_confs_acquired": null,
+      "pd_slope_deviation_from_group_median_pct": 2
     }
   },
   "fileset": {

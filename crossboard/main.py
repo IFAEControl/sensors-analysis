@@ -87,7 +87,11 @@ def main():
     plotter = CrossboardPlotter(crossboard_dataframe=crossboard_df, output_path=output_path)
     for metric in ("a2p", "a2v"):
         plotter.generate_intercept_vs_slope_by_wavelength(metric=metric)
+        plotter.generate_intercept_vs_slope_by_wavelength_gain(metric=metric)
         plotter.generate_slope_intercept_histograms_by_wavelength(metric=metric)
+    plotter.generate_a2p_slope_diff_from_median_grid()
+    plotter.generate_a2p_robust_zscore_heatmap()
+    ranking_paths = plotter.export_a2p_deviation_rankings(top_n=3)
     plot_paths = plotter.plots
 
     summary = {
@@ -106,6 +110,9 @@ def main():
             "csv_path": dataframe_path if not args.no_save_dataframe else None,
         },
         "plots": plot_paths,
+        "analysis": {
+            "a2p_board_deviation_rankings": ranking_paths,
+        },
         "input_files_used": crossboard_df.input_files_used,
     }
     summary_path = os.path.join(output_path, config.summary_file_name)

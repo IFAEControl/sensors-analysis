@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from .helpers import get_logger
+from characterization.config import config as char_config
 
 logger = get_logger()
 
@@ -16,6 +17,7 @@ DATAFRAME_COLUMNS = [
     "photodiode_id",
     "timestamp",
     "wavelength",
+    "gain",
     "a2p_slope",
     "a2p_intercept",
     "a2p_slope_err",
@@ -68,11 +70,15 @@ class CrossboardDataFrame:
         if not os.path.exists(csv_path):
             raise FileNotFoundError(f"CSV input does not exist: {csv_path}")
         df = pd.read_csv(csv_path)
-        missing = [col for col in DATAFRAME_COLUMNS if col not in df.columns]
+        expected_columns = [col for col in DATAFRAME_COLUMNS if col != "gain"]
+        missing = [col for col in expected_columns if col not in df.columns]
         if missing:
             raise ValueError(f"CSV is missing required columns: {missing}")
 
-        self.dataframe = df[DATAFRAME_COLUMNS].copy()
+        work = df.copy()
+        if "gain" not in work.columns:
+            work["gain"] = work["photodiode_id"].astype(str).map(self._resolve_gain)
+        self.dataframe = work[DATAFRAME_COLUMNS].copy()
         self.input_files_used = [csv_path]
         return self.dataframe
 
@@ -121,6 +127,7 @@ class CrossboardDataFrame:
                         "photodiode_id": photodiode_id,
                         "timestamp": timestamp,
                         "wavelength": wavelength,
+                        "gain": self._resolve_gain(str(photodiode_id)),
                         "a2p_slope": self._get_value_or_none(adc_to_power, "slope"),
                         "a2p_intercept": self._get_value_or_none(adc_to_power, "intercept"),
                         "a2p_slope_err": self._get_value_or_none(adc_to_power, "slope_err"),
@@ -132,6 +139,10 @@ class CrossboardDataFrame:
                     }
                 )
         return records
+
+    @staticmethod
+    def _resolve_gain(photodiode_id: str) -> str:
+        return str(char_config.sensor_config.get(str(photodiode_id), {}).get("gain", "UNK"))
 
     @staticmethod
     def _find_board_summary_file(board_root: Path) -> Path | None:

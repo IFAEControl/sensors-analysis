@@ -478,21 +478,53 @@ class Characterization(BaseElement):
         calibration_summary_path: str,
         max_gap_days: int = 30,
     ) -> None:
-        char_execution_date = self.meta.get("execution_date")
-        char_dt = self._parse_any_datetime(char_execution_date)
+        char_acquisition_date = None
+        if isinstance(self.time_info, dict):
+            char_acquisition_date = self.time_info.get("min_dt") or self.time_info.get("max_dt")
+        if char_acquisition_date is None:
+            self.add_issue_warning(
+                "Cannot evaluate calibration age gap because characterization acquisition time is missing.",
+                {
+                    "source": "calibration_age_gap_missing_characterization_time",
+                    "calibration_execution_date": calibration_execution_date,
+                    "calibration_summary_path": calibration_summary_path,
+                },
+            )
+            return
+        char_dt = self._parse_any_datetime(char_acquisition_date)
         cal_dt = self._parse_any_datetime(calibration_execution_date)
-        if char_dt is None or cal_dt is None:
+        if char_dt is None:
+            self.add_issue_warning(
+                "Cannot evaluate calibration age gap because characterization acquisition time is invalid.",
+                {
+                    "source": "calibration_age_gap_missing_characterization_time",
+                    "characterization_acquisition_date": char_acquisition_date,
+                    "calibration_execution_date": calibration_execution_date,
+                    "calibration_summary_path": calibration_summary_path,
+                },
+            )
+            return
+        if cal_dt is None:
+            self.add_issue_warning(
+                "Cannot evaluate calibration age gap because calibration execution time is invalid.",
+                {
+                    "source": "calibration_age_gap_missing_calibration_time",
+                    "characterization_acquisition_date": char_acquisition_date,
+                    "calibration_execution_date": calibration_execution_date,
+                    "calibration_summary_path": calibration_summary_path,
+                },
+            )
             return
         gap_days = abs((char_dt - cal_dt).total_seconds()) / 86400.0
         if gap_days <= float(max_gap_days):
             return
         self.add_issue_warning(
-            "Calibration and characterization execution dates differ by more than 30 days.",
+            "Calibration date and characterization acquisition date differ by more than 30 days.",
             {
                 "source": "calibration_age_gap",
                 "days_apart": round(gap_days, 3),
                 "max_gap_days": int(max_gap_days),
-                "characterization_execution_date": char_execution_date,
+                "characterization_acquisition_date": char_acquisition_date,
                 "calibration_execution_date": calibration_execution_date,
                 "calibration_summary_path": calibration_summary_path,
             },

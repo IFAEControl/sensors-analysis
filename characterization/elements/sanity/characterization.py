@@ -1,4 +1,6 @@
 """Characterization-level sanity checks"""
+import math
+import numpy as np
 from characterization.helpers import get_logger
 from characterization.config import config
 from ..helpers import SanityCheckResult
@@ -192,4 +194,140 @@ class CharacterizationSanityChecker:
             'check_args': None,
             'severity': severity,
             'check_explanation': 'Sensor 532 fileset must match expected run mapping from configuration.',
+        }
+
+    def san_check_pd_has_slope_intercept_for_all_wavelengths(self, severity='error') -> SanityCheckResult:
+        violations = {}
+        for sensor_id, pdh in self.char.photodiodes.items():
+            expected_setups = config.sensor_config.get(sensor_id, {}).get('valid_setups', [])
+            expected_wavelengths = sorted({s.split('_', 1)[0] for s in expected_setups if isinstance(s, str) and s})
+            if not expected_wavelengths:
+                expected_wavelengths = sorted({k.split('_', 1)[0] for k in pdh.filesets.keys() if isinstance(k, str) and k})
+
+            missing_details = {}
+            for wavelength in expected_wavelengths:
+                matching = [(k, fs) for k, fs in pdh.filesets.items() if str(k).startswith(f"{wavelength}_")]
+                if not matching:
+                    missing_details[wavelength] = {"reason": "missing_wavelength_fileset"}
+                    continue
+
+                has_complete_lr = False
+                has_complete_power = False
+                for _, fs in matching:
+                    anal = getattr(fs, "anal", None)
+                    lr = getattr(anal, "lr_refpd_vs_adc", None)
+                    if lr is not None and getattr(lr, "linreg", None) is not None:
+                        if getattr(lr, "slope", None) is not None and getattr(lr, "intercept", None) is not None:
+                            has_complete_lr = True
+                    adc_to_power = getattr(anal, "adc_to_power", None)
+                    if isinstance(adc_to_power, dict):
+                        if adc_to_power.get("slope") is not None and adc_to_power.get("intercept") is not None:
+                            has_complete_power = True
+
+                if not has_complete_lr or not has_complete_power:
+                    missing_fields = []
+                    if not has_complete_lr:
+                        missing_fields.append("lr_refpd_vs_adc.slope/intercept")
+                    if not has_complete_power:
+                        missing_fields.append("adc_to_power.slope/intercept")
+                    missing_details[wavelength] = {
+                        "reason": "missing_fit_parameters",
+                        "missing_fields": missing_fields,
+                        "candidate_filesets": [k for k, _ in matching],
+                    }
+
+            if missing_details:
+                violations[sensor_id] = missing_details
+
+        passed = len(violations) == 0
+        return SanityCheckResult(
+            severity=severity,
+            check_name='pd_has_slope_intercept_for_all_wavelengths',
+            check_args=violations,
+            passed=passed,
+            info='' if passed else f"{len(violations)} sensors missing slope/intercept for one or more wavelengths",
+            check_explanation='Each photodiode must have slope/intercept computed for all expected wavelengths.',
+        )
+
+    def san_info_pd_has_slope_intercept_for_all_wavelengths(self, severity='error') -> dict:
+        return {
+            'check_name': 'pd_has_slope_intercept_for_all_wavelengths',
+            'check_args': None,
+            'severity': severity,
+            'check_explanation': 'Each photodiode must have slope/intercept computed for all expected wavelengths.',
+        }
+
+    def san_check_pd_slope_deviation_from_group_median_pct(
+        self,
+        max_abs_deviation_pct: float,
+        severity='warning',
+    ) -> SanityCheckResult:
+        grouped: dict[str, list[dict]] = {}
+        for sensor_id, pdh in self.char.photodiodes.items():
+            gain = str(config.sensor_config.get(sensor_id, {}).get("gain", "UNK"))
+            for cfg_key, fs in pdh.filesets.items():
+                wavelength = str(cfg_key).split('_', 1)[0]
+                group_key = f"{wavelength}_{gain}"
+                anal = getattr(fs, "anal", None)
+                lr = getattr(anal, "lr_refpd_vs_adc", None)
+                if lr is None or getattr(lr, "linreg", None) is None:
+                    continue
+                slope = getattr(lr, "slope", None)
+                if slope is None:
+                    continue
+                grouped.setdefault(group_key, []).append(
+                    {"sensor_id": sensor_id, "slope": float(slope), "cfg_key": str(cfg_key)}
+                )
+
+        violations = {}
+        skipped_groups = []
+        for group_key, rows in grouped.items():
+            slopes = [r["slope"] for r in rows]
+            median = float(np.median(slopes))
+            if math.isclose(median, 0.0, abs_tol=1e-20):
+                skipped_groups.append(group_key)
+                continue
+            for row in rows:
+                dev_pct = abs((row["slope"] - median) / median) * 100.0
+                if dev_pct > float(max_abs_deviation_pct):
+                    violations.setdefault(row["sensor_id"], []).append(
+                        {
+                            "group": group_key,
+                            "configuration": row["cfg_key"],
+                            "slope": row["slope"],
+                            "group_median_slope": median,
+                            "abs_rel_dev_pct": dev_pct,
+                            "threshold_pct": float(max_abs_deviation_pct),
+                        }
+                    )
+
+        passed = len(violations) == 0
+        info = ""
+        if not passed:
+            info = f"{len(violations)} sensors exceed {max_abs_deviation_pct}% slope deviation vs group median"
+        if skipped_groups:
+            suffix = f"; skipped zero-median groups: {sorted(skipped_groups)}"
+            info = (info + suffix) if info else suffix.lstrip("; ")
+        return SanityCheckResult(
+            severity=severity,
+            check_name='pd_slope_deviation_from_group_median_pct',
+            check_args={"max_abs_deviation_pct": max_abs_deviation_pct, "violations": violations},
+            passed=passed,
+            info=info,
+            check_explanation='Checks absolute slope deviation from wavelength+gain group median.',
+        )
+
+    def san_info_pd_slope_deviation_from_group_median_pct(
+        self,
+        max_abs_deviation_pct: float,
+        severity='warning',
+    ) -> dict:
+        return {
+            'check_name': 'pd_slope_deviation_from_group_median_pct',
+            'check_args': max_abs_deviation_pct,
+            'severity': severity,
+            'check_explanation': (
+                'Checks whether absolute slope deviation versus wavelength+gain group median '
+                f'exceeds {max_abs_deviation_pct}%.'
+            ),
         }

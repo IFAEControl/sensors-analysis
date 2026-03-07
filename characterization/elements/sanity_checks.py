@@ -192,6 +192,7 @@ class SanityChecks:
             "pd_single_1064_fw5",
             "pd_single_532_fileset",
             "pd_532_matches_expected_mapping",
+            "pd_has_slope_intercept_for_all_wavelengths",
         }
         failed = []
         for key, payload in checks.items():
