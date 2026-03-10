@@ -649,6 +649,8 @@ class Plots:
     linreg_voltage_slope_vs_intercept_532: Optional[str] = None
     linreg_power_slope_vs_intercept_1064: Optional[str] = None
     linreg_power_slope_vs_intercept_532: Optional[str] = None
+    power_range_by_sensor_1064: Optional[str] = None
+    power_range_by_sensor_532: Optional[str] = None
     power_vs_adc_linregs_1064_simp: Optional[str] = None
     power_vs_adc_linregs_532_simp: Optional[str] = None
     refpd_pedestals_timeseries: Optional[str] = None
@@ -675,6 +677,8 @@ class Plots:
             linreg_voltage_slope_vs_intercept_532=data.get("linreg_voltage_slope_vs_intercept_532"),
             linreg_power_slope_vs_intercept_1064=data.get("linreg_power_slope_vs_intercept_1064"),
             linreg_power_slope_vs_intercept_532=data.get("linreg_power_slope_vs_intercept_532"),
+            power_range_by_sensor_1064=data.get("power_range_by_sensor_1064"),
+            power_range_by_sensor_532=data.get("power_range_by_sensor_532"),
             power_vs_adc_linregs_1064_simp=data.get("power_vs_adc_linregs_1064_simp"),
             power_vs_adc_linregs_532_simp=data.get("power_vs_adc_linregs_532_simp"),
             refpd_pedestals_timeseries=data.get("refpd_pedestals_timeseries"),

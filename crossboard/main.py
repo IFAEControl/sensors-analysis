@@ -90,6 +90,7 @@ def main():
         plotter.generate_intercept_vs_slope_by_wavelength_gain(metric=metric)
         plotter.generate_slope_intercept_histograms_by_wavelength(metric=metric)
     plotter.generate_a2p_slope_diff_from_median_grid()
+    plotter.generate_a2p_slope_pct_diff_from_median_grid()
     plotter.generate_a2p_robust_zscore_heatmap()
     ranking_paths = plotter.export_a2p_deviation_rankings(top_n=3)
     plot_paths = plotter.plots

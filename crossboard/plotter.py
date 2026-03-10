@@ -360,6 +360,161 @@ class CrossboardPlotter:
             logger.info("Saved plot: %s", fig_path)
         return self.plots
 
+    def generate_a2p_slope_pct_diff_from_median_grid(self) -> dict[str, str]:
+        slope_col = "a2p_slope"
+        for required in ("board_id", "photodiode_id", "wavelength", "gain", slope_col):
+            if required not in self.df.columns:
+                raise ValueError(f"Missing required column for plotting: {required}")
+
+        if self.df.empty:
+            logger.warning("Crossboard dataframe is empty. No composed median-percent-diff plot generated.")
+            return self.plots
+
+        clean_df = self.df.dropna(subset=["board_id", "photodiode_id", "wavelength", "gain", slope_col]).copy()
+        if clean_df.empty:
+            logger.warning("Crossboard dataframe has no valid rows for a2p slope median-percent-diff plot.")
+            return self.plots
+
+        combos = (
+            clean_df.assign(
+                wavelength_s=clean_df["wavelength"].astype(str),
+                gain_s=clean_df["gain"].astype(str),
+            )[["wavelength_s", "gain_s"]]
+            .drop_duplicates()
+            .sort_values(by=["wavelength_s", "gain_s"], key=lambda s: s.map(self._sort_wavelength) if s.name == "wavelength_s" else s)
+        )
+        if combos.empty:
+            return self.plots
+
+        for _, combo in combos.iterrows():
+            wavelength = combo["wavelength_s"]
+            gain = combo["gain_s"]
+            subset = clean_df[
+                (clean_df["wavelength"].astype(str) == wavelength)
+                & (clean_df["gain"].astype(str) == gain)
+            ].copy()
+            if subset.empty:
+                continue
+
+            slopes_all = subset[slope_col].astype(float).values
+            median = float(np.median(slopes_all))
+            if np.isclose(median, 0.0):
+                logger.warning(
+                    "Skipping a2p slope median-percent-diff plot for wavelength %s gain %s because median is 0.",
+                    wavelength,
+                    gain,
+                )
+                continue
+
+            subset["slope_diff_pct"] = ((subset[slope_col].astype(float) - median) / median) * 100.0
+            pct_values = subset["slope_diff_pct"].astype(float).values
+            p75_pct = float(np.percentile(np.abs(pct_values), 75))
+
+            board_ids = sorted(subset["board_id"].astype(str).unique())
+            boards_by_col: dict[int, list[str]] = {0: [], 1: [], 2: []}
+            other_boards: list[str] = []
+            for board_id in board_ids:
+                suffix = str(board_id)[-1:]
+                if suffix == "0":
+                    boards_by_col[0].append(board_id)
+                elif suffix == "1":
+                    boards_by_col[1].append(board_id)
+                elif suffix == "2":
+                    boards_by_col[2].append(board_id)
+                else:
+                    other_boards.append(board_id)
+            # Keep non 0/1/2 boards visible by appending them to the first column.
+            boards_by_col[0].extend(other_boards)
+
+            ncols = 3
+            nrows = max(len(boards_by_col[0]), len(boards_by_col[1]), len(boards_by_col[2]), 1)
+            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6 * ncols, 4.5 * nrows), sharey=False)
+            axes_arr = np.array(axes).reshape(-1)
+            used_axes: set[int] = set()
+
+            for col_idx in range(ncols):
+                for row_idx, board_id in enumerate(boards_by_col[col_idx]):
+                    ax_idx = row_idx * ncols + col_idx
+                    ax = axes_arr[ax_idx]
+                    used_axes.add(ax_idx)
+                    board_points = subset[subset["board_id"].astype(str) == board_id].copy()
+                    board_points = board_points.sort_values(by=["photodiode_id"]).reset_index(drop=True)
+                    x = np.arange(len(board_points))
+
+                    ax.axhline(
+                        0.0,
+                        linestyle="--",
+                        linewidth=1.5,
+                        color=PLOT_STYLE["median_line"],
+                        label="Median diff (0.00%)",
+                    )
+                    ax.fill_between(
+                        [-0.5, len(board_points) - 0.5],
+                        -p75_pct,
+                        p75_pct,
+                        color=PLOT_STYLE["band_up_to_p75"],
+                        alpha=1.0,
+                        label=f"Up to P75 (±{p75_pct:.2f}%)",
+                    )
+                    slope_diff_vals = board_points["slope_diff_pct"].astype(float).values
+                    ax.scatter(
+                        x,
+                        slope_diff_vals,
+                        s=36,
+                        alpha=0.9,
+                        color=PLOT_STYLE["board_point"],
+                        edgecolors=PLOT_STYLE["scatter_edge"],
+                        linewidths=0.25,
+                        label=f"Board {board_id}",
+                    )
+
+                    # Mark out-of-range points with red arrows at the plot edge.
+                    for x_i, y_i in zip(x, slope_diff_vals):
+                        if y_i > 5.0:
+                            ax.annotate(
+                                "",
+                                xy=(x_i, 4.95),
+                                xytext=(x_i, 4.2),
+                                arrowprops=dict(arrowstyle="-|>", color="red", lw=1.6),
+                                zorder=40,
+                            )
+                        elif y_i < -5.0:
+                            ax.annotate(
+                                "",
+                                xy=(x_i, -4.95),
+                                xytext=(x_i, -4.2),
+                                arrowprops=dict(arrowstyle="-|>", color="red", lw=1.6),
+                                zorder=40,
+                            )
+
+                    labels = [str(v) for v in board_points["photodiode_id"].tolist()]
+                    ax.set_xticks(x)
+                    ax.set_xticklabels(labels, rotation=65, ha="right", fontsize=7)
+                    ax.set_xlim(-0.5, len(board_points) - 0.5)
+                    ax.set_title(f"Board {board_id}", fontsize=10)
+                    ax.set_xlabel("Photodiode ID")
+                    ax.set_ylabel("A2P slope diff from median (%)")
+                    ax.set_ylim(-5.0, 5.0)
+                    ax.grid(True, axis="y", alpha=0.25)
+                    ax.legend(loc="best", fontsize=7, title="Board ID", title_fontsize=8)
+
+            for idx, ax in enumerate(axes_arr):
+                if idx not in used_axes:
+                    ax.set_visible(False)
+
+            fig.suptitle(
+                f"A2P slope % diff vs median percentiles - wavelength {wavelength} - gain {gain}",
+                y=1.01,
+            )
+            fig.tight_layout()
+            fig_id = f"a2p_slope_pct_diff_median_std_by_board_{wavelength}_{gain}"
+            fig_path = os.path.join(self.output_path, f"{fig_id}.{config.plot_output_format}")
+            fig.savefig(fig_path)
+            plt.close(fig)
+            self.plots[fig_id] = fig_path
+            logger.info("Saved plot: %s", fig_path)
+        return self.plots
+
     def generate_a2p_robust_zscore_heatmap(self) -> dict[str, str]:
         required = ("board_id", "wavelength", "gain", "a2p_slope")
         for col in required:

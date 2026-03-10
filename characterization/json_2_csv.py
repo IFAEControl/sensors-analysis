@@ -17,6 +17,11 @@ CSV_COLUMNS = [
     "v_intercept",
     "power_slope",
     "power_intercept",
+    "power_at_adc_min",
+    "power_at_adc_max",
+    "power_low",
+    "power_high",
+    "power_span",
 ]
 
 
@@ -45,6 +50,7 @@ def _build_rows(payload: dict) -> list[dict]:
             node = per_wavelength.get(wavelength, {}) or {}
             adc_to_vref = node.get("adc_to_vrefV", {}) or {}
             adc_to_power = node.get("adc_to_power", {}) or {}
+            power_range = adc_to_power.get("power_range", {}) or {}
 
             rows.append(
                 {
@@ -55,6 +61,11 @@ def _build_rows(payload: dict) -> list[dict]:
                     "v_intercept": adc_to_vref.get("intercept"),
                     "power_slope": adc_to_power.get("slope"),
                     "power_intercept": adc_to_power.get("intercept"),
+                    "power_at_adc_min": power_range.get("power_at_adc_min"),
+                    "power_at_adc_max": power_range.get("power_at_adc_max"),
+                    "power_low": power_range.get("power_low"),
+                    "power_high": power_range.get("power_high"),
+                    "power_span": power_range.get("power_span"),
                 }
             )
 

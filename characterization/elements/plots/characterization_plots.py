@@ -2,10 +2,11 @@
 
 from typing import TYPE_CHECKING
 import numpy as np
+from matplotlib.patches import Rectangle
 
 from characterization.helpers import get_logger
 from characterization.helpers.fileset_selector import select_fileset_for_wavelength
-from characterization.config import config
+from characterization.config import config, simulation_values
 from .plot_base import BasePlots
 from matplotlib import pyplot as plt
 
@@ -33,6 +34,7 @@ class CharacterizationPlots(BasePlots):
         self._gen_relative_slope_deviation_by_gain_and_wavelength()
         self._gen_voltage_slope_vs_intercept_by_wavelength()
         self._gen_power_slope_vs_intercept_by_wavelength()
+        self._gen_power_range_rectangles_by_wavelength()
         self._gen_power_vs_adc_linregs(include_extra=False)
         self._gen_refpd_pedestals_timeseries(include_temp=False)
         self._gen_refpd_pedestals_timeseries(include_temp=True)
@@ -564,4 +566,263 @@ class CharacterizationPlots(BasePlots):
 
             plt.tight_layout()
             self.savefig(fig, f"linreg_power_slope_vs_intercept_{wavelength}")
+            plt.close(fig)
+
+    @staticmethod
+    def _compute_power_range_from_conversion(conv: dict | None, adc_min: int = 0, adc_max: int = 4095) -> dict | None:
+        if not isinstance(conv, dict):
+            return None
+        slope = conv.get("slope")
+        intercept = conv.get("intercept")
+        if slope is None or intercept is None:
+            return None
+        slope_f = float(slope)
+        intercept_f = float(intercept)
+        adc_min_f = float(adc_min)
+        adc_max_f = float(adc_max)
+        power_at_adc_min = slope_f * adc_min_f + intercept_f
+        power_at_adc_max = slope_f * adc_max_f + intercept_f
+        power_low = min(power_at_adc_min, power_at_adc_max)
+        power_high = max(power_at_adc_min, power_at_adc_max)
+        return {
+            "adc_min": int(adc_min),
+            "adc_max": int(adc_max),
+            "power_at_adc_min": float(power_at_adc_min),
+            "power_at_adc_max": float(power_at_adc_max),
+            "power_low": float(power_low),
+            "power_high": float(power_high),
+            "power_span": float(power_high - power_low),
+        }
+
+    def _gen_power_range_rectangles_by_wavelength(self):
+        run_labels = sorted({
+            run
+            for sensor_cfg in config.sensor_config.values()
+            for run in sensor_cfg.get('valid_setups', [])
+        })
+        if not run_labels:
+            logger.warning("No wavelength/filter combinations found; skipping power-range plot.")
+            return
+        wavelength_labels = sorted({run.split('_', 1)[0] for run in run_labels})
+        power_unit = self._data_holder.calibration_info.get("power_unit") or "power"
+        sim_unit_scale = 1e6 if str(power_unit).lower() in {"uw", "µw"} else 1.0
+
+        def sensor_sort_key(sensor_id: str):
+            try:
+                return float(sensor_id)
+            except ValueError:
+                return sensor_id
+
+        def parse_ring_angle(sensor_id: str) -> tuple[int | None, int | None]:
+            sid = str(sensor_id)
+            if "." not in sid:
+                return None, None
+            left, right = sid.split(".", 1)
+            try:
+                return int(left), int(right)
+            except ValueError:
+                return None, None
+
+        sim_values = simulation_values or {}
+
+        def should_show_simulation_overlay(wavelength_value: str) -> bool:
+            wl = str(wavelength_value).strip()
+            if wl.startswith("1064"):
+                return True
+            try:
+                return np.isclose(float(wl), 1064.0)
+            except ValueError:
+                return False
+
+        def simulation_entry_for_ring(ring_idx: int) -> dict | None:
+            candidates = {int(ring_idx)}
+            for sim_entry in sim_values.values():
+                if not isinstance(sim_entry, dict):
+                    continue
+                sim_ring = sim_entry.get("ring")
+                if sim_ring is None:
+                    continue
+                try:
+                    if int(sim_ring) in candidates:
+                        return sim_entry
+                except (TypeError, ValueError):
+                    continue
+            return None
+
+        for wavelength_label in wavelength_labels:
+            rows = []
+            show_simulation_overlay = should_show_simulation_overlay(wavelength_label)
+            for sensor_id, pdh in self._data_holder.photodiodes.items():
+                cfg_key, fs = self._select_fileset_for_wavelength(
+                    sensor_id=sensor_id,
+                    filesets=pdh.filesets,
+                    wavelength=wavelength_label,
+                )
+                if cfg_key is None or fs is None:
+                    continue
+                conv = fs.anal.adc_to_power if isinstance(fs.anal.adc_to_power, dict) else None
+                if conv is None:
+                    continue
+                range_info = conv.get("power_range")
+                if not isinstance(range_info, dict):
+                    range_info = self._compute_power_range_from_conversion(conv)
+                if not isinstance(range_info, dict):
+                    continue
+
+                filter_wheel = cfg_key.split('_', 1)[1] if '_' in cfg_key else 'UNK'
+                rows.append(
+                    {
+                        "sensor_id": sensor_id,
+                        "ring": parse_ring_angle(sensor_id)[0],
+                        "angle": parse_ring_angle(sensor_id)[1],
+                        "filter_wheel": filter_wheel,
+                        "label": f"{sensor_id} ({filter_wheel})",
+                        "power_at_adc_min": float(range_info["power_at_adc_min"]),
+                        "power_at_adc_max": float(range_info["power_at_adc_max"]),
+                        "power_low": float(range_info["power_low"]),
+                        "power_high": float(range_info["power_high"]),
+                    }
+                )
+
+            if not rows:
+                logger.warning("No sensors with adc_to_power ranges for wavelength %s; skipping plot.", wavelength_label)
+                continue
+
+            rows = sorted(
+                rows,
+                key=lambda r: (
+                    10**9 if r["ring"] is None else r["ring"],
+                    10**9 if r["angle"] is None else r["angle"],
+                    sensor_sort_key(r["sensor_id"]),
+                ),
+            )
+            x = np.arange(len(rows), dtype=float)
+            rect_width = 0.68
+            fig, ax = plt.subplots(figsize=(12, 6))
+
+            y_min = min(r["power_low"] for r in rows)
+            y_max = max(r["power_high"] for r in rows)
+            if show_simulation_overlay:
+                for sim_data in sim_values.values():
+                    if not isinstance(sim_data, dict):
+                        continue
+                    sim_min = sim_data.get("min")
+                    sim_max = sim_data.get("max")
+                    if sim_min is None or sim_max is None:
+                        continue
+                    y_min = min(y_min, float(sim_min) * sim_unit_scale)
+                    y_max = max(y_max, float(sim_max) * sim_unit_scale)
+            y_span = y_max - y_min
+            y_pad = max(y_span * 0.08, 1e-12)
+
+            first = True
+            ring_positions: dict[int, list[int]] = {}
+            for i, row in enumerate(rows):
+                if row["ring"] is not None:
+                    ring_positions.setdefault(int(row["ring"]), [])
+                    ring_positions[int(row["ring"])].append(i)
+                left = x[i] - rect_width / 2.0
+                height = row["power_high"] - row["power_low"]
+                rect = Rectangle(
+                    (left, row["power_low"]),
+                    rect_width,
+                    height if height > 0.0 else 1e-12,
+                    facecolor=self._c("power_range_fill"),
+                    edgecolor=self._c("power_range_rect_edge"),
+                    linewidth=1.0,
+                    alpha=0.35,
+                    label="Power range (ADC 0..4095)" if first else None,
+                )
+                ax.add_patch(rect)
+                ax.hlines(
+                    row["power_at_adc_min"],
+                    left,
+                    left + rect_width,
+                    colors=self._c("power_at_adc_min"),
+                    linestyles=self._ls("power_at_adc_min"),
+                    linewidth=1.5,
+                    label="Power @ ADC=0" if first else None,
+                )
+                ax.hlines(
+                    row["power_at_adc_max"],
+                    left,
+                    left + rect_width,
+                    colors=self._c("power_at_adc_max"),
+                    linestyles=self._ls("power_at_adc_max"),
+                    linewidth=1.5,
+                    label="Power @ ADC=4095" if first else None,
+                )
+                first = False
+
+            if show_simulation_overlay:
+                # Overlay simulated expected-power ranges by ring as foreground rectangles.
+                first_sim = True
+                y_display_span = max((y_max + y_pad) - (y_min - y_pad), 1e-12)
+                min_sim_display_height = y_display_span * 0.006
+                for ring_idx, idxs in sorted(ring_positions.items()):
+                    sim_entry = simulation_entry_for_ring(ring_idx)
+                    if not isinstance(sim_entry, dict):
+                        continue
+                    sim_min = sim_entry.get("min")
+                    sim_max = sim_entry.get("max")
+                    sim_mean = sim_entry.get("mean")
+                    if sim_min is None or sim_max is None:
+                        continue
+                    sim_min_f = float(sim_min) * sim_unit_scale
+                    sim_max_f = float(sim_max) * sim_unit_scale
+                    sim_mean_f = float(sim_mean) * sim_unit_scale if sim_mean is not None else None
+                    bottom = min(sim_min_f, sim_max_f)
+                    top = max(sim_min_f, sim_max_f)
+                    display_height = max(top - bottom, min_sim_display_height)
+                    display_bottom = ((bottom + top) / 2.0) - (display_height / 2.0)
+
+                    left = min(idxs) - rect_width / 2.0
+                    width = (max(idxs) - min(idxs)) + rect_width
+                    sim_rect = Rectangle(
+                        (left, display_bottom),
+                        width,
+                        display_height,
+                        facecolor=self._c("sim_power_range_fill"),
+                        edgecolor=self._c("sim_power_range_edge"),
+                        linewidth=1.4,
+                        alpha=0.45,
+                        zorder=30,
+                        label="Expected simulated power" if first_sim else None,
+                    )
+                    ax.add_patch(sim_rect)
+                    if sim_mean_f is not None:
+                        ax.hlines(
+                            sim_mean_f,
+                            left,
+                            left + width,
+                            colors=self._c("sim_power_range_edge"),
+                            linestyles="--",
+                            linewidth=1.5,
+                            zorder=31,
+                            label=f"Sim mean ring {ring_idx}: {sim_mean_f:.3e} {power_unit}",
+                        )
+                    ax.hlines(
+                        [bottom, top],
+                        left,
+                        left + width,
+                        colors=self._c("sim_power_range_edge"),
+                        linestyles="--",
+                        linewidth=1.0,
+                        zorder=31,
+                    )
+                    first_sim = False
+
+            ax.set_xlim(-0.8, len(rows) - 0.2)
+            ax.set_ylim(y_min - y_pad, y_max + y_pad)
+            ax.set_xticks(x)
+            ax.set_xticklabels([r["label"] for r in rows])
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+            ax.set_ylabel(f"Power ({power_unit})")
+            ax.set_xlabel("Sensor")
+            ax.set_title(f"ADC-to-power range by sensor - {wavelength_label}")
+            ax.grid(True, axis='y', alpha=0.3)
+            ax.legend(loc="best")
+
+            plt.tight_layout()
+            self.savefig(fig, f"power_range_by_sensor_{wavelength_label}")
             plt.close(fig)

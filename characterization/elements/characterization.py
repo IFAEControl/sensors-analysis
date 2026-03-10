@@ -245,6 +245,7 @@ class Characterization(BaseElement):
                         'intercept': adc_to_power.get('intercept'),
                         'slope_err': adc_to_power.get('slope_err'),
                         'intercept_err': adc_to_power.get('intercept_err'),
+                        'power_range': adc_to_power.get('power_range'),
                     },
                     'adc_to_vrefV': adc_to_vref,
                 }
@@ -357,8 +358,8 @@ class Characterization(BaseElement):
                     'power_unit': self.calibration_info['power_unit'],
                     'configuration': cfg_label,
                 }
-                fs.anal.adc_to_power = conv
-                sensor_conv[cfg_label] = conv
+                fs.anal.set_adc_to_power(conv)
+                sensor_conv[cfg_label] = fs.anal.adc_to_power
 
             out_conversion[sensor_id] = sensor_conv
 

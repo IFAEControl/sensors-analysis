@@ -77,12 +77,16 @@ class CharacterizationAnalysis(BaseAnal):
                 conv_slope = adc_to_power.get("slope")
                 conv_intercept = adc_to_power.get("intercept")
                 if conv_slope is not None and conv_intercept is not None:
+                    power_range = adc_to_power.get("power_range") if isinstance(adc_to_power.get("power_range"), dict) else {}
                     adc_to_power_rows.append(
                         {
                             "sensor_id": sensor_id,
                             "group": group_key,
                             "slope": float(conv_slope),
                             "intercept": float(conv_intercept),
+                            "power_low": float(power_range["power_low"]) if power_range.get("power_low") is not None else None,
+                            "power_high": float(power_range["power_high"]) if power_range.get("power_high") is not None else None,
+                            "power_span": float(power_range["power_span"]) if power_range.get("power_span") is not None else None,
                         }
                     )
 
@@ -134,6 +138,9 @@ class CharacterizationAnalysis(BaseAnal):
         for group_key, group_rows in adc_to_power_grouped.items():
             slopes = np.array([r["slope"] for r in group_rows], dtype=float)
             intercepts = np.array([r["intercept"] for r in group_rows], dtype=float)
+            power_lows = np.array([r["power_low"] for r in group_rows if r["power_low"] is not None], dtype=float)
+            power_highs = np.array([r["power_high"] for r in group_rows if r["power_high"] is not None], dtype=float)
+            power_spans = np.array([r["power_span"] for r in group_rows if r["power_span"] is not None], dtype=float)
             adc_to_power_out[group_key] = {
                 "adc_to_power_summary": {
                     "num_photodiodes": int(len(group_rows)),
@@ -143,6 +150,15 @@ class CharacterizationAnalysis(BaseAnal):
                     "intercept_mean": float(np.mean(intercepts)),
                     "intercept_median": float(np.median(intercepts)),
                     "intercept_std": float(np.std(intercepts)),
+                    "power_low_mean": float(np.mean(power_lows)) if power_lows.size else None,
+                    "power_low_median": float(np.median(power_lows)) if power_lows.size else None,
+                    "power_low_std": float(np.std(power_lows)) if power_lows.size else None,
+                    "power_high_mean": float(np.mean(power_highs)) if power_highs.size else None,
+                    "power_high_median": float(np.median(power_highs)) if power_highs.size else None,
+                    "power_high_std": float(np.std(power_highs)) if power_highs.size else None,
+                    "power_span_mean": float(np.mean(power_spans)) if power_spans.size else None,
+                    "power_span_median": float(np.median(power_spans)) if power_spans.size else None,
+                    "power_span_std": float(np.std(power_spans)) if power_spans.size else None,
                 }
             }
 
