@@ -8,12 +8,19 @@ from .logger import get_logger
 
 logger = get_logger()
 
+this_path = os.path.dirname(os.path.abspath(__file__))
+default_logo_path = os.path.abspath(
+    os.path.join(this_path, "..", "..", "calib_report", "logo", "IFAE_logo_white_SO.png")
+)
+
 
 @dataclass
 class ReportPaths:
     root_path: str
     input_file: str
     output_path: str
+    report_path: str = ""
+    logo_path: str = default_logo_path
 
 
 _PATTERN = re.compile(r".*_summary\.json$")

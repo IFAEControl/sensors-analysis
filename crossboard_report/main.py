@@ -4,6 +4,7 @@ import argparse
 
 from .config import config
 from .helpers import ReportPaths, add_file_handler, calc_paths, get_logger
+from .slides_sections.full_report import FullReport
 
 logger = get_logger()
 
@@ -13,10 +14,13 @@ def build_report(input_path: str, output_path: str | None = None) -> None:
     report_paths: ReportPaths = calc_paths(input_path, output_path)
     config.paths = report_paths
 
-    logger.info("Crossboard report scaffold loaded")
+    logger.info("Crossboard report loaded")
     logger.info("Input summary: %s", report_paths.input_file)
     logger.info("Output path: %s", report_paths.output_path)
-    logger.info("No report sections implemented yet for crossboard_report")
+
+    report = FullReport(report_paths=report_paths)
+    report.build(depth=0)
+    logger.info("Generated crossboard report: %s", report_paths.report_path)
 
 
 def main() -> None:

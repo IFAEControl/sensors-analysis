@@ -722,7 +722,9 @@ class BaseReportSlides:
             scale_x = draw_width / src_width
             scale_y = draw_height / src_height
             xobj = pagexobj(page)
+            self._sanitize_pdf_embedding_obj(xobj)
             rl_obj = makerl(self._canvas, xobj)
+            self._sanitize_pdf_embedding_obj(rl_obj)
             self._canvas.saveState()
             self._canvas.translate(frame.x, frame.y - draw_height)
             self._canvas.scale(scale_x, scale_y)
@@ -744,6 +746,41 @@ class BaseReportSlides:
         self._maybe_draw_debug(frame)
         self._set_last_frame(frame)
         return frame
+
+    def _sanitize_pdf_embedding_obj(self, obj, seen: set[int] | None = None):
+        """Convert high-byte pdfrw strings to latin1 bytes before reportlab serialization."""
+        if seen is None:
+            seen = set()
+        oid = id(obj)
+        if oid in seen:
+            return obj
+        seen.add(oid)
+
+        if isinstance(obj, str):
+            if any(ord(ch) > 127 for ch in obj):
+                return obj.encode("latin1")
+            return obj
+
+        if isinstance(obj, list):
+            for idx, item in enumerate(obj):
+                obj[idx] = self._sanitize_pdf_embedding_obj(item, seen)
+            return obj
+
+        if isinstance(obj, tuple):
+            return tuple(self._sanitize_pdf_embedding_obj(item, seen) for item in obj)
+
+        if hasattr(obj, "items"):
+            try:
+                items = list(obj.items())
+            except Exception:
+                return obj
+            for key, value in items:
+                sanitized = self._sanitize_pdf_embedding_obj(value, seen)
+                if sanitized is not value:
+                    obj[key] = sanitized
+            return obj
+
+        return obj
 
     def _draw_missing_plot_placeholder(
         self,

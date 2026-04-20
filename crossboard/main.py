@@ -93,6 +93,7 @@ def main():
     plotter.generate_a2p_slope_pct_diff_from_median_grid()
     plotter.generate_a2p_robust_zscore_heatmap()
     ranking_paths = plotter.export_a2p_deviation_rankings(top_n=3)
+    final_calification_paths = plotter.export_a2p_final_calification()
     plot_paths = plotter.plots
 
     summary = {
@@ -113,6 +114,7 @@ def main():
         "plots": plot_paths,
         "analysis": {
             "a2p_board_deviation_rankings": ranking_paths,
+            "a2p_board_final_calification": final_calification_paths,
         },
         "input_files_used": crossboard_df.input_files_used,
     }

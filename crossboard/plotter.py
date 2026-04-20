@@ -280,29 +280,26 @@ class CrossboardPlotter:
             p75 = float(np.percentile(abs_dev, 75))
 
             board_ids = sorted(subset["board_id"].astype(str).unique())
-            boards_by_col: dict[int, list[str]] = {0: [], 1: [], 2: []}
+            column_order = ("L0", "L1", "L2", "R0", "R1", "R2")
+            boards_by_col: dict[str, list[str]] = {key: [] for key in column_order}
             other_boards: list[str] = []
             for board_id in board_ids:
-                suffix = str(board_id)[-1:]
-                if suffix == "0":
-                    boards_by_col[0].append(board_id)
-                elif suffix == "1":
-                    boards_by_col[1].append(board_id)
-                elif suffix == "2":
-                    boards_by_col[2].append(board_id)
+                suffix = str(board_id)[-2:]
+                if suffix in boards_by_col:
+                    boards_by_col[suffix].append(board_id)
                 else:
                     other_boards.append(board_id)
-            # Keep non 0/1/2 boards visible by appending them to the first column.
-            boards_by_col[0].extend(other_boards)
+            # Keep non-matching boards visible by appending them to the first column.
+            boards_by_col[column_order[0]].extend(other_boards)
 
-            ncols = 3
-            nrows = max(len(boards_by_col[0]), len(boards_by_col[1]), len(boards_by_col[2]), 1)
-            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6 * ncols, 4.5 * nrows), sharey=False)
+            ncols = len(column_order)
+            nrows = max(max(len(boards_by_col[key]) for key in column_order), 1)
+            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(4.0 * ncols, 4.5 * nrows), sharey=False)
             axes_arr = np.array(axes).reshape(-1)
             used_axes: set[int] = set()
 
-            for col_idx in range(ncols):
-                for row_idx, board_id in enumerate(boards_by_col[col_idx]):
+            for col_idx, column_key in enumerate(column_order):
+                for row_idx, board_id in enumerate(boards_by_col[column_key]):
                     ax_idx = row_idx * ncols + col_idx
                     ax = axes_arr[ax_idx]
                     used_axes.add(ax_idx)
@@ -323,7 +320,7 @@ class CrossboardPlotter:
                         median + p75,
                         color=PLOT_STYLE["band_up_to_p75"],
                         alpha=1.0,
-                        label=f"Up to P75 (±{p75:.3e})",
+                        label=f"Up to P75 (+/-{p75:.3e})",
                     )
                     ax.scatter(
                         x,
@@ -411,29 +408,26 @@ class CrossboardPlotter:
             p75_pct = float(np.percentile(np.abs(pct_values), 75))
 
             board_ids = sorted(subset["board_id"].astype(str).unique())
-            boards_by_col: dict[int, list[str]] = {0: [], 1: [], 2: []}
+            column_order = ("L0", "L1", "L2", "R0", "R1", "R2")
+            boards_by_col: dict[str, list[str]] = {key: [] for key in column_order}
             other_boards: list[str] = []
             for board_id in board_ids:
-                suffix = str(board_id)[-1:]
-                if suffix == "0":
-                    boards_by_col[0].append(board_id)
-                elif suffix == "1":
-                    boards_by_col[1].append(board_id)
-                elif suffix == "2":
-                    boards_by_col[2].append(board_id)
+                suffix = str(board_id)[-2:]
+                if suffix in boards_by_col:
+                    boards_by_col[suffix].append(board_id)
                 else:
                     other_boards.append(board_id)
-            # Keep non 0/1/2 boards visible by appending them to the first column.
-            boards_by_col[0].extend(other_boards)
+            # Keep non-matching boards visible by appending them to the first column.
+            boards_by_col[column_order[0]].extend(other_boards)
 
-            ncols = 3
-            nrows = max(len(boards_by_col[0]), len(boards_by_col[1]), len(boards_by_col[2]), 1)
-            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6 * ncols, 4.5 * nrows), sharey=False)
+            ncols = len(column_order)
+            nrows = max(max(len(boards_by_col[key]) for key in column_order), 1)
+            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(4.0 * ncols, 4.5 * nrows), sharey=False)
             axes_arr = np.array(axes).reshape(-1)
             used_axes: set[int] = set()
 
-            for col_idx in range(ncols):
-                for row_idx, board_id in enumerate(boards_by_col[col_idx]):
+            for col_idx, column_key in enumerate(column_order):
+                for row_idx, board_id in enumerate(boards_by_col[column_key]):
                     ax_idx = row_idx * ncols + col_idx
                     ax = axes_arr[ax_idx]
                     used_axes.add(ax_idx)
@@ -454,7 +448,7 @@ class CrossboardPlotter:
                         p75_pct,
                         color=PLOT_STYLE["band_up_to_p75"],
                         alpha=1.0,
-                        label=f"Up to P75 (±{p75_pct:.2f}%)",
+                        label=f"Up to P75 (+/-{p75_pct:.2f}%)",
                     )
                     slope_diff_vals = board_points["slope_diff_pct"].astype(float).values
                     ax.scatter(
@@ -497,6 +491,17 @@ class CrossboardPlotter:
                     ax.set_ylim(-5.0, 5.0)
                     ax.grid(True, axis="y", alpha=0.25)
                     ax.legend(loc="best", fontsize=7, title="Board ID", title_fontsize=8)
+                    if row_idx == 0:
+                        ax.text(
+                            0.5,
+                            1.12,
+                            column_key,
+                            transform=ax.transAxes,
+                            ha="center",
+                            va="bottom",
+                            fontsize=11,
+                            fontweight="bold",
+                        )
 
             for idx, ax in enumerate(axes_arr):
                 if idx not in used_axes:
@@ -556,20 +561,97 @@ class CrossboardPlotter:
                 z = (col - median) / robust_sigma
             zmat[combo] = z
 
-        fig, ax = plt.subplots(figsize=(max(8, len(combos) * 1.2), max(5, len(boards) * 0.6)))
+        fig_width = max(10.0, len(boards) * 0.55)
+        fig_height = max(4.5, len(combos) * 1.1)
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        fig.patch.set_facecolor("white")
+        ax.set_facecolor("white")
         arr = zmat.to_numpy(dtype=float)
-        arr_plot = np.where(np.isnan(arr), 0.0, arr)
+        arr_plot = np.where(np.isnan(arr), 0.0, arr).T
         vmax = max(3.0, float(np.nanmax(np.abs(arr))) if np.isfinite(np.nanmax(np.abs(arr))) else 3.0)
-        im = ax.imshow(arr_plot, cmap=PLOT_STYLE["heatmap_cmap"], vmin=-vmax, vmax=vmax, aspect="auto")
+        cmap = plt.get_cmap(PLOT_STYLE["heatmap_cmap"])
+        norm = plt.Normalize(vmin=-vmax, vmax=vmax)
+
+        nrows, ncols = arr_plot.shape
+        for row_idx in range(nrows):
+            for col_idx in range(ncols):
+                value = arr_plot[row_idx, col_idx]
+                facecolor = cmap(norm(value))
+                rect = plt.Rectangle(
+                    (col_idx - 0.5, row_idx - 0.5),
+                    1.0,
+                    1.0,
+                    facecolor=facecolor,
+                    edgecolor="white",
+                    linewidth=0.8,
+                )
+                ax.add_patch(rect)
+                if np.isfinite(value):
+                    text_color = "white" if abs(value) >= 0.55 * vmax else "black"
+                    ax.text(
+                        col_idx,
+                        row_idx,
+                        f"{value:.2f}",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color=text_color,
+                    )
+
+        ax.set_xlim(-0.5, ncols - 0.5)
+        ax.set_ylim(nrows - 0.5, -0.5)
         ax.set_title("A2P robust z-score heatmap (board mean slope)")
-        ax.set_xlabel("Wavelength + Gain")
-        ax.set_ylabel("Board ID")
-        ax.set_xticks(np.arange(len(combos)))
-        ax.set_xticklabels(combos, rotation=45, ha="right", fontsize=8)
-        ax.set_yticks(np.arange(len(boards)))
-        ax.set_yticklabels(boards, fontsize=8)
-        cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
-        cbar.set_label("Robust z-score")
+        ax.set_xlabel("Board ID")
+        ax.set_ylabel("Wavelength + Gain")
+        ax.set_xticks(np.arange(len(boards)))
+        ax.set_xticklabels(boards, rotation=65, ha="right", fontsize=8)
+        ax.set_yticks(np.arange(len(combos)))
+        ax.set_yticklabels(combos, fontsize=9)
+        legend_steps = np.linspace(-vmax, vmax, 9)
+        legend_x = ncols + 0.6
+        legend_width = 0.45
+        for idx in range(len(legend_steps) - 1):
+            y0 = idx * (nrows / (len(legend_steps) - 1)) - 0.5
+            y1 = (idx + 1) * (nrows / (len(legend_steps) - 1)) - 0.5
+            mid = 0.5 * (legend_steps[idx] + legend_steps[idx + 1])
+            rect = plt.Rectangle(
+                (legend_x, y0),
+                legend_width,
+                y1 - y0,
+                facecolor=cmap(norm(mid)),
+                edgecolor="white",
+                linewidth=0.4,
+            )
+            ax.add_patch(rect)
+
+        tick_values = np.linspace(-vmax, vmax, 5)
+        for tick in tick_values:
+            y = (tick_values[-1] - tick) / (tick_values[-1] - tick_values[0]) * (nrows - 1)
+            ax.plot(
+                [legend_x + legend_width, legend_x + legend_width + 0.12],
+                [y, y],
+                color="black",
+                linewidth=0.8,
+                clip_on=False,
+            )
+            ax.text(
+                legend_x + legend_width + 0.18,
+                y,
+                f"{tick:.1f}",
+                va="center",
+                ha="left",
+                fontsize=8,
+            )
+        ax.text(
+            legend_x,
+            -1.05,
+            "Robust z-score",
+            ha="left",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold",
+        )
+        ax.set_xlim(-0.5, legend_x + legend_width + 1.0)
         fig.tight_layout()
 
         fig_id = "a2p_robust_zscore_heatmap"
@@ -581,35 +663,17 @@ class CrossboardPlotter:
         return self.plots
 
     def export_a2p_deviation_rankings(self, top_n: int = 3) -> dict[str, str]:
-        required = ("board_id", "wavelength", "gain", "a2p_slope")
-        for col in required:
-            if col not in self.df.columns:
-                raise ValueError(f"Missing required column for ranking: {col}")
-
-        clean_df = self.df.dropna(subset=list(required)).copy()
-        if clean_df.empty:
+        rankings_df = self._build_a2p_board_combo_deviation_df()
+        if rankings_df.empty:
             logger.warning("Crossboard dataframe has no valid rows for a2p rankings.")
             return {}
 
-        clean_df["combo"] = clean_df["wavelength"].astype(str) + "_" + clean_df["gain"].astype(str)
-        board_combo = (
-            clean_df.groupby(["combo", "board_id"], as_index=False)["a2p_slope"]
-            .mean()
-            .rename(columns={"a2p_slope": "board_mean_slope"})
-        )
-
         rows: list[dict[str, Any]] = []
         summary: dict[str, Any] = {}
-        for combo in sorted(board_combo["combo"].astype(str).unique(), key=self._combo_sort_key):
-            part = board_combo[board_combo["combo"].astype(str) == combo].copy()
+        for combo in sorted(rankings_df["combo"].astype(str).unique(), key=self._combo_sort_key):
+            part = rankings_df[rankings_df["combo"].astype(str) == combo].copy()
             if part.empty:
                 continue
-            median = float(np.median(part["board_mean_slope"].astype(float).values))
-            part["abs_dev_pct"] = np.where(
-                median == 0.0,
-                0.0,
-                np.abs((part["board_mean_slope"].astype(float) - median) / median) * 100.0,
-            )
             part = part.sort_values(by="abs_dev_pct", ascending=False).reset_index(drop=True)
             for _, r in part.iterrows():
                 rows.append(
@@ -617,7 +681,7 @@ class CrossboardPlotter:
                         "combo": combo,
                         "board_id": str(r["board_id"]),
                         "board_mean_slope": float(r["board_mean_slope"]),
-                        "median_board_slope": median,
+                        "median_board_slope": float(r["median_board_slope"]),
                         "abs_dev_pct": float(r["abs_dev_pct"]),
                     }
                 )
@@ -650,6 +714,126 @@ class CrossboardPlotter:
         logger.info("Saved ranking CSV: %s", csv_path)
         logger.info("Saved ranking JSON: %s", json_path)
         return {"ranking_csv": csv_path, "ranking_json": json_path}
+
+    def export_a2p_final_calification(self) -> dict[str, str]:
+        rankings_df = self._build_a2p_board_combo_deviation_df()
+        if rankings_df.empty:
+            logger.warning("Crossboard dataframe has no valid rows for a2p final calification.")
+            return {}
+
+        combos = sorted(rankings_df["combo"].astype(str).unique(), key=self._combo_sort_key)
+        wide = (
+            rankings_df.assign(board_id=rankings_df["board_id"].astype(str))
+            .pivot(index="board_id", columns="combo", values="abs_dev_pct")
+            .reindex(columns=combos)
+        )
+        wide = wide.rename(columns={combo: f"abs_dev_pct_{combo}" for combo in combos})
+        wide.index.name = "board_id"
+
+        result = wide.reset_index()
+        combo_columns = [f"abs_dev_pct_{combo}" for combo in combos]
+        combo_weights = self._build_final_calification_combo_weights(combos)
+        result["average_abs_dev_pct"] = result.apply(
+            lambda row: self._compute_weighted_abs_dev_pct(row=row, combo_columns=combo_columns, combo_weights=combo_weights),
+            axis=1,
+        )
+        result = result.sort_values(by=["average_abs_dev_pct", "board_id"], ascending=[True, True]).reset_index(drop=True)
+        result.insert(0, "rank", np.arange(1, len(result) + 1, dtype=int))
+
+        ordered_columns = ["rank", "board_id", "average_abs_dev_pct", *combo_columns]
+        result = result[ordered_columns]
+
+        csv_path = os.path.join(self.output_path, "a2p_board_final_calification.csv")
+        json_path = os.path.join(self.output_path, "a2p_board_final_calification.json")
+        result.to_csv(csv_path, index=False)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "meta": {
+                        "metric": "a2p_slope",
+                        "method": "weighted_mean_abs_dev_pct_across_wavelength_gain_combinations",
+                        "wavelength_weights": {"1064": 0.7, "532": 0.3},
+                        "rank_order": "ascending_average_abs_dev_pct",
+                    },
+                    "rows": result.to_dict(orient="records"),
+                },
+                f,
+                indent=2,
+            )
+        logger.info("Saved final calification CSV: %s", csv_path)
+        logger.info("Saved final calification JSON: %s", json_path)
+        return {"ranking_csv": csv_path, "ranking_json": json_path}
+
+    def _build_a2p_board_combo_deviation_df(self) -> pd.DataFrame:
+        required = ("board_id", "wavelength", "gain", "a2p_slope")
+        for col in required:
+            if col not in self.df.columns:
+                raise ValueError(f"Missing required column for ranking: {col}")
+
+        clean_df = self.df.dropna(subset=list(required)).copy()
+        if clean_df.empty:
+            return pd.DataFrame(columns=["combo", "board_id", "board_mean_slope", "median_board_slope", "abs_dev_pct"])
+
+        clean_df["combo"] = clean_df["wavelength"].astype(str) + "_" + clean_df["gain"].astype(str)
+        board_combo = (
+            clean_df.groupby(["combo", "board_id"], as_index=False)["a2p_slope"]
+            .mean()
+            .rename(columns={"a2p_slope": "board_mean_slope"})
+        )
+
+        frames: list[pd.DataFrame] = []
+        for combo in sorted(board_combo["combo"].astype(str).unique(), key=self._combo_sort_key):
+            part = board_combo[board_combo["combo"].astype(str) == combo].copy()
+            if part.empty:
+                continue
+            median = float(np.median(part["board_mean_slope"].astype(float).values))
+            part["median_board_slope"] = median
+            part["abs_dev_pct"] = np.where(
+                median == 0.0,
+                0.0,
+                np.abs((part["board_mean_slope"].astype(float) - median) / median) * 100.0,
+            )
+            frames.append(part)
+
+        if not frames:
+            return pd.DataFrame(columns=["combo", "board_id", "board_mean_slope", "median_board_slope", "abs_dev_pct"])
+
+        return pd.concat(frames, ignore_index=True)
+
+    @staticmethod
+    def _build_final_calification_combo_weights(combos: list[str]) -> dict[str, float]:
+        wavelength_weights = {"1064": 0.7, "532": 0.3}
+        combos_by_wavelength: dict[str, list[str]] = {}
+        for combo in combos:
+            wavelength, _, _ = str(combo).partition("_")
+            combos_by_wavelength.setdefault(wavelength, []).append(combo)
+
+        combo_weights: dict[str, float] = {}
+        for wavelength, wavelength_combos in combos_by_wavelength.items():
+            total_weight = wavelength_weights.get(wavelength, 0.0)
+            if total_weight <= 0.0 or not wavelength_combos:
+                continue
+            per_combo_weight = total_weight / len(wavelength_combos)
+            for combo in wavelength_combos:
+                combo_weights[f"abs_dev_pct_{combo}"] = per_combo_weight
+        return combo_weights
+
+    @staticmethod
+    def _compute_weighted_abs_dev_pct(row: pd.Series, combo_columns: list[str], combo_weights: dict[str, float]) -> float:
+        weighted_sum = 0.0
+        total_weight = 0.0
+        for column in combo_columns:
+            value = row.get(column)
+            if pd.isna(value):
+                continue
+            weight = float(combo_weights.get(column, 0.0))
+            if weight <= 0.0:
+                continue
+            weighted_sum += float(value) * weight
+            total_weight += weight
+        if total_weight <= 0.0:
+            return float("nan")
+        return weighted_sum / total_weight
 
     @staticmethod
     def _sort_wavelength(value: str):
