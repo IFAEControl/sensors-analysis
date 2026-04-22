@@ -23,3 +23,4 @@ include = ["calibration*"]
 
 [project.scripts]
 calibration-files-analysis = "calibration.main:main"
+batch-calibration-files-analysis = "calibration.batch_calib_analysis:main"

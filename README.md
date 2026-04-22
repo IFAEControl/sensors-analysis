@@ -31,6 +31,16 @@ To execute with the package installed, use:
 calibration-files-analysis <path_to_calibration_zip_file> [--output_path <output_path>]
 ```
 
+To batch-process all calibration zip files in a folder, use:
+```bash
+python -m calibration.batch_calib_analysis <calibration_zip_folder> [--output-folder <output_folder>]
+```
+
+or, if the package is installed:
+```bash
+batch-calibration-files-analysis <calibration_zip_folder> [--output-folder <output_folder>]
+```
+
 ### Structure
 
  - Calibration
