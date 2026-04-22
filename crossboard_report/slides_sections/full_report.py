@@ -5,6 +5,7 @@ import os
 from base_report.base_report_slides import BaseReportSlides
 
 from ..helpers import ReportPaths, load_summary
+from .excluded_boards_section import ExcludedBoardsSection
 from .final_calification_section import FinalCalificationSection
 from .metadata_section import MetadataSection
 from .plots_section import PlotsSection
@@ -33,6 +34,7 @@ class FullReport:
 
     def load_sections(self) -> None:
         self.sections.append(FinalCalificationSection(self.summary_data, self.report, self.report_paths.root_path))
+        self.sections.append(ExcludedBoardsSection(self.summary_data, self.report, self.report_paths.root_path))
         self.sections.append(PositionAssignmentSection(self.summary_data, self.report, self.report_paths.root_path))
         self.sections.append(PlotsSection(self.summary_data, self.report, self.report_paths.root_path))
         self.sections.append(MetadataSection(self.summary_data, self.report, self.report_paths))

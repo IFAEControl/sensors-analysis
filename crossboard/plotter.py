@@ -24,6 +24,7 @@ class CrossboardPlotter:
         self.crossboard_dataframe = crossboard_dataframe
         self.output_path = output_path
         self.plots: dict[str, str] = {}
+        self._excluded_board_ids_cache: set[str] | None = None
         os.makedirs(self.output_path, exist_ok=True)
 
     @property
@@ -42,6 +43,7 @@ class CrossboardPlotter:
             return self.plots
 
         clean_df = self.df.dropna(subset=["board_id", "wavelength", slope_col, intercept_col]).copy()
+        clean_df = self._exclude_flagged_boards(clean_df)
         if clean_df.empty:
             logger.warning("Crossboard dataframe has no valid rows for %s intercept/slope plot.", metric)
             return self.plots
@@ -106,6 +108,7 @@ class CrossboardPlotter:
             return self.plots
 
         clean_df = self.df.dropna(subset=["wavelength", "gain", slope_col, intercept_col]).copy()
+        clean_df = self._exclude_flagged_boards(clean_df)
         if clean_df.empty:
             logger.warning("Crossboard dataframe has no valid rows for %s histograms.", metric)
             return self.plots
@@ -174,6 +177,7 @@ class CrossboardPlotter:
             return self.plots
 
         clean_df = self.df.dropna(subset=["board_id", "wavelength", "gain", slope_col, intercept_col]).copy()
+        clean_df = self._exclude_flagged_boards(clean_df)
         if clean_df.empty:
             logger.warning("Crossboard dataframe has no valid rows for %s intercept/slope by gain plot.", metric)
             return self.plots
@@ -567,15 +571,17 @@ class CrossboardPlotter:
         fig.patch.set_facecolor("white")
         ax.set_facecolor("white")
         arr = zmat.to_numpy(dtype=float)
-        arr_plot = np.where(np.isnan(arr), 0.0, arr).T
-        vmax = max(3.0, float(np.nanmax(np.abs(arr))) if np.isfinite(np.nanmax(np.abs(arr))) else 3.0)
+        color_limit = 10.0
+        arr_plot = np.clip(np.where(np.isnan(arr), 0.0, arr), -color_limit, color_limit).T
+        label_values = arr.T
         cmap = plt.get_cmap(PLOT_STYLE["heatmap_cmap"])
-        norm = plt.Normalize(vmin=-vmax, vmax=vmax)
+        norm = plt.Normalize(vmin=-color_limit, vmax=color_limit)
 
         nrows, ncols = arr_plot.shape
         for row_idx in range(nrows):
             for col_idx in range(ncols):
                 value = arr_plot[row_idx, col_idx]
+                label_value = label_values[row_idx, col_idx]
                 facecolor = cmap(norm(value))
                 rect = plt.Rectangle(
                     (col_idx - 0.5, row_idx - 0.5),
@@ -586,12 +592,12 @@ class CrossboardPlotter:
                     linewidth=0.8,
                 )
                 ax.add_patch(rect)
-                if np.isfinite(value):
-                    text_color = "white" if abs(value) >= 0.55 * vmax else "black"
+                if np.isfinite(label_value):
+                    text_color = "white" if abs(value) >= 0.55 * color_limit else "black"
                     ax.text(
                         col_idx,
                         row_idx,
-                        f"{value:.2f}",
+                        f"{label_value:.2f}",
                         ha="center",
                         va="center",
                         fontsize=7,
@@ -607,7 +613,7 @@ class CrossboardPlotter:
         ax.set_xticklabels(boards, rotation=65, ha="right", fontsize=8)
         ax.set_yticks(np.arange(len(combos)))
         ax.set_yticklabels(combos, fontsize=9)
-        legend_steps = np.linspace(-vmax, vmax, 9)
+        legend_steps = np.linspace(-color_limit, color_limit, 9)
         legend_x = ncols + 0.6
         legend_width = 0.45
         for idx in range(len(legend_steps) - 1):
@@ -624,7 +630,7 @@ class CrossboardPlotter:
             )
             ax.add_patch(rect)
 
-        tick_values = np.linspace(-vmax, vmax, 5)
+        tick_values = np.linspace(-color_limit, color_limit, 5)
         for tick in tick_values:
             y = (tick_values[-1] - tick) / (tick_values[-1] - tick_values[0]) * (nrows - 1)
             ax.plot(
@@ -721,9 +727,14 @@ class CrossboardPlotter:
             logger.warning("Crossboard dataframe has no valid rows for a2p final calification.")
             return {}
 
+        threshold = float(config.final_calification_exclusion_pct_threshold)
+        excluded_df = self._build_excluded_boards_df(rankings_df=rankings_df, threshold=threshold)
+        excluded_board_ids = set(excluded_df["board_id"].astype(str).tolist())
+        eligible_df = rankings_df[~rankings_df["board_id"].astype(str).isin(excluded_board_ids)].copy()
+
         combos = sorted(rankings_df["combo"].astype(str).unique(), key=self._combo_sort_key)
         wide = (
-            rankings_df.assign(board_id=rankings_df["board_id"].astype(str))
+            eligible_df.assign(board_id=eligible_df["board_id"].astype(str))
             .pivot(index="board_id", columns="combo", values="abs_dev_pct")
             .reindex(columns=combos)
         )
@@ -745,7 +756,10 @@ class CrossboardPlotter:
 
         csv_path = os.path.join(self.output_path, "a2p_board_final_calification.csv")
         json_path = os.path.join(self.output_path, "a2p_board_final_calification.json")
+        excluded_csv_path = os.path.join(self.output_path, "a2p_board_excluded.csv")
+        excluded_json_path = os.path.join(self.output_path, "a2p_board_excluded.json")
         result.to_csv(csv_path, index=False)
+        excluded_df.to_csv(excluded_csv_path, index=False)
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -754,15 +768,37 @@ class CrossboardPlotter:
                         "method": "weighted_mean_abs_dev_pct_across_wavelength_gain_combinations",
                         "wavelength_weights": {"1064": 0.7, "532": 0.3},
                         "rank_order": "ascending_average_abs_dev_pct",
+                        "exclusion_threshold_abs_dev_pct": threshold,
+                        "excluded_board_count": int(len(excluded_df)),
                     },
                     "rows": result.to_dict(orient="records"),
                 },
                 f,
                 indent=2,
             )
+        with open(excluded_json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "meta": {
+                        "metric": "a2p_slope",
+                        "method": "exclude_boards_with_any_combo_abs_dev_pct_above_threshold",
+                        "exclusion_threshold_abs_dev_pct": threshold,
+                    },
+                    "rows": excluded_df.to_dict(orient="records"),
+                },
+                f,
+                indent=2,
+            )
         logger.info("Saved final calification CSV: %s", csv_path)
         logger.info("Saved final calification JSON: %s", json_path)
-        return {"ranking_csv": csv_path, "ranking_json": json_path}
+        logger.info("Saved excluded boards CSV: %s", excluded_csv_path)
+        logger.info("Saved excluded boards JSON: %s", excluded_json_path)
+        return {
+            "ranking_csv": csv_path,
+            "ranking_json": json_path,
+            "excluded_csv": excluded_csv_path,
+            "excluded_json": excluded_json_path,
+        }
 
     def _build_a2p_board_combo_deviation_df(self) -> pd.DataFrame:
         required = ("board_id", "wavelength", "gain", "a2p_slope")
@@ -834,6 +870,79 @@ class CrossboardPlotter:
         if total_weight <= 0.0:
             return float("nan")
         return weighted_sum / total_weight
+
+    @staticmethod
+    def _build_excluded_boards_df(rankings_df: pd.DataFrame, threshold: float) -> pd.DataFrame:
+        excluded_rows: list[dict[str, Any]] = []
+        if rankings_df.empty:
+            return pd.DataFrame(
+                columns=[
+                    "board_id",
+                    "status",
+                    "max_abs_dev_pct",
+                    "excluded_combos",
+                    "excluded_combo_count",
+                    "exclusion_threshold_abs_dev_pct",
+                ]
+            )
+
+        for board_id, part in rankings_df.groupby(rankings_df["board_id"].astype(str), sort=True):
+            over_threshold = part[part["abs_dev_pct"].astype(float) > threshold].copy()
+            if over_threshold.empty:
+                continue
+            over_threshold = over_threshold.sort_values(by=["abs_dev_pct", "combo"], ascending=[False, True]).reset_index(drop=True)
+            excluded_rows.append(
+                {
+                    "board_id": str(board_id),
+                    "status": "excluded",
+                    "max_abs_dev_pct": float(over_threshold.iloc[0]["abs_dev_pct"]),
+                    "excluded_combos": "; ".join(
+                        f"{row['combo']} ({float(row['abs_dev_pct']):.3f}%)"
+                        for _, row in over_threshold.iterrows()
+                    ),
+                    "excluded_combo_count": int(len(over_threshold)),
+                    "exclusion_threshold_abs_dev_pct": float(threshold),
+                }
+            )
+
+        return pd.DataFrame(
+            excluded_rows,
+            columns=[
+                "board_id",
+                "status",
+                "max_abs_dev_pct",
+                "excluded_combos",
+                "excluded_combo_count",
+                "exclusion_threshold_abs_dev_pct",
+            ],
+        )
+
+    def _get_excluded_board_ids(self) -> set[str]:
+        if self._excluded_board_ids_cache is not None:
+            return self._excluded_board_ids_cache
+
+        rankings_df = self._build_a2p_board_combo_deviation_df()
+        threshold = float(config.final_calification_exclusion_pct_threshold)
+        excluded_df = self._build_excluded_boards_df(rankings_df=rankings_df, threshold=threshold)
+        self._excluded_board_ids_cache = set(excluded_df["board_id"].astype(str).tolist())
+        return self._excluded_board_ids_cache
+
+    def _exclude_flagged_boards(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty or "board_id" not in df.columns:
+            return df
+
+        excluded_board_ids = self._get_excluded_board_ids()
+        if not excluded_board_ids:
+            return df
+
+        filtered_df = df[~df["board_id"].astype(str).isin(excluded_board_ids)].copy()
+        if len(filtered_df) != len(df):
+            logger.info(
+                "Excluded %d rows from plots for flagged boards: %s",
+                len(df) - len(filtered_df),
+                ", ".join(sorted(excluded_board_ids)),
+            )
+        return filtered_df
 
     @staticmethod
     def _sort_wavelength(value: str):

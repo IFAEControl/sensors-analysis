@@ -72,6 +72,17 @@ def load_final_calification_rows(summary: dict[str, Any], root_path: str) -> lis
     return load_csv_rows(csv_path)
 
 
+def load_excluded_board_rows(summary: dict[str, Any], root_path: str) -> list[dict[str, str]]:
+    analysis = summary.get("analysis", {}) or {}
+    final_calification = analysis.get("a2p_board_final_calification", {}) or {}
+    csv_path = resolve_artifact_path(final_calification.get("excluded_csv"), root_path)
+    if not csv_path:
+        csv_path = os.path.join(root_path, "a2p_board_excluded.csv")
+    if not os.path.exists(csv_path):
+        return []
+    return load_csv_rows(csv_path)
+
+
 def load_deviation_ranking_rows(summary: dict[str, Any], root_path: str) -> list[dict[str, str]]:
     analysis = summary.get("analysis", {}) or {}
     rankings = analysis.get("a2p_board_deviation_rankings", {}) or {}

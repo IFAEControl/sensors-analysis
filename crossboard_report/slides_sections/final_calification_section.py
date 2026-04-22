@@ -34,6 +34,7 @@ class FinalCalificationSection(BaseSection):
         intro_lines = [
             "Final board calification ranks boards by a weighted mean absolute deviation percentage across all wavelength and gain combinations.",
             "The weighting is 70% for 1064 and 30% for 532, split evenly across gains within each wavelength.",
+            "Boards with any combo above the exclusion threshold are removed from this ranking and listed separately.",
             "Lower average absolute deviation means the board is closer to the crossboard median behavior.",
         ]
 

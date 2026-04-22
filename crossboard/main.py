@@ -3,6 +3,8 @@ import json
 import os
 from datetime import datetime, timezone
 
+from crossboard_report import build_report
+
 from .config import config
 from .dataframe import CrossboardDataFrame, DATAFRAME_COLUMNS
 from .helpers import add_file_handler, get_logger
@@ -40,6 +42,11 @@ def main():
         "--no-save-dataframe",
         action="store_true",
         help="Load/build dataframe but do not write output CSV file",
+    )
+    parser.add_argument(
+        "--no-report",
+        action="store_true",
+        help="Skip crossboard report generation",
     )
     args = parser.parse_args()
 
@@ -123,6 +130,12 @@ def main():
         json.dump(summary, f, indent=2)
 
     logger.info("Generated crossboard summary: %s", summary_path)
+    if args.no_report:
+        logger.info("Skipping crossboard report generation due to --no-report")
+    else:
+        logger.info("Starting crossboard report generation from summary: %s", summary_path)
+        build_report(summary_path, output_path)
+        logger.info("Crossboard report generation completed")
     logger.info("Crossboard stage 1 completed")
 
 
